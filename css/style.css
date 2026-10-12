@@ -3,6 +3,7 @@
   --bg:#E9F0EA; --surface:#F8FBF8; --surface2:#F0F5F1; --ink:#18222C; --muted:#56636B; --line:#C6D4CB;
   --gold:#9A6E17; --goldtint:#F3E6C4; --accent:#256352; --accentink:#FFFFFF;
   --forest:#DCEBDD; --plain:#EFECD6; --water:#CFE3EE; --waterline:#3F7FA6; --daytint:#FBF0D2; --nighttint:#DDE3F3; --nightline:#4E62A0; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
+  --rit:#C8372D; --kum:#2A63C4; --bun:#D9A21B;
   --s0:#C2402F; --s1:#2F68B0; --s2:#A9781E; --s3:#6B42A3; --s4:#2C8250; --s5:#B84F8A; --s6:#16808E;
   --f-display:"Chonburi","Anuphan",serif; --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
 }
@@ -10,11 +11,13 @@
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
   --forest:#1D2D22; --plain:#2A2A1F; --water:#16303D; --waterline:#6FB3DB; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --rit:#F06A5E; --kum:#6FA0F2; --bun:#EBC04F;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
   --forest:#1D2D22; --plain:#2A2A1F; --water:#16303D; --waterline:#6FB3DB; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --rit:#F06A5E; --kum:#6FA0F2; --bun:#EBC04F;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
@@ -69,7 +72,21 @@ select,input{font:inherit;color:var(--ink);background:var(--surface);border:1px 
 .pw .nm{font-weight:600;font-size:.9rem;display:flex;justify-content:space-between;gap:6px}
 .pw .tx{font-size:.78rem;color:var(--muted)}
 .pw.owned{opacity:.55}
-.pw.can{border-color:var(--accent)}
+.pw .nm{align-items:flex-start}
+.pw .cost{display:flex;flex-direction:column;align-items:flex-end;flex:none;font-size:.75rem;font-weight:600;line-height:1.25;white-space:nowrap}
+.pw .tx i{font-style:normal;font-weight:600}
+.pw.line-rit{border:2px solid var(--rit)}.pw.line-kum{border:2px solid var(--kum)}.pw.line-bun{border:2px solid var(--bun)}
+.pw.line-rit .cost span:first-child{color:var(--rit)}.pw.line-kum .cost span:first-child{color:var(--kum)}.pw.line-bun .cost span:first-child{color:var(--bun)}
+.pw.mnt{border:2px dashed var(--line)}
+.pw.can{box-shadow:0 0 0 2px var(--surface) inset;background:var(--surface)}
+.pw.mnt.can{border-color:var(--accent)}
+.lhead{padding-left:8px;border-left:4px solid}.lhead.line-rit{border-color:var(--rit)}.lhead.line-kum{border-color:var(--kum)}.lhead.line-bun{border-color:var(--bun)}
+.mic{font-size:1.05em;margin-right:4px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.mic.big{font-size:1.4em}
+.mopt{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--surface);cursor:pointer}
+.mopt.on{border-color:var(--gold);background:var(--goldtint)}.mopt.off{opacity:.45;cursor:not-allowed}
+.mopt input{margin:0 4px 0 0}
+.idbox{border:1px dashed var(--line);border-radius:10px;padding:8px 10px;background:var(--surface2)}
 .log{max-height:240px;overflow:auto;font-size:.85rem;display:flex;flex-direction:column;gap:3px;margin:0;padding-left:1.1em}
 .lobbylist{display:grid;gap:8px}
 .lg{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
@@ -98,7 +115,7 @@ table.ref td,table.ref th{border-bottom:1px solid var(--line);padding:4px 6px;te
 /* ชิปพรและป๊อปอัปรายละเอียด */
 button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);cursor:pointer}
 .chip.info{position:relative}
-.chip.line-rit{border-color:var(--s0)}.chip.line-kum{border-color:var(--s1)}.chip.line-bun{border-color:var(--gold)}.chip.mount{border-style:dashed}
+.chip.line-rit{border:1.5px solid var(--rit)}.chip.line-kum{border:1.5px solid var(--kum)}.chip.line-bun{border:1.5px solid var(--bun)}.chip.mount{border-style:dashed}
 .godlink,.loglink{font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;border-radius:4px}
 .loglink{color:var(--accent);text-decoration:underline dotted;text-underline-offset:3px}
 .godlink:hover,.loglink:hover{text-decoration:underline}
@@ -111,8 +128,12 @@ button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);curso
 
 /* แถบกลางวัน/กลางคืน และเลขลำดับเล่น */
 .phase{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:12px 16px;border-radius:12px;border:1px solid}
-.phase.day{background:var(--daytint);border-color:var(--gold)}
-.phase.night{background:var(--nighttint);border-color:var(--nightline)}
+.phase.day{background:#FFFFFF;color:#18222C;border-color:#E2BE5E}
+.phase.night{background:#0A0D17;color:#EEF1FA;border-color:#2C3558}
+.phase.day .phnext{color:#56636B}.phase.night .phnext{color:#AEB6CC}
+.phase.day .phicon circle,.phase.day .phicon line{fill:#F2B21B;stroke:#F2B21B}
+.phase.night .phicon path,.phase.night .phicon circle{fill:#F4ECCB}
+.phase.night [style*="border-top"]{border-color:#2C3558!important}
 .phicon{width:44px;height:44px;flex:none}
 .phtitle{font-family:var(--f-display);font-weight:400;font-size:1.15rem}
 .phnext{text-align:right;color:var(--muted)}
@@ -127,3 +148,26 @@ button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);curso
 .bcmini{display:inline-flex;align-items:baseline;gap:1px;padding:1px 6px;border-radius:5px;border:1px solid var(--line);background:var(--surface);font-size:.75rem;font-variant-numeric:tabular-nums;cursor:default}
 .bcmini b{font-size:.85rem}
 .bcmini.used{opacity:.45;text-decoration:line-through;background:transparent;border-style:dashed}
+
+/* แอนิเมชันเปลี่ยนกลางวัน/กลางคืน */
+.sky{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;overflow:hidden;cursor:pointer;animation:skyin .45s ease both;padding:16px}
+.sky.day{background:linear-gradient(#FFE9A8 0%,#FFF8E6 45%,#FFFFFF 100%);color:#18222C}
+.sky.night{background:linear-gradient(#020309 0%,#0B1022 55%,#1B2346 100%);color:#F2F4FA}
+.sky .stars{position:absolute;inset:0;background-image:radial-gradient(2.5px 2.5px at 12% 18%,#fff 50%,transparent 51%),radial-gradient(1.8px 1.8px at 30% 40%,#fff 50%,transparent 51%),radial-gradient(2.5px 2.5px at 62% 12%,#fff 50%,transparent 51%),radial-gradient(1.8px 1.8px at 80% 33%,#fff 50%,transparent 51%),radial-gradient(2.5px 2.5px at 88% 70%,#fff 50%,transparent 51%),radial-gradient(1.8px 1.8px at 20% 75%,#fff 50%,transparent 51%),radial-gradient(1.8px 1.8px at 50% 60%,#fff 50%,transparent 51%),radial-gradient(2.5px 2.5px at 42% 86%,#fff 50%,transparent 51%);opacity:.8}
+.sky .orbsvg{width:min(42vw,190px);height:auto;display:block}
+.skyorb{position:relative}
+.skytxt{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.skytxt b{font-family:var(--f-display);font-weight:400;font-size:clamp(2rem,8vw,3rem);line-height:1.2}
+.skytxt span{font-size:1.1rem}
+.skytxt small{font-size:.95rem;opacity:.8}
+.skytap{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0px));opacity:.6}
+.sky.out{animation:skyout .45s ease forwards}
+@keyframes skyin{from{opacity:0}}
+@keyframes skyout{to{opacity:0}}
+@media (prefers-reduced-motion:no-preference){
+  .skyorb{animation:rise 1.7s cubic-bezier(.2,.8,.2,1) both}
+  .skytxt{animation:fadeup .6s 1s both}
+  .sky.day .orbsvg{animation:sunspin 14s linear infinite}
+  @keyframes rise{from{transform:translateY(55vh) scale(.6);opacity:.2}to{transform:none;opacity:1}}
+  @keyframes fadeup{from{transform:translateY(12px);opacity:0}}
+}

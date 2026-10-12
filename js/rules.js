@@ -11,26 +11,41 @@ const GODS=[
 ];
 const GOD=Object.fromEntries(GODS.map(g=>[g.k,g]));
 const MOUNTS={
- erawan:{name:'ช้างเอราวัณ',sh:'ช',cost:4,txt:'ตั้งรับ +2',bonus:'พระอินทร์: วชิราวุธถึงกองที่ห่างเอราวัณ 2 ช่อง'},
- garuda:{name:'ครุฑ',sh:'ค',cost:4,txt:'บุก +1 และเดินได้ 2 ช่อง',bonus:'พระนารายณ์: บินข้ามช่องศัตรูได้'},
- hong:{name:'หงส์',sh:'ห',cost:3,txt:'จบรอบในวัดหรือเขาพระสุเมรุ ได้บุญ +1',bonus:'พระพรหม: เกณฑ์ทัพลงกองที่มีหงส์ได้'},
- nonthi:{name:'โคนนทิ',sh:'โ',cost:3,txt:'พลังรบ +1 ทั้งบุกและรับ',bonus:'พระอิศวร: บุกชนะได้บาปแค่ +1'},
- buffalo:{name:'กระบือ',sh:'ก',cost:2,txt:'บุกชนะแล้วไม่ได้บาป',bonus:'พระยม: ยมโลก +2 ต่อตัวในศึกของกองนี้'},
- rhino:{name:'แรด',sh:'ร',cost:3,txt:'บุก +2',bonus:'พระเพลิง: กองนี้ไม่โดนตั้งรับ −1'},
- naga:{name:'นาค',sh:'น',cost:4,txt:'รับความเสียหาย −1 (ครุฑลบล้าง)',bonus:'พระพิรุณ: +1 เมื่ออยู่ในวัด'}
+ erawan:{name:'ช้างเอราวัณ',ic:'🐘',cost:4,home:'forest',txt:'ตั้งรับ +2',bonus:'พระอินทร์: วชิราวุธถึงกองที่ห่างเอราวัณ 2 ช่อง'},
+ garuda:{name:'ครุฑ',ic:'🦅',cost:4,home:'sumeru',txt:'บุก +1 และเดินได้ 2 ช่อง',bonus:'พระนารายณ์: บินข้ามช่องศัตรูได้'},
+ hong:{name:'หงส์',ic:'🦢',cost:3,home:'temple',txt:'จบรอบในวัดหรือเขาพระสุเมรุ ได้บุญ +1',bonus:'พระพรหม: เกณฑ์ทัพลงกองที่มีหงส์ได้'},
+ nonthi:{name:'โคนนทิ',ic:'🐂',cost:3,home:'royal',txt:'พลังรบ +1 ทั้งบุกและรับ',bonus:'พระอิศวร: บุกชนะได้บาปแค่ +1'},
+ buffalo:{name:'กระบือ',ic:'🐃',cost:2,home:'plain',txt:'บุกชนะแล้วไม่ได้บาป',bonus:'พระยม: ยมโลก +2 ต่อตัวในศึกของกองนี้'},
+ rhino:{name:'แรด',ic:'🦏',cost:3,home:'deep',txt:'บุก +2',bonus:'พระเพลิง: กองนี้ไม่โดนตั้งรับ −1'},
+ naga:{name:'นาค',ic:'🐍',cost:4,home:'water',txt:'รับความเสียหาย −1 (ครุฑลบล้าง)',bonus:'พระพิรุณ: +1 เมื่ออยู่ในวัด'},
+ rajasi:{name:'ราชสีห์',ic:'🦁',cost:4,home:'plain',txt:'บุกชนะ แต้มฆ่า +1'},
+ khotchasi:{name:'คชสีห์',ic:'🐯',cost:4,home:'forest',txt:'ตั้งรับ +1 และตอนตั้งรับรับความเสียหาย −1'},
+ kilen:{name:'กิเลน',ic:'🦄',cost:3,home:'temple',txt:'จบรอบ บาป −1'},
+ durong:{name:'ดุรงค์ปักษิน (ม้าปีก)',ic:'🐎',cost:3,home:'sumeru',txt:'เดินได้ 2 ช่อง'},
+ kinnaree:{name:'กินรี',ic:'🧚',cost:2,home:'water',txt:'ทำบุญได้บุญ +1 เพิ่ม'},
+ makara:{name:'มกร',ic:'🐊',cost:3,home:'water',txt:'ตอนบุก รับความเสียหาย −1'},
+ hera:{name:'เหรา',ic:'🦎',cost:2,home:'deep',txt:'ตั้งรับ +1'},
+ hatsadee:{name:'นกหัสดีลิงค์',ic:'🦚',cost:3,home:'deep',txt:'กลางคืน บุก +2'},
+ kraisorn:{name:'ไกรสรปักษา',ic:'🦜',cost:3,home:'sumeru',txt:'กลางวัน ตั้งรับ +2'},
+ asura:{name:'อสุรปักษา',ic:'👹',cost:2,home:'forest',txt:'บุก +1'},
+ kwang:{name:'กวางทอง',ic:'🦌',cost:2,home:'temple',txt:'จบรอบ ได้บุญ +1'},
+ kaisornnaka:{name:'ไกรสรนาคา',ic:'🐲',cost:3,home:'royal',txt:'บุกชนะ ได้บุญ +2'},
+ thakthor:{name:'ทักทอ',ic:'🐐',cost:3,home:'plain',txt:'เกณฑ์ทัพลงกองที่มีทักทอได้'}
 };
 /* ถิ่นของพาหนะ: รบในช่องถิ่นของตัวเอง พลังรบ +1 ทั้งบุกและรับ */
-const HOME={erawan:'ป่า',rhino:'ป่าลึก',buffalo:'ทุ่ง',naga:'ริมน้ำ',garuda:'เขาพระสุเมรุ',hong:'วัด',nonthi:'วัดหลวง'};
+const HOMENAME={forest:'ป่า',deep:'ป่าลึก',plain:'ทุ่ง',water:'ริมน้ำ',temple:'วัด',sumeru:'เขาพระสุเมรุ',royal:'วัดหลวง'};
+const HOME=Object.fromEntries(Object.entries(MOUNTS).map(([k,m])=>[k,HOMENAME[m.home]]));
+const HOMEK={forest:1,temple:2,plain:3,water:4,deep:5};
 function inHome(S,m,i){
-  if(!m)return false;
-  if(m==='garuda')return i===0;
-  if(m==='nonthi')return isRoyal(S,i);
+  if(!m||!MOUNTS[m])return false;const h=MOUNTS[m].home;
+  if(h==='sumeru')return i===0;
+  if(h==='royal')return isRoyal(S,i);
   if(i===0||isRoyal(S,i))return false;
-  const k=kOf(i);
-  return (m==='erawan'&&k===1)||(m==='rhino'&&k===5)||(m==='buffalo'&&k===3)||(m==='naga'&&k===4)||(m==='hong'&&k===2);
+  return kOf(i)===HOMEK[h];
 }
 const MK=Object.keys(MOUNTS);
 const OWNER_GOD={erawan:'indra',garuda:'narai',hong:'brahma',nonthi:'shiva',buffalo:'yama',rhino:'agni',naga:'varuna'};
+const mIcon=k=>MOUNTS[k]?MOUNTS[k].ic:'';
 const LINES={rit:'สายฤทธิ์',kum:'สายคุ้มกัน',bun:'สายบุญ'};
 const P=(id,line,lv,name,txt,todo)=>({id,line,lv,name,txt,todo:!!todo});
 const POWERS=[
@@ -91,6 +106,10 @@ function nbs(S,i,s){
   return out;
 }
 function mountAt(S,cell,s){for(const k of MK){const m=S.M[k];if(m&&m.o===s&&m.c===cell)return k}return null}
+/* เมืองเก็บพาหนะได้หลายตัว กองนอกเมืองมีพาหนะได้ 1 ตัว */
+function mountsAt(S,cell,s){return MK.filter(k=>{const m=S.M[k];return m&&m.o===s&&m.c===cell})}
+const ownsM=(S,s,k)=>!!(S.M[k]&&S.M[k].o===s);
+const meritAmt=(S,s)=>(has(S,s,'holy')?3:2)+(ownsM(S,s,'kinnaree')?1:0);
 function mountsOf(S,s){return MK.filter(k=>S.M[k]&&S.M[k].o===s)}
 function onBoard(S,s){let t=0;for(const c of S.B)if(c.o===s)t+=c.t;if(S.battle&&S.battle.a===s)t+=S.battle.n;if(S.retreat&&S.retreat.loser===s)t+=S.retreat.n;return t}
 const reserve=(S,s)=>10-onBoard(S,s);
@@ -139,12 +158,13 @@ function recruitTargets(S,s){
   const out=[cityOf(s)];
   if(has(S,s,'reserve')){for(const j of adj(S,cityOf(s))){const c=S.B[j];if(c.t===0||c.o===s)out.push(j)}}
   if(isGod(S,s,'brahma')&&S.M.hong&&S.M.hong.o===s&&!out.includes(S.M.hong.c))out.push(S.M.hong.c);
+  if(ownsM(S,s,'thakthor')&&S.M.thakthor.c>=0&&!out.includes(S.M.thakthor.c))out.push(S.M.thakthor.c);
   return out.filter(j=>j===cityOf(s)||S.B[j].t<cap(S,s,j));
 }
 const recruitAmt=(S,s)=>(isGod(S,s,'brahma')?3:2)+(has(S,s,'levy')?1:0);
 
 function reachable(S,s,src,carry,maxRange){
-  let range=has(S,s,'swift')||carry==='garuda'?2:1;if(maxRange)range=Math.min(range,maxRange);
+  let range=has(S,s,'swift')||carry==='garuda'||carry==='durong'?2:1;if(maxRange)range=Math.min(range,maxRange);
   const fly=carry==='garuda'&&isGod(S,s,'narai');
   const res={};const seen=new Set([src]);let front=[src];
   for(let d=0;d<range;d++){const nx=[];
@@ -159,6 +179,8 @@ function reachable(S,s,src,carry,maxRange){
   }
   return res;
 }
+/* ช่องที่ไปได้จากกองนี้ ไม่ว่าจะพาพาหนะตัวไหนไป (หรือไม่พา) */
+function reachAny(S,s,src,maxRange){const out={};for(const m of [null,...mountsAt(S,src,s)])Object.assign(out,reachable(S,s,src,m,maxRange));return out}
 function placeTroops(S,s,cell,n){const c=S.B[cell];if(c.t===0||c.o!==s){c.o=s;c.t=0}c.t+=n}
 function removeTroops(S,cell,n){const c=S.B[cell];c.t=Math.max(0,c.t-n);if(c.t===0){const ow=c.o;if(ctype(S,cell)!=='city')c.o=-1;sendMountsHome(S,cell,ow)}}
 function sendMountsHome(S,cell,ow){if(ow<0)return;for(const k of MK){const m=S.M[k];if(m&&m.o===ow&&m.c===cell&&cell!==cityOf(ow)){m.c=cityOf(ow)}}}
@@ -185,8 +207,8 @@ function retreatOpts(S,s,cell,n){
   });
 }
 function placeRetreat(S,s,j,n,m){
-  placeTroops(S,s,j,n);
-  if(m){if(mountAt(S,j,s))S.M[m].c=cityOf(s);else S.M[m].c=j}
+  const had=mountAt(S,j,s);placeTroops(S,s,j,n);
+  if(m){if(had&&j!==cityOf(s))S.M[m].c=cityOf(s);else S.M[m].c=j}
 }
 function resolveBattle(S,defCard){
   const b=S.battle;const A=b.a,D=b.d,cell=b.to;
@@ -210,19 +232,23 @@ function resolveBattle(S,defCard){
   if(mD==='naga'&&temple&&isGod(S,D,'varuna'))d('นาคในวัด',1);
   if(mA==='garuda'&&mD==='naga'){a('ครุฑข่มนาค',2);notes.push('ครุฑข่มนาค')}
   if(mD==='garuda'&&mA==='naga'){d('ครุฑข่มนาค',2);notes.push('ครุฑข่มนาค')}
+  if(mA==='asura')a('อสุรปักษา',1);if(mA==='hatsadee'&&S.moon==='wane')a('หัสดีลิงค์ยามค่ำ',2);
+  if(mD==='hera')d('เหรา',1);if(mD==='khotchasi')d('คชสีห์',1);if(mD==='kraisorn'&&S.moon==='wax')d('ไกรสรปักษายามวัน',2);
   if(inHome(S,mA,cell))a(MOUNTS[mA].name+'ในถิ่น',1);
   if(inHome(S,mD,cell))d(MOUNTS[mD].name+'ในถิ่น',1);
   const sA=pA.reduce((t,x)=>t+x[1],0),sD=pD.reduce((t,x)=>t+x[1],0);
   const aWin=sA>sD;
   // damage each side deals
   const kA=[['การ์ด',cA.k]],kD=[['การ์ด',cD.k]];
-  if(aWin){if(has(S,A,'raid'))kA.push(['จู่โจม',1]);if(isGod(S,A,'shiva'))kA.push(['ระบำทำลายล้าง',1])}
+  if(aWin){if(has(S,A,'raid'))kA.push(['จู่โจม',1]);if(isGod(S,A,'shiva'))kA.push(['ระบำทำลายล้าง',1]);if(mA==='rajasi')kA.push(['ราชสีห์',1])}
   else{if(has(S,D,'counter'))kD.push(['โต้กลับ',1])}
   // reductions on the receiving side
   if(mD==='naga'&&mA!=='garuda')kA.push(['นาคกันไว้',-1]);
   if(has(S,D,'ward'))kA.push(['มนต์คุ้มกาย',-1]);
   if(mA==='naga'&&mD!=='garuda')kD.push(['นาคกันไว้',-1]);
   if(has(S,A,'rally'))kD.push(['ปลุกใจ',-1]);
+  if(mD==='khotchasi')kA.push(['คชสีห์',-1]);
+  if(mA==='makara')kD.push(['มกร',-1]);
   const dmgA=Math.max(0,kA.reduce((t,x)=>t+x[1],0)),dmgD=Math.max(0,kD.reduce((t,x)=>t+x[1],0));
   const lossD=Math.min(nD,dmgA),lossA=Math.min(nA,dmgD);
   const survA=nA-lossA,survD=nD-lossD;deaths+=lossA+lossD;
@@ -243,9 +269,11 @@ function resolveBattle(S,defCard){
     let sin=1;if(isGod(S,A,'shiva'))sin=(S.M.nonthi&&S.M.nonthi.o===A)?1:2;
     if(mA==='buffalo')sin=0;
     S.P[A].sin+=sin;
+    if(mA==='kaisornnaka'){S.P[A].merit+=2;notes.push('ไกรสรนาคา +2 บุญ')}
   }
   for(const s of [A,D]){if(isGod(S,s,'yama')&&deaths>0){const grpM=s===A?mA:mD;const g=deaths*(grpM==='buffalo'?2:1);S.P[s].merit+=g;notes.push(`ยมโลก +${g} บุญ`)}}
-  S.last={cell,A,D,ac:b.ac,dc:defCard,sA,sD,pA,pD,kA,kD,aWin,lossA,lossD,round:S.round,retreat:null};
+  const ob=x=>x.map(([l,v])=>({l,v}));
+  S.last={cell,A,D,ac:b.ac,dc:defCard,sA,sD,pA:ob(pA),pD:ob(pD),kA:ob(kA),kD:ob(kD),aWin,lossA,lossD,round:S.round,retreat:null};
   log(S,`ศึก${cname(S,cell)}: ${gname(S,A)} ${cA.n} พลัง ${sA} ต่อ ${gname(S,D)} ${cD.n} พลัง ${sD} → ${gname(S,W)} ชนะ · บุกเสีย ${lossA} รับเสีย ${lossD}${notes.length?' ('+notes.join(', ')+')':''}${aWin&&survA===0?' · ฝ่ายบุกไม่เหลือทหาร ไม่ได้คะแนน':''}`);
   S.battle=null;
   checkSin(S,A);
@@ -311,6 +339,8 @@ function endRound(S){
     if(isGod(S,s,'varuna'))p.merit+=th;
     if(S.M.hong&&S.M.hong.o===s){const c=S.M.hong.c;if((ctype(S,c)==='temple'||c===0)&&S.B[c].o===s&&S.B[c].t>0)p.merit+=1}
     if(has(S,s,'chant'))p.merit+=1;
+    if(ownsM(S,s,'kwang'))p.merit+=1;
+    if(ownsM(S,s,'kilen'))p.sin=Math.max(0,p.sin-1);
     if(has(S,s,'offer'))p.merit+=th;
     if(has(S,s,'angel'))p.sin=Math.max(0,p.sin-1);
     if(has(S,s,'pray')&&p.uc.length){p.uc.sort((a,b)=>b-a);p.uc.shift()}

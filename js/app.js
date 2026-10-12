@@ -7,7 +7,7 @@ async function createGame(data){return STORE.create(data)}
 async function mutate(gid,fn){
   if(isTut(gid)){const S=clone(localGames[gid]);if(fn(S)===false)return false;localGames[gid]=S;fireLocal();return true}
   const r=await STORE.mutate(gid,fn);
-  if(!r.ok&&r.why){toast(r.why==='missing'?'ไม่พบห้องนี้แล้ว':r.why==='denied'?'คุณไม่ได้อยู่ในห้องนี้ จึงเดินแทนไม่ได้':'บันทึกไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง')}
+  if(!r.ok&&r.why){toast(r.why==='missing'?'ไม่พบห้องนี้แล้ว':r.why==='denied'?'คุณไม่ได้อยู่ในห้องนี้ จึงเดินแทนไม่ได้':r.why==='offline'?'ต่ออินเทอร์เน็ตไม่ได้ ลองอีกครั้ง':'บันทึกไม่สำเร็จ ('+(r.detail||'ไม่ทราบสาเหตุ')+') ลองรีเฟรชแล้วทำใหม่ ถ้ายังไม่ได้ส่งภาพหน้าจอนี้มา')}
   return r.ok;
 }
 let unsub=null;
@@ -36,7 +36,7 @@ function myName(){try{return localStorage.getItem('hmp-name')||''}catch(e){retur
 function setMyName(n){try{localStorage.setItem('hmp-name',n)}catch(e){}}
 const cleanName=v=>String(v||'').replace(/\s+/g,' ').trim().slice(0,20);
 const linkFor=id=>location.origin+location.pathname+'#g-'+id;
-function copyText(t){const done=()=>toast('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย');
+function copyText(t,msg){const done=()=>toast(msg||'คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย');
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,()=>toast('คัดลอกไม่ได้ กดค้างที่ลิงก์เพื่อคัดลอกเอง'))}else toast('กดค้างที่ลิงก์เพื่อคัดลอกเอง')}
 
 /* ===================== RENDER: LOBBY ===================== */
@@ -70,6 +70,7 @@ function renderLobby(){
     </div>
     <div class="panel stack">
       <label class="form"><span class="small">ชื่อในเกมของคุณ</span><input id="nick" maxlength="20" placeholder="เช่น มิล" value="${esc(myName())}" autocomplete="nickname"></label>
+      ${idBox()}
       <form class="row" id="joinf"><input id="jcode" maxlength="6" placeholder="รหัสห้อง 6 ตัว" style="text-transform:uppercase;flex:1 1 140px" aria-label="รหัสห้อง" autocomplete="off"><button type="submit">เข้าห้อง</button></form>
       <details ${rows.length?'':'open'}><summary>เปิดห้องใหม่</summary>
       <form class="form" id="newf" style="margin-top:10px">
@@ -103,6 +104,19 @@ function renderLobby(){
   };
   app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openGame(b.dataset.open));
   document.getElementById('learn').onclick=startTutorial;
+  wireId();
+}
+/* ตัวตนผู้เล่น: ปกติจำไว้ในเบราว์เซอร์ ผูก Google ได้เพื่อใช้ตัวตนเดิมข้ามเครื่อง */
+function idBox(){
+  if(!STORE.online)return '';
+  if(STORE.google)return `<div class="small idbox">✓ ตัวตนของคุณผูกกับ Google แล้ว (${esc(STORE.google)}) เปลี่ยนเครื่องก็กด "ใช้ Google ที่ผูกไว้" ที่หน้าแรกของเครื่องใหม่ แล้วเล่นต่อได้เลย</div>`;
+  return `<div class="small idbox"><b>เน็ตหลุดไม่เป็นไร</b> เว็บจำคุณไว้ในเบราว์เซอร์นี้ กลับมาเปิดลิงก์เดิมก็เล่นต่อได้ ถ้าอยากเล่นต่อจาก<b>เครื่องอื่น</b>ด้วย (เช่น คอมกับ iPad) ให้ผูก Google ไว้ก่อน
+    <div class="row" style="margin-top:6px"><button id="glink">ผูกกับ Google</button><button class="ghost" id="glink2">ใช้ Google ที่ผูกไว้ (เครื่องใหม่)</button></div></div>`}
+function wireId(){
+  const go=async()=>{try{const r=await STORE.linkGoogle();
+      if(r==='switched'){toast('กลับมาเป็นตัวตนเดิมแล้ว กำลังโหลดใหม่');setTimeout(()=>location.reload(),900)}else{toast('ผูกกับ Google แล้ว');render()}}
+    catch(e){const c=e&&e.code;toast(c==='auth/operation-not-allowed'?'ยังไม่ได้เปิดการเข้าสู่ระบบด้วย Google ใน Firebase (ดู README ขั้นที่ 6)':c==='auth/popup-blocked'?'เบราว์เซอร์บล็อกหน้าต่าง ลองกดอีกครั้ง':c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request'?'ยกเลิกแล้ว':'ผูกไม่สำเร็จ: '+(c||e))}};
+  ['glink','glink2'].forEach(id=>{const b=document.getElementById(id);if(b)b.onclick=go});
 }
 function rulesRef(){return `<details class="panel" style="margin-top:20px"><summary>สรุปกติกาแบบย่อ</summary>
 <div class="stack small" style="margin-top:10px">
@@ -123,7 +137,7 @@ function openGame(id){
     if(!S){G=null;render();return}
     const prevTurn=G?activeSeat(G):null;G=S;
     if(prevTurn!==activeSeat(S))ui={mode:null};
-    noteNames(S);render();tutTick(S);
+    noteNames(S);render();tutTick(S);checkPhase(S);
   });
   render();
 }
@@ -234,7 +248,7 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
       <circle class="ring" cx="${p.x}" cy="${p.y}" r="${rr}" fill="${fill}" stroke="${oc}" stroke-width="${c.t>0||t==='city'?3.5:1.5}"/>
       <text x="${p.x}" y="${p.y-rr*0.3}" text-anchor="middle" font-size="${fs}" fill="var(--muted)" font-family="Anuphan,sans-serif">${esc(lab)}</text>
       ${c.t>0?`<text x="${p.x}" y="${p.y+rr*0.4}" text-anchor="middle" font-size="${Math.max(17,rr*0.66)}" font-weight="700" fill="${SEATC(c.o)}" font-family="Anuphan,sans-serif">${c.t}</text>`:''}
-      ${ms.map((k,j)=>`<g><circle cx="${p.x+rr*0.78-j*18}" cy="${p.y-rr*0.8}" r="12" fill="${SEATC(S.M[k].o)}"/><text x="${p.x+rr*0.78-j*18}" y="${p.y-rr*0.8+5}" text-anchor="middle" font-size="13" fill="var(--surface)" font-weight="700" font-family="Anuphan,sans-serif">${MOUNTS[k].sh}</text><title>${MOUNTS[k].name} ของ${GOD[godOf(S,S.M[k].o)].name}</title></g>`).join('')}
+      ${ms.map((k,j)=>{const mx=p.x+rr*0.8-j*22,my=p.y-rr*0.82;return `<g class="mtok"><circle cx="${mx}" cy="${my}" r="14" fill="var(--surface)" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/><text x="${mx}" y="${my+6}" text-anchor="middle" font-size="16">${MOUNTS[k].ic}</text><title>${MOUNTS[k].name} ของ${GOD[godOf(S,S.M[k].o)].name}</title></g>`}).join('')}
       ${i===0?`<text x="${p.x}" y="${p.y+rr*0.55}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Anuphan,sans-serif">2 คะแนน</text>`:''}
     </g>`;
   }
@@ -246,12 +260,12 @@ function renderGame(){
   const myTurn=mine&&!S.battle&&!S.retreat&&S.status==='play';
   let clickable=[],selected=null;
   if(myTurn){
-    if(ui.mode==='move-src'){S.B.forEach((c,i)=>{if(c.o===act&&c.t>0&&Object.keys(reachable(S,act,i,mountAt(S,i,act))).length)clickable.push(i)})}
+    if(ui.mode==='move-src'){S.B.forEach((c,i)=>{if(c.o===act&&c.t>0&&Object.keys(reachAny(S,act,i)).length)clickable.push(i)})}
     if(ui.mode==='move-dst'){clickable=Object.keys(ui.dest).map(Number);selected=ui.src}
     if(ui.mode==='move-cfg'){selected=ui.dst}
     if(ui.mode==='recruit'){clickable=recruitTargets(S,act)}
     if(ui.mode==='vajra'){clickable=vajraTargets(S,act)}
-    if(ui.mode==='avatar-dst'){S.B.forEach((c,i)=>{if((c.o===act&&c.t>0||i===cityOf(act))&&!mountAt(S,i,act))clickable.push(i)})}
+    if(ui.mode==='avatar-dst'){S.B.forEach((c,i)=>{if((c.o===act&&c.t>0&&!mountAt(S,i,act))||i===cityOf(act))if(S.M[ui.am].c!==i)clickable.push(i)})}
   }
   if(S.retreat&&mine&&S.status==='play'){clickable=S.retreat.opts;selected=S.retreat.from}
   const moonPill=`<span class="pill">${S.moon==='wax'?'◐ กลางวัน: วัดได้บุญ +1':'◑ กลางคืน: ฝ่ายบุก +1'}</span>`;
@@ -261,11 +275,17 @@ function renderGame(){
   ${phaseBox(S)}
   <div class="panel mapbox">${mapSVG(S,clickable,selected,(TUT&&GID==='tut'&&tutStep()&&tutStep().hl)||[])}</div>
   <div class="game">
-    <div class="stack">${statusBox(S,act,mine)}${lastBattleBox(S)}${myTurn?shopBox(S,act):''}</div>
+    <div class="stack">${statusBox(S,act,mine)}${lastBattleBox(S)}${myTurn?shopBox(S,act):''}${seatHelpBox(S)}</div>
     <div class="stack">${playersBox(S,act)}<div class="panel"><h3>บันทึก</h3><ul class="log">${S.log.map(t=>`<li>${richLog(t)}</li>`).join('')}</ul></div>${rulesRef()}</div>
   </div></div>`;
   document.getElementById('back').onclick=showLobby;
-  wireGame(S,act);wireTut();const cp=document.getElementById('copy');if(cp)cp.onclick=()=>copyText(linkFor(GID));
+  wireGame(S,act);wireTut();wireId();
+  {const $=id=>document.getElementById(id);
+   if($('cpme'))$('cpme').onclick=()=>copyText(ME,'คัดลอกรหัสแล้ว ส่งให้เพื่อนในห้องได้เลย');
+   if($('mvgo'))$('mvgo').onclick=()=>{const i=+$('mvseat').value;const code=$('mvcode').value.trim();
+     if(!/^[A-Za-z0-9]{20,40}$/.test(code)){toast('รหัสไม่ถูกต้อง ให้เพื่อนกดคัดลอกรหัสแล้วส่งมาใหม่');return}
+     mutate(GID,T=>{if(!mySeats(T).length||mySeats(T).includes(i)||T.seats.some(x=>x.uid===code))return false;
+       const old=T.seats[i].name||'ผู้เล่น';T.seats[i].uid=code;log(T,`ย้ายที่นั่งของ${gname(T,i)} (${old}) ไปเครื่องใหม่`)}).then(ok=>{if(ok)toast('ย้ายที่นั่งแล้ว ให้เพื่อนรีเฟรชหน้า')})}}const cp=document.getElementById('copy');if(cp)cp.onclick=()=>copyText(linkFor(GID));
 }
 function statusBox(S,act,mine){
   if(S.status==='done'){return `<div class="banner"><h2>${esc(gname(S,S.winner))} ชนะ!</h2><p class="small">${total(S,S.winner)} คะแนน ในรอบที่ ${S.round}</p><button id="back2">กลับหน้ารวม</button></div>`}
@@ -288,7 +308,7 @@ function statusBox(S,act,mine){
     <div class="row">${f.vajra?`<button class="primary" id="f-vajra">ใช้วชิราวุธ</button>`:''}${f.bonusFrom!==null?`<button class="primary" id="f-bonus">เดินต่อ 1 ช่อง (ชัยต่อเนื่อง)</button>`:''}<button id="f-end">จบตา</button></div>
     ${modeBox(S,act)}</div>`}
   const p=S.P[act];
-  const moveable=S.B.some((c,i)=>c.o===act&&c.t>0&&Object.keys(reachable(S,act,i,mountAt(S,i,act))).length);
+  const moveable=S.B.some((c,i)=>c.o===act&&c.t>0&&Object.keys(reachAny(S,act,i)).length);
   const canRecruit=reserve(S,act)>0&&recruitTargets(S,act).length;
   const btn=(a,sub,ok)=>`<button data-act="${a}" ${actionOK(S,act,a)&&ok&&tutAllow(a)?'':'disabled'}><b>${ACT[a]}</b><span>${sub}</span></button>`;
   return `<div class="panel stack"><div class="row">${who}</div>
@@ -296,15 +316,30 @@ function statusBox(S,act,mine){
    ${ui.mode?modeBox(S,act):`<div class="actions">
     ${btn('recruit',`+${Math.min(recruitAmt(S,act),reserve(S,act))} ตัว (คลังเหลือ ${reserve(S,act)})`,canRecruit)}
     ${btn('move','เลือกกองแล้วเลือกปลายทาง',moveable)}
-    ${btn('merit',(has(S,act,'atone')?'บุญ +'+(has(S,act,'holy')?3:2)+' และลบบาป 1':'บุญ +'+(has(S,act,'holy')?3:2)+' หรือลบบาป 1'),true)}
+    ${btn('merit',(has(S,act,'atone')?'บุญ +'+meritAmt(S,act)+' และลบบาป 1':'บุญ +'+meritAmt(S,act)+' หรือลบบาป 1'),true)}
     ${btn('buy','ซื้อการ์ดพลังหรือพาหนะ (รายการด้านล่าง)',true)}
    </div>`}
    ${isGod(S,act,'narai')&&!p.f.avatar&&mountsOf(S,act).length&&!ui.mode?`<button id="avatar">อวตาร: ย้ายพาหนะ (ฟรี รอบละครั้ง)</button>`:''}
   </div>`;
 }
+/* ย้ายที่นั่งให้คนที่เปลี่ยนเครื่อง: คนที่ยังอยู่ในห้องใส่รหัสของเครื่องใหม่ */
+function seatHelpBox(S){
+  if(isTut(GID)||S.status!=='play'||!STORE.online)return '';
+  const mine=mySeats(S);
+  if(!mine.length)return `<div class="panel stack"><h3>คุณดูอยู่เฉยๆ ยังไม่ได้นั่งในห้องนี้</h3>
+    <p class="small">ถ้าคุณเป็นผู้เล่นในห้องนี้ที่เปลี่ยนเครื่องหรือล้างเบราว์เซอร์ เลือกทางใดทางหนึ่ง</p>
+    <p class="small"><b>1.</b> ถ้าเคยผูก Google ไว้ <button id="glink2">ใช้ Google ที่ผูกไว้</button></p>
+    <p class="small"><b>2.</b> ส่งรหัสเครื่องนี้ให้เพื่อนในห้อง ให้เขากด "ย้ายที่นั่ง" แล้ววางรหัสนี้</p>
+    <div class="share"><code>${esc(ME)}</code><button id="cpme">คัดลอกรหัส</button></div></div>`;
+  return `<details class="panel"><summary>เพื่อนเปลี่ยนเครื่อง? ย้ายที่นั่งให้</summary><div class="stack" style="margin-top:10px">
+    <p class="small">ให้เพื่อนเปิดลิงก์ห้องนี้ในเครื่องใหม่ จะเห็น "รหัสเครื่องนี้" ให้ส่งรหัสนั้นมา แล้ววางที่นี่</p>
+    <label class="form"><span class="small">ที่นั่งของ</span><select id="mvseat">${S.seats.map((x,i)=>mine.includes(i)?'':`<option value="${i}">${esc(gname(S,i))} (${esc(x.name||'ผู้เล่น')})</option>`).join('')}</select></label>
+    <label class="form"><span class="small">รหัสเครื่องใหม่</span><input id="mvcode" autocomplete="off" placeholder="วางรหัสที่เพื่อนส่งมา"></label>
+    <div><button id="mvgo">ย้ายที่นั่ง</button></div></div></details>`;
+}
 function lastBattleBox(S){
   const r=S.last;if(!r||S.battle||!r.kA)return '';
-  const fmt=parts=>parts.map(([l,v])=>`${esc(l)} ${v>=0?'+':''}${v}`).join(' · ');
+  const fmt=parts=>parts.map(x=>Array.isArray(x)?x:[x.l,x.v]).map(([l,v])=>`${esc(l)} ${v>=0?'+':''}${v}`).join(' · ');
   const side=(s,parts,tot,kparts,lost,win,card)=>`<div style="min-width:0;flex:1 1 150px"><div class="row"><span class="dot" style="background:${SEATC(s)}"></span><b>${esc(gname(S,s))}</b>${win?' <span class="chip">ชนะ</span>':''}</div>
     <div class="small">${esc(CARD[card].n)} · พลังรวม <b class="tab">${tot}</b></div>
     <div class="small muted">${fmt(parts)}</div>
@@ -317,7 +352,7 @@ function lastBattleBox(S){
 function defBonusText(S,s,cell){const t=[];const m=mountAt(S,cell,s);
   if(has(S,s,'armor'))t.push('เกราะเพชร +1');if(ctype(S,cell)==='temple'&&has(S,s,'wall'))t.push('กำแพงวัด +1');if(S.B[cell].t>=5&&has(S,s,'unity'))t.push('สามัคคี +1');if(has(S,s,'guardian'))t.push('ทวารบาล +2');
   if(isGod(S,s,'agni')&&m!=='rhino')t.push('เผาผลาญ −1');if(isGod(S,s,'varuna')&&ctype(S,cell)==='forest')t.push('ป่า +1');
-  if(m==='erawan')t.push('เอราวัณ +2');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='naga')t.push('นาค (รับความเสียหาย −1)');if(inHome(S,m,cell))t.push(MOUNTS[m].name+'ในถิ่น +1');
+  if(m==='erawan')t.push('เอราวัณ +2');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='hera')t.push('เหรา +1');if(m==='khotchasi')t.push('คชสีห์ +1 และรับความเสียหาย −1');if(m==='kraisorn'&&S.moon==='wax')t.push('ไกรสรปักษายามวัน +2');if(m==='naga')t.push('นาค (รับความเสียหาย −1)');if(inHome(S,m,cell))t.push(MOUNTS[m].name+'ในถิ่น +1');
   return t.length?t.join(', '):'ไม่มี';}
 function modeBox(S,act){
   const cancel=`<button class="ghost" id="cancel">ยกเลิก</button>`;
@@ -325,37 +360,71 @@ function modeBox(S,act){
   if(ui.mode==='move-dst')return `<div class="banner row">เลือกปลายทาง ช่องที่มีศัตรู = รบ ${cancel}</div>`;
   if(ui.mode==='recruit')return `<div class="banner row">เลือกช่องที่จะลงทหาร ${cancel}</div>`;
   if(ui.mode==='vajra')return `<div class="banner row">เลือกกองศัตรูที่จะฟาดวชิราวุธ ${cancel}</div>`;
-  if(ui.mode==='avatar-pick')return `<div class="banner stack"><div>เลือกพาหนะที่จะย้าย</div><div class="row">${mountsOf(S,act).map(k=>`<button data-am="${k}">${MOUNTS[k].name}</button>`).join('')}${cancel}</div></div>`;
+  if(ui.mode==='avatar-pick')return `<div class="banner stack"><div>เลือกพาหนะที่จะย้าย</div><div class="row">${mountsOf(S,act).map(k=>`<button data-am="${k}">${mIcon(k)} ${MOUNTS[k].name}</button>`).join('')}${cancel}</div></div>`;
   if(ui.mode==='avatar-dst')return `<div class="banner row">เลือกกองของคุณที่จะให้${MOUNTS[ui.am].name}ไปอยู่ ${cancel}</div>`;
-  if(ui.mode==='merit'){return `<div class="banner stack"><div>ทำบุญแบบไหน</div><div class="row"><button class="primary" data-mm="merit">บุญ +${has(S,act,'holy')?3:2}</button><button data-mm="sin" ${S.P[act].sin?'':'disabled'}>ลบบาป 1</button>${cancel}</div></div>`}
+  if(ui.mode==='merit'){return `<div class="banner stack"><div>ทำบุญแบบไหน</div><div class="row"><button class="primary" data-mm="merit">บุญ +${meritAmt(S,act)}</button><button data-mm="sin" ${S.P[act].sin?'':'disabled'}>ลบบาป 1</button>${cancel}</div></div>`}
   if(ui.mode==='move-cfg'){
-    const src=ui.src,dst=ui.dst,c=S.B[src];const battle=ui.dest[dst]==='battle';const mnt=mountAt(S,src,act);
-    const isCity=src===cityOf(act);const maxN=c.t;
+    const src=ui.src,dst=ui.dst,c=S.B[src];const battle=ui.dest[dst]==='battle';
+    const maxN=c.t;
     const room=battle?99:(cap(S,act,dst)-(S.B[dst].o===act?S.B[dst].t:0));
     const nMax=Math.min(maxN,room,battle?(has(S,act,'fort')?6:5):99);
     if(ui.n==null||ui.n>nMax)ui.n=nMax;
-    const dstM=mountAt(S,dst,act);
-    const carryAllowed=mnt&&!(dstM&&!battle);
-    const mustCarry=mnt&&!isCity&&ui.n===c.t;
-    if(ui.carry==null)ui.carry=!!carryAllowed&&!isCity;
-    if(mustCarry)ui.carry=true;
-    if(!carryAllowed)ui.carry=false;
+    const co=carryOpts(S,act,src,dst,ui.n,!!ui.bonus);
+    if(ui.carry==null||!co.ok.includes(ui.carry))ui.carry=co.def;
+    const mlist=mountsAt(S,src,act);
+    const carryUI=mlist.length?`<div class="stack" style="gap:4px"><div class="small"><b>พาพาหนะไปด้วยไหม</b> (กองหนึ่งพาได้ 1 ตัว)</div><div class="row">${[''].concat(mlist).map(k=>{const ok=co.ok.includes(k);
+      return `<label class="mopt ${ui.carry===k?'on':''} ${ok?'':'off'}"><input type="radio" name="carry" value="${k}" ${ui.carry===k?'checked':''} ${ok?'':'disabled'}>${k?`<span class="mic">${mIcon(k)}</span>${esc(MOUNTS[k].name)}`:'ไม่พา'}</label>`}).join('')}</div>${co.note?`<div class="small muted">${esc(co.note)}</div>`:''}</div>`:'';
     return `<div class="banner stack"><div><b>${battle?'บุก':'เดินไป'}${esc(cname(S,dst))}</b>${battle?` · ศัตรู ${S.B[dst].t} ตัว (${esc(gname(S,S.B[dst].o))})`:''}</div>
       <div class="row">จำนวนทหาร <button id="nm" ${ui.n<=1?'disabled':''} aria-label="ลด">−</button><b class="tab">${ui.n}</b><button id="np" ${ui.n>=nMax?'disabled':''} aria-label="เพิ่ม">+</button><span class="small muted">สูงสุด ${nMax}</span></div>
-      ${mnt?`<label class="row small"><input type="checkbox" id="carry" ${ui.carry?'checked':''} ${!carryAllowed||mustCarry?'disabled':''}> พา${MOUNTS[mnt].name}ไปด้วย${!carryAllowed?' (ปลายทางมีพาหนะแล้ว)':mustCarry?' (ต้องไปด้วย เพราะกองนี้ว่าง)':''}</label>`:''}
+      ${carryUI}
       ${battle?`<div>เลือกการ์ดรบ (ฝ่ายรับไม่เห็นจนกว่าจะเปิด)</div><div class="cards">${availCards(S,act).map(c=>cardBtn(c,'data-ac',ui.card===c)).join('')}</div>
-      <div class="small muted">โบนัสบุกของคุณ: ${atkBonusText(S,act,ui.carry?mnt:null,dst,ui.n)}</div>`:''}
-      <div class="row"><button class="primary" id="go" ${battle&&ui.card==null?'disabled':''}>${battle?'บุก':'เดิน'}</button>${cancel}</div></div>`;
+      <div class="small muted">โบนัสบุกของคุณ: ${atkBonusText(S,act,ui.carry||null,dst,ui.n)}</div>`:''}
+      <div class="row"><button class="primary" id="go" ${(battle&&ui.card==null)||!co.ok.length?'disabled':''}>${battle?'บุก':'เดิน'}</button>${cancel}</div></div>`;
   }
   return '';
 }
+/* ตัวเลือกพาพาหนะ: '' = ไม่พา */
+function carryOpts(S,s,src,dst,n,bonus){
+  const list=mountsAt(S,src,s);const isCity=src===cityOf(s);const battle=S.B[dst].t>0&&S.B[dst].o!==s;
+  const dstHas=!battle&&dst!==cityOf(s)&&mountAt(S,dst,s);
+  const can=m=>!!reachable(S,s,src,m||null,bonus?1:0)[dst];
+  const ok=[];let note='';
+  const mustCarry=!isCity&&list.length&&n===S.B[src].t;
+  if(can(null)&&!mustCarry)ok.push('');
+  for(const k of list){if(dstHas){note='ปลายทางมีพาหนะของคุณอยู่แล้ว พาไปเพิ่มไม่ได้';continue}if(can(k))ok.push(k)}
+  if(mustCarry&&!dstHas)note='ทหารออกหมดกอง พาหนะต้องไปด้วย';
+  if(mustCarry&&dstHas&&can(null)){ok.push('');note='ปลายทางมีพาหนะแล้ว พาหนะกองนี้จะกลับเมือง'}
+  if(!can(null)&&ok.length&&!note)note='ช่องนี้ไกลเกิน 1 ช่อง ต้องพาพาหนะที่เดินได้ 2 ช่อง';
+  const def=!isCity&&list.length&&ok.includes(list[0])?list[0]:ok.includes('')?'':(ok[0]??'');
+  return {ok,def,note};
+}
 function atkBonusText(S,s,m,cell,n){const t=[];
   if(has(S,s,'weapon'))t.push('ศาสตราวุธ +1');if(has(S,s,'divine'))t.push('อาวุธเทวะ +2');if(S.moon==='wane'){t.push('กลางคืน +1');if(has(S,s,'banner'))t.push('ธงรบ +1')}
-  if(isGod(S,s,'agni'))t.push('เผาผลาญ +1');if(m==='garuda')t.push('ครุฑ +1');if(inHome(S,m,cell))t.push(MOUNTS[m].name+'ในถิ่น +1');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='rhino')t.push('แรด +2');
+  if(isGod(S,s,'agni'))t.push('เผาผลาญ +1');if(m==='garuda')t.push('ครุฑ +1');if(inHome(S,m,cell))t.push(MOUNTS[m].name+'ในถิ่น +1');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='rhino')t.push('แรด +2');if(m==='asura')t.push('อสุรปักษา +1');if(m==='hatsadee'&&S.moon==='wane')t.push('หัสดีลิงค์ยามค่ำ +2');if(m==='rajasi')t.push('ราชสีห์: ชนะแล้วฆ่า +1');if(m==='makara')t.push('มกร: รับความเสียหาย −1');
   if(has(S,s,'vanguard')&&n>S.B[cell].t)t.push('ทัพหน้า: ศัตรูเสีย 1 ก่อนรบ');
   return t.length?t.join(', '):'ไม่มี';}
 const SUN=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="10" fill="var(--gold)"/>${[0,45,90,135,180,225,270,315].map(d=>`<line x1="24" y1="5" x2="24" y2="11" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" transform="rotate(${d} 24 24)"/>`).join('')}</svg>`;
 const MOON=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><path d="M30 7a17 17 0 1 0 11 29A14 14 0 0 1 30 7z" fill="var(--nightline)"/><circle cx="12" cy="12" r="1.6" fill="var(--nightline)"/><circle cx="40" cy="18" r="1.2" fill="var(--nightline)"/><circle cx="36" cy="42" r="1.4" fill="var(--nightline)"/></svg>`;
+/* แอนิเมชันพระอาทิตย์/พระจันทร์ขึ้น เมื่อเข้ารอบใหม่ (จำว่าเครื่องนี้เห็นรอบไหนแล้ว จึงเห็นแม้เปิดมาทีหลัง) */
+const PH_SEEN={};
+function checkPhase(S){
+  if(!S||S.status!=='play'||!GID)return;
+  const key='hmp-ph-'+GID;let seen=PH_SEEN[GID];
+  if(seen===undefined&&!isTut(GID)){try{const v=localStorage.getItem(key);if(v!=null)seen=+v}catch(e){}}
+  PH_SEEN[GID]=S.round;if(!isTut(GID)){try{localStorage.setItem(key,String(S.round))}catch(e){}}
+  if(seen!==undefined&&seen<S.round)skyShow(S);
+}
+const SUN_BIG=`<svg class="orbsvg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="26" fill="#F2B21B"/><circle cx="60" cy="60" r="34" fill="none" stroke="#F2B21B" stroke-opacity=".25" stroke-width="6"/>${[0,30,60,90,120,150,180,210,240,270,300,330].map(d=>`<line x1="60" y1="6" x2="60" y2="18" stroke="#F2B21B" stroke-width="5" stroke-linecap="round" transform="rotate(${d} 60 60)"/>`).join('')}</svg>`;
+const MOON_BIG=`<svg class="orbsvg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="40" fill="#F4ECCB" fill-opacity=".12"/><path d="M72 22a38 38 0 1 0 26 64A32 32 0 0 1 72 22z" fill="#F4ECCB"/></svg>`;
+function skyShow(S){
+  const day=S.moon==='wax';const old=document.getElementById('sky');if(old)old.remove();
+  const d=document.createElement('div');d.id='sky';d.className='sky '+(day?'day':'night');d.setAttribute('role','status');
+  d.innerHTML=`${day?'':'<div class="stars" aria-hidden="true"></div>'}<div class="skyorb">${day?SUN_BIG:MOON_BIG}</div>
+    <div class="skytxt"><b>${day?'กลางวัน':'กลางคืน'}</b><span>รอบ ${S.round}</span><small>${day?'จบรอบนี้ วัดที่ยึดอยู่ให้บุญ +1':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ'}</small></div><small class="skytap">แตะเพื่อปิด</small>`;
+  document.body.appendChild(d);
+  const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),450)};
+  d.onclick=close;setTimeout(close,3400);
+}
 function phaseBox(S){
   if(S.status!=='play')return '';
   const day=S.moon==='wax';
@@ -375,7 +444,7 @@ function playersBox(S,act){
        <div class="small muted">${s===act?'<b style="color:var(--ink)">กำลังเดิน</b> · ':''}แอคชัน ${p.used.length}/${actionLimit(S,s)}${doneAll?' · เดินครบแล้ว':''}</div></div>
      <div class="stats"><span title="คะแนนรวม">★ ${total(S,s)}</span><span title="บุญ">บุญ ${p.merit}</span><span title="บาป" style="color:${p.sin>=2?'var(--warn)':'inherit'}">บาป ${p.sin}/3</span></div>
      <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span><span class="bcmini-wrap" aria-label="การ์ดรบ">${hand(S,s).map(c=>{const used=p.uc.includes(c);return `<span class="bcmini ${used?'used':''}" data-tip="${esc(CARD[c].n)} · พลัง ${CARD[c].s} ฆ่า ${CARD[c].k}${used?' · ใช้ไปแล้ว':' · ยังอยู่ในมือ'}" tabindex="0"><b>${CARD[c].s}</b>/${CARD[c].k}</span>`}).join('')}<span class="small muted" style="margin-left:2px">${p.uc.length?`ใช้แล้ว ${p.uc.length} · ใช้ครบเมื่อไรได้คืนทั้งชุด`:'ครบมือ'}</span></span><span class="chip tab">คลัง ${reserve(S,s)}</span>
-     ${mountsOf(S,s).map(k=>`<button class="chip info mount" ${infoAttr('mount:'+k)}>${MOUNTS[k].name}</button>`).join('')}${p.pw.map(id=>`<button class="chip info line-${PW[id].line}" ${infoAttr('pw:'+id)}>${PW[id].name}</button>`).join('')}</div></div>`}).join('')}</div>
+     ${mountsOf(S,s).map(k=>`<button class="chip info mount" ${infoAttr('mount:'+k)}><span class="mic">${MOUNTS[k].ic}</span>${MOUNTS[k].name}</button>`).join('')}${p.pw.map(id=>`<button class="chip info line-${PW[id].line}" ${infoAttr('pw:'+id)}>${PW[id].name}</button>`).join('')}</div></div>`}).join('')}</div>
      ${S.status==='play'?`<p class="small" style="margin:10px 0 0"><b>รอบหน้า</b> (ถ้าคะแนนเป็นแบบตอนนี้): ${nxt.map((s,i)=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}">${i+1}</span>${esc(gname(S,s))}</span>`).join(' ')}</p>`:''}
      <p class="small muted" style="margin-top:6px">${GOD[godOf(S,act)]?esc(GOD[godOf(S,act)].ab)+': '+esc(GOD[godOf(S,act)].txt):''}</p></div>`;
 }
@@ -383,20 +452,20 @@ function shopBox(S,s){
   if(S.follow||S.battle)return '';
   const canBuy=actionOK(S,s,'buy');
   const lab={ok:'',mine:'ของคุณ',taken:'มีเจ้าของ',locked:'ต้องมีเลเวลก่อนหน้า',poor:'บุญไม่พอ',off:'ปิดในห้องนี้',todo:'ยังไม่เปิด'};
-  const col=line=>`<div class="stack" style="gap:6px"><b>${LINES[line]}</b>${[1,2,3].map(lv=>POWERS.filter(p=>p.line===line&&p.lv===lv).map(p=>{const st=powerState(S,s,p.id);
-    return `<button class="pw ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-buy="${p.id}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span>${p.name}</span><span class="tab">L${p.lv} · ${priceOf(S,s,{pw:p.id})}</span></span><span class="tx">${esc(p.txt)}${lab[st]?' · '+lab[st]:''}</span></button>`}).join('')).join('')}</div>`;
+  const col=line=>`<div class="stack" style="gap:6px"><b class="lhead line-${line}">${LINES[line]}</b>${[1,2,3].map(lv=>POWERS.filter(p=>p.line===line&&p.lv===lv).map(p=>{const st=powerState(S,s,p.id);
+    return `<button class="pw line-${line} ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-buy="${p.id}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span>${p.name}</span><span class="cost tab"><span>Lv.${p.lv}</span><span>${priceOf(S,s,{pw:p.id})} บุญ</span></span></span><span class="tx">${esc(p.txt)}${lab[st]?'<br><i>'+lab[st]+'</i>':''}</span></button>`}).join('')).join('')}</div>`;
   return `<details class="panel" ${ui.shop?'open':''} id="shopd"><summary>ขอพร: การ์ดพลังและพาหนะ (บุญคุณมี ${S.P[s].merit})</summary>
    <div class="stack" style="margin-top:10px">${canBuy?'':'<p class="small muted">รอบนี้ใช้แอคชันขอพรไปแล้ว</p>'}
-   <div><b>พาหนะ</b><div class="shop" style="margin-top:6px">${MK.map(k=>{const st=mountState(S,s,k);const m=MOUNTS[k];const own=OWNER_GOD[k]===godOf(S,s);
-     return `<button class="pw ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-mount="${k}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span>${m.name}</span><span class="tab">${priceOf(S,s,{mount:k})}</span></span><span class="tx">${m.txt} · ถิ่น: ${HOME[k]} +1${own?' · <b>ของคุณได้โบนัส</b>: '+m.bonus.split(': ')[1]:''}${lab[st]?' · '+lab[st]:''}</span></button>`}).join('')}</div></div>
-   <div class="shop">${col('rit')}${col('kum')}${col('bun')}</div></div></details>`;
+   <div class="shop">${col('rit')}${col('kum')}${col('bun')}</div>
+   <details id="mshop" ${ui.mshop?'open':''}><summary>พาหนะ (${MK.length} ตัว · ของว่าง ${MK.filter(k=>!S.M[k]).length} ตัว)</summary><div class="shop" style="margin-top:8px">${MK.map(k=>{const st=mountState(S,s,k);const m=MOUNTS[k];const own=OWNER_GOD[k]===godOf(S,s);
+     return `<button class="pw mnt ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-mount="${k}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span><span class="mic">${m.ic}</span>${m.name}</span><span class="cost tab"><span>${priceOf(S,s,{mount:k})} บุญ</span></span></span><span class="tx">${m.txt} · ถิ่น: ${HOME[k]} +1${own&&m.bonus?' · <b>ของคุณได้โบนัส</b>: '+m.bonus.split(': ')[1]:''}${lab[st]?'<br><i>'+(st==='taken'?'เป็นของ'+esc(gname(S,S.M[k].o)):lab[st])+'</i>':''}</span></button>`}).join('')}</div></details></div></details>`;
 }
 
 function wireGame(S,act){
   const $=id=>document.getElementById(id);
   const b2=$('back2');if(b2)b2.onclick=showLobby;
   const re=()=>render();
-  const sd=$('shopd');if(sd)sd.ontoggle=()=>{ui.shop=sd.open};
+  const sd=$('shopd');if(sd)sd.ontoggle=()=>{ui.shop=sd.open};const ms=$('mshop');if(ms)ms.ontoggle=()=>{ui.mshop=ms.open};
   if($('cancel'))$('cancel').onclick=()=>{ui={mode:null,shop:ui.shop};re()};
   app.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.act;
@@ -412,20 +481,20 @@ function wireGame(S,act){
   app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{ui.card=+b.dataset.ac;re()});
   if($('nm'))$('nm').onclick=()=>{ui.n--;re()};
   if($('np'))$('np').onclick=()=>{ui.n++;re()};
-  if($('carry'))$('carry').onchange=e=>{ui.carry=e.target.checked;re()};
+  app.querySelectorAll('input[name=carry]').forEach(r=>r.onchange=()=>{ui.carry=r.value;re()});
   if($('go'))$('go').onclick=doMove;
   if($('avatar'))$('avatar').onclick=()=>{ui={mode:'avatar-pick'};re()};
   app.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{ui={mode:'avatar-dst',am:b.dataset.am};re()});
   if($('f-end'))$('f-end').onclick=()=>mutate(GID,T=>{if(!T.follow||!iControl(T,T.follow.seat))return false;T.follow=null;advance(T)});
   if($('f-vajra'))$('f-vajra').onclick=()=>{ui={mode:'vajra'};re()};
-  if($('f-bonus'))$('f-bonus').onclick=()=>{const src=S.follow.bonusFrom;const dest=reachable(S,act,src,mountAt(S,src,act),1);if(!Object.keys(dest).length){toast('ไม่มีช่องให้เดินต่อ');return}ui={mode:'move-dst',src,dest,bonus:true};re()};
+  if($('f-bonus'))$('f-bonus').onclick=()=>{const src=S.follow.bonusFrom;const dest=reachAny(S,act,src,1);if(!Object.keys(dest).length){toast('ไม่มีช่องให้เดินต่อ');return}ui={mode:'move-dst',src,dest,bonus:true};re()};
   app.querySelectorAll('.cell.click').forEach(g=>{const h=()=>onCell(S,act,+g.dataset.cell);g.onclick=h;g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();h()}}});
 }
 function onCell(S,act,i){
   if(S.retreat){doRetreat(i);return}
-  if(ui.mode==='move-src'){const dest=reachable(S,act,i,mountAt(S,i,act));ui={mode:'move-dst',src:i,dest};render()}
+  if(ui.mode==='move-src'){const dest=reachAny(S,act,i);ui={mode:'move-dst',src:i,dest};render()}
   else if(ui.mode==='move-dst'){ui.mode='move-cfg';ui.dst=i;ui.n=null;ui.carry=null;ui.card=null;
-    const m=mountAt(S,ui.src,act);if(m!=='garuda'&&!(has(S,act,'swift'))){} render()}
+    render()}
   else if(ui.mode==='recruit')doRecruit(i);
   else if(ui.mode==='vajra')doVajra(i);
   else if(ui.mode==='avatar-dst')doAvatar(ui.am,i);
@@ -437,7 +506,7 @@ function doRecruit(cell){const s=activeSeat(G);ui={mode:null};
     const n=Math.min(recruitAmt(T,s),reserve(T,s),room);if(n<=0)return false;
     placeTroops(T,s,cell,n);markAction(T,s,'recruit');log(T,`${gname(T,s)} เกณฑ์ทัพ ${n} ตัว ลง${cname(T,cell)}`);advance(T)})}
 function doMerit(kind){const s=activeSeat(G);ui={mode:null};
-  mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'merit'))return false;const p=T.P[s];const g=has(T,s,'holy')?3:2;
+  mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'merit'))return false;const p=T.P[s];const g=meritAmt(T,s);
     if(has(T,s,'atone')){p.merit+=g;p.sin=Math.max(0,p.sin-1);log(T,`${gname(T,s)} ทำบุญ +${g} และไถ่บาป`)}
     else if(kind==='sin'&&p.sin>0){p.sin--;log(T,`${gname(T,s)} ทำบุญลบบาป 1`)}
     else{p.merit+=g;log(T,`${gname(T,s)} ทำบุญ +${g}`)}
@@ -447,8 +516,7 @@ function doBuy(item){const s=activeSeat(G);ui={mode:null};
     if(item.pw){if(powerState(T,s,item.pw)!=='ok')return false;const c=priceOf(T,s,item);p.merit-=c;p.pw.push(item.pw);
       if(['vpR','vpK','vpB'].includes(item.pw))p.vp+=1;log(T,`${gname(T,s)} ขอพรได้${PW[item.pw].name} (−${c} บุญ)`)}
     else{if(mountState(T,s,item.mount)!=='ok')return false;const c=priceOf(T,s,item);p.merit-=c;
-      let cell=cityOf(s);if(mountAt(T,cell,s)){const alt=T.B.findIndex((x,i)=>x.o===s&&x.t>0&&!mountAt(T,i,s));if(alt>=0)cell=alt}
-      T.M[item.mount]={o:s,c:cell};log(T,`${gname(T,s)} ได้${MOUNTS[item.mount].name}มาเป็นพาหนะ (−${c} บุญ)`)}
+      T.M[item.mount]={o:s,c:cityOf(s)};log(T,`${gname(T,s)} ได้${MOUNTS[item.mount].name}มาเป็นพาหนะ (−${c} บุญ)`)}
     markAction(T,s,'buy');advance(T)})}
 function doMove(){
   const s=activeSeat(G);const {src,dst,n,card,bonus}=ui;const carry=ui.carry;ui={mode:null};
@@ -456,8 +524,10 @@ function doMove(){
     if(bonus){if(!T.follow||T.follow.seat!==s||T.follow.bonusFrom!==src||!iControl(T,s))return false}
     else{if(!guard(T,s)||!actionOK(T,s,'move'))return false}
     const c=T.B[src];if(c.o!==s||c.t<n||n<1)return false;
-    const m=mountAt(T,src,s);const takeM=carry&&m?m:null;
+    const takeM=carry||null;if(takeM&&!mountsAt(T,src,s).includes(takeM))return false;
+    const m=takeM||mountAt(T,src,s);
     const dest=reachable(T,s,src,takeM,bonus?1:0);const kind=dest[dst];if(!kind)return false;
+    if(takeM&&kind!=='battle'&&dst!==cityOf(s)&&mountAt(T,dst,s))return false;
     if(!bonus)markAction(T,s,'move');
     const wasVajra=T.follow&&T.follow.vajra;
     T.follow=null;
@@ -490,7 +560,7 @@ function doVajra(cell){const s=activeSeat(G);ui={mode:null};
     T.follow.vajra=false;if(T.follow.bonusFrom===null){T.follow=null;advance(T)}})}
 function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!isGod(T,s,'narai')||T.P[s].f.avatar)return false;if(!T.M[k]||T.M[k].o!==s)return false;
-    if(!((T.B[cell].o===s&&T.B[cell].t>0)||cell===cityOf(s))||mountAt(T,cell,s))return false;
+    if(cell!==cityOf(s)&&!(T.B[cell].o===s&&T.B[cell].t>0&&!mountAt(T,cell,s)))return false;
     T.M[k].c=cell;T.P[s].f.avatar=true;log(T,`${gname(T,s)} อวตาร ย้าย${MOUNTS[k].name}ไป${cname(T,cell)}`)})}
 
 /* ===================== TUTORIAL ===================== */
@@ -506,7 +576,7 @@ const TSTEPS=[
  {k:'do',t:'บุก!',hl:[10],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์ (ระวัง พระพิรุณตั้งรับในป่าได้ +1)`,done:S=>!!(S.last&&S.last.A===0)},
  {k:'do',t:'วชิราวุธของพระอินทร์',allow:[],b:`ดูกล่อง <b>ศึกล่าสุด</b> ว่าพลังรบมาจากไหน ฝ่ายแพ้ที่เหลือรอดต้องถอยไป 1 ช่อง โดยฝ่ายชนะเป็นคนเลือกช่อง (ถ้ามีช่องเดียวระบบถอยให้เอง)<br>หลังเดินทัพ พระอินทร์ใช้ <b>วชิราวุธ</b> ได้รอบละครั้ง ทำให้กองศัตรูที่อยู่ติดกับกองคุณเสียทหาร 1 ตัวโดยไม่ต้องรบ ลองกด <b>ใช้วชิราวุธ</b> แล้วเลือกกองศัตรู หรือกด <b>จบตา</b>`,done:S=>!S.follow&&!S.battle&&!S.retreat},
  {k:'info',t:'บาป: ราคาของสงคราม',b:`บุกชนะได้คะแนนถาวร แต่ได้ <b>บาป +1</b> ด้วย (ดูในแถบผู้เล่น) ถ้าบาปถึง <b>3</b> จะเสียทหาร 2 ตัวทันที<br>บุกบ่อยได้คะแนนเร็ว แต่ต้องหาจังหวะทำบุญลบบาป นี่คือการตัดสินใจหลักของเกม`},
- {k:'do',t:'ขอพร',allow:['buy'],b:`เปิดรายการ <b>ขอพร</b> ด้านล่าง แล้วซื้อการ์ดพลังเลเวล 1 สักใบ (การ์ดที่มีขอบสีเขียวคือซื้อได้) การ์ดเลเวล 2 ต้องมีเลเวล 1 ในสายเดียวกันก่อน<br>หรือจะซื้อ <b>ช้างเอราวัณ</b> พาหนะประจำองค์ก็ได้ ถ้าบุญพอ`,done:S=>S.P[0].pw.length>0||mountsOf(S,0).length>0},
+ {k:'do',t:'ขอพร',allow:['buy'],b:`เปิดรายการ <b>ขอพร</b> ด้านล่าง แล้วซื้อการ์ดพลังเลเวล 1 สักใบ (การ์ดที่สีชัดไม่จางคือซื้อได้ ขอบแดง = สายฤทธิ์ น้ำเงิน = สายคุ้มกัน เหลือง = สายบุญ) การ์ดเลเวล 2 ต้องมีเลเวล 1 ในสายเดียวกันก่อน<br>หรือจะซื้อ <b>ช้างเอราวัณ</b> พาหนะประจำองค์ก็ได้ ถ้าบุญพอ`,done:S=>S.P[0].pw.length>0||mountsOf(S,0).length>0},
  {k:'do',t:'ลบบาป',allow:['merit'],b:`แอคชันสุดท้ายของรอบนี้ กด <b>ทำบุญ</b> แล้วเลือก <b>ลบบาป 1</b> ถ้ามีบาปอยู่`,done:S=>S.round>2||(S.round===2&&S.P[0].used.includes('merit'))},
  {k:'end',t:'พร้อมรบแล้ว!',b:`คุณรู้กติกาหลักครบแล้ว ยังมีอีกหลายอย่างให้ลองเอง: เทพแต่ละองค์มีพลังไม่เหมือนกัน พาหนะของเทพเจ้าของได้โบนัสเพิ่ม และ <b>ครุฑข่มนาค</b> ได้ +2<br>จะเล่นต่อกับบอทในห้องนี้ก็ได้ หรือกลับไปเปิดห้องจริงชวนเพื่อน`}
 ];
@@ -517,6 +587,7 @@ function tutState(){
   return S;
 }
 function startTutorial(){
+  PH_SEEN.tut=undefined;
   localGames.tut=tutState();TUT={i:0,snap:null,busy:false};openGame('tut');
 }
 function tutStep(){return TUT?TSTEPS[TUT.i]:null}
@@ -582,10 +653,10 @@ function infoHTML(spec){const [kind,id]=spec.split(':');const own=ownerOf(kind,i
     return `<p class="small muted">${LINES[p.line]} · เลเวล ${p.lv} · ราคา ${COST[p.lv]} บุญ</p><h2>${esc(p.name)}</h2><p>${esc(PW_DETAIL[id]||p.txt)}</p>${owner}
       ${p.lv>1?`<p class="small muted">ซื้อได้เมื่อมีการ์ด${LINES[p.line]}เลเวล ${p.lv-1} อย่างน้อย 1 ใบ</p>`:''}`}
   if(kind==='mount'){const m=MOUNTS[id];if(!m)return '';const g=GOD[OWNER_GOD[id]];
-    return `<p class="small muted">พาหนะ · ราคา ${m.cost} บุญ</p><h2>${esc(m.name)}</h2><p>${esc(m.txt)}</p><p><b>ถิ่น: ${HOME[id]}</b> รบในช่อง${HOME[id]} ได้พลังรบ +1 ทั้งบุกและรับ</p>
-      <p class="small"><b>โบนัสเมื่ออยู่กับ${esc(g.name)}</b> (เจ้าของในตำนาน): ${esc(m.bonus.split(': ')[1]||m.bonus)}</p>
+    return `<p class="small muted">พาหนะ · ราคา ${m.cost} บุญ</p><h2><span class="mic big">${m.ic}</span>${esc(m.name)}</h2><p>${esc(m.txt)}</p><p><b>ถิ่น: ${HOME[id]}</b> รบในช่อง${HOME[id]} ได้พลังรบ +1 ทั้งบุกและรับ</p>
+      ${g?`<p class="small"><b>โบนัสเมื่ออยู่กับ${esc(g.name)}</b> (เจ้าของในตำนาน): ${esc(m.bonus.split(': ')[1]||m.bonus)}</p>`:''}
       ${id==='garuda'||id==='naga'?'<p class="small">ครุฑข่มนาค: เมื่อกองที่มีครุฑรบกับกองที่มีนาค ฝ่ายครุฑได้ +2 และนาคใช้ความสามารถไม่ได้</p>':''}
-      <p class="small muted">พาหนะอยู่กับกองทหาร 1 กอง ไม่นับเป็นทหาร และไม่ตาย ถ้ากองหมด พาหนะกลับเมือง</p>${owner}`}
+      <p class="small muted">พาหนะอยู่กับกองทหาร กองละ 1 ตัว (ในเมืองพักไว้ได้หลายตัว) ไม่นับเป็นทหาร และไม่ตาย ถ้ากองหมด พาหนะกลับเมือง</p>${owner}`}
   if(kind==='god'){const g=GOD[id];if(!g)return '';
     return `<p class="small muted">เทพ · พาหนะประจำองค์ ${MOUNTS[g.mount].name}</p><h2>${esc(g.name)}</h2><p><b>${esc(g.ab)}</b>: ${esc(g.txt)}</p><p class="small">จุดอ่อน / แนวเล่น: ${esc(g.weak)}</p>${owner}`}
   return ''}

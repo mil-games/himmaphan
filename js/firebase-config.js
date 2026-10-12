@@ -1,3 +1,5 @@
+// ค่าตั้งค่า Firebase ของโปรเจกต์ himmaphan-a0c78
+// ค่าเหล่านี้เปิดเผยได้ตามปกติ ความปลอดภัยของข้อมูลมาจากกฎใน firestore.rules
 export const firebaseConfig = {
   apiKey: "AIzaSyBzUUTUc9XvPAbOXXtLL7wfJQLlzNgRZtY",
   authDomain: "himmaphan-a0c78.firebaseapp.com",

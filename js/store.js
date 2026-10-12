@@ -31,7 +31,7 @@ function localStore() {
 
 async function firebaseStore() {
   const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
-  const { getAuth, signInAnonymously, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  const { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signInWithCredential } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
   const F = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -41,8 +41,25 @@ async function firebaseStore() {
     signInAnonymously(auth).catch(reject);
   });
   const ref = id => F.doc(db, 'games', id);
+  const user = () => auth.currentUser;
   return {
     online: true, me,
+    get google() { const u = user(); const g = u && u.providerData.find(p => p.providerId === 'google.com'); return g ? (g.email || g.displayName || 'Google') : null; },
+    /* ผูกตัวตนนี้กับบัญชี Google เพื่อใช้ตัวตนเดิมจากเครื่องอื่น
+       ถ้าบัญชี Google นี้เคยผูกไว้แล้วจากอีกเครื่อง จะสลับไปใช้ตัวตนเดิมนั้น (คืนค่า 'switched' ให้รีโหลดหน้า) */
+    async linkGoogle() {
+      const p = new GoogleAuthProvider();
+      try { await linkWithPopup(user(), p); return 'linked'; }
+      catch (e) {
+        if (e && (e.code === 'auth/credential-already-in-use' || e.code === 'auth/email-already-in-use')) {
+          const cred = GoogleAuthProvider.credentialFromError(e);
+          if (cred) { await signInWithCredential(auth, cred); return 'switched'; }
+          await signInWithPopup(auth, p); return 'switched';
+        }
+        if (e && e.code === 'auth/provider-already-linked') return 'linked';
+        throw e;
+      }
+    },
     async create(data) {
       data.uids = uidsOf(data);
       for (let i = 0; i < 6; i++) {
@@ -69,7 +86,11 @@ async function firebaseStore() {
         });
         return ok === true ? { ok: true } : { ok: false, why: ok === 'missing' ? 'missing' : undefined };
       } catch (e) {
-        return { ok: false, why: e && e.code === 'permission-denied' ? 'denied' : 'error' };
+        console.error('บันทึกไม่สำเร็จ', e);
+        const code = e && e.code;
+        if (code === 'permission-denied') return { ok: false, why: 'denied' };
+        if (code === 'unavailable' || (typeof navigator !== 'undefined' && navigator.onLine === false)) return { ok: false, why: 'offline' };
+        return { ok: false, why: 'error', detail: String(code || (e && e.message) || e).slice(0, 80) };
       }
     },
     watchGame(id, cb) { return F.onSnapshot(ref(id), s => cb(s.exists() ? s.data() : null), () => cb(undefined)); },
