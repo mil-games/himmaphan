@@ -4,7 +4,7 @@ const GODS=[
  {k:'indra',name:'พระอินทร์',mount:'erawan',ab:'วชิราวุธ',txt:'รอบละครั้ง หลังเดินทัพ ทำให้กองศัตรูที่ติดกับกองคุณเสียทหาร 1 ตัว',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'narai',name:'พระนารายณ์',mount:'garuda',ab:'อวตาร',txt:'รอบละครั้ง ย้ายพาหนะของคุณไปกองไหนก็ได้ของตัวเอง (ฟรี)',weak:'เก่งเมื่อมีพาหนะ'},
  {k:'brahma',name:'พระพรหม',mount:'hong',ab:'สร้างสรรพสิ่ง',txt:'เกณฑ์ทัพได้ 3 ตัวแทน 2',weak:'รบปกติ ชนะด้วยจำนวน'},
- {k:'shiva',name:'พระอิศวร',mount:'nonthi',ab:'ระบำทำลายล้าง',txt:'บุกชนะ ศัตรูเสียทหารเพิ่ม 1 ตัว',weak:'บุกชนะได้บาป +2'},
+ {k:'shiva',name:'พระอิศวร',mount:'nonthi',ab:'ระบำทำลายล้าง',txt:'บุกชนะ แต้มฆ่า +1',weak:'บุกชนะได้บาป +2'},
  {k:'yama',name:'พระยม',mount:'buffalo',ab:'ยมโลก',txt:'ทหารตายในศึกที่คุณเกี่ยว ได้บุญ +1 ต่อตัว',weak:'ไม่แรงขึ้นในศึก'},
  {k:'agni',name:'พระเพลิง',mount:'rhino',ab:'เผาผลาญ',txt:'บุกได้พลังรบ +1',weak:'ตั้งรับ −1'},
  {k:'varuna',name:'พระพิรุณ',mount:'naga',ab:'หลั่งฝน',txt:'จบรอบได้บุญ +1 ต่อวัด และตั้งรับในป่า +1',weak:'บุกปกติ'}
@@ -42,18 +42,36 @@ const ACT={recruit:'เกณฑ์ทัพ',move:'เดินทัพ',merit
 const SEATC=i=>`var(--s${i})`;
 
 /* ===================== RULES ===================== */
-const L=S=>3*S.n;
-const ctype=(S,i)=>i===0?'sumeru':['city','forest','temple'][(i-1)%3];
-const citySeat=i=>(i-1)/3;
-const cityOf=s=>1+3*s;
+/* แผนที่ v2: ผู้เล่นละ 6 ช่อง เรียงเป็นบล็อก
+   k=0 เมือง · 1 ป่า · 2 วัด · 3 ทุ่ง (วงนอก)  k=4 เนิน · 5 ป่าลึก (วงใน ป่าลึกติดเขาพระสุเมรุ) */
+const SECT=6;
+const L=S=>SECT*S.n;
+const KTYPE=['city','forest','temple','plain','plain','forest'];
+const KNAME=['เมือง','ป่า','วัด','ทุ่ง','เนิน','ป่าลึก'];
+const kOf=i=>(i-1)%SECT;
+const ctype=(S,i)=>i===0?'sumeru':KTYPE[kOf(i)];
+const citySeat=i=>(i-1)/SECT;
+const cityOf=s=>1+SECT*s;
 const has=(S,s,id)=>S.P[s].pw.includes(id);
 const godOf=(S,s)=>S.seats[s].god;
 const isGod=(S,s,k)=>godOf(S,s)===k;
-function ringNb(S,i){const n=L(S);return [((i-2+n)%n)+1,(i%n)+1]}
+function adj(S,i){
+  const n=S.n,B=(t,k)=>1+SECT*(((t%n)+n)%n)+k;
+  if(i===0){const out=[];for(let t=0;t<n;t++)out.push(B(t,5));return out}
+  const t=Math.floor((i-1)/SECT),k=kOf(i);
+  switch(k){
+    case 0:return [B(t,1),B(t-1,3)];
+    case 1:return [B(t,0),B(t,2),B(t,4)];
+    case 2:return [B(t,1),B(t,3),B(t,5)];
+    case 3:return [B(t,2),B(t+1,0)];
+    case 4:return [B(t,1),B(t,5),B(t-1,5)];
+    default:return [B(t,2),B(t,4),B(t+1,4),0];
+  }
+}
 function nbs(S,i,s){
-  if(i===0){const out=[];for(let j=1;j<=L(S);j++){if(ctype(S,j)==='temple'||has(S,s,'secret'))out.push(j)}return out}
-  const out=ringNb(S,i);
-  if(ctype(S,i)==='temple'||has(S,s,'secret'))out.push(0);
+  if(i===0){if(has(S,s,'secret')){const out=[];for(let j=1;j<=L(S);j++)out.push(j);return out}return adj(S,0)}
+  const out=adj(S,i);
+  if(has(S,s,'secret')&&!out.includes(0))out.push(0);
   return out;
 }
 function mountAt(S,cell,s){for(const k of MK){const m=S.M[k];if(m&&m.o===s&&m.c===cell)return k}return null}
@@ -103,7 +121,7 @@ function mountState(S,s,k){
 
 function recruitTargets(S,s){
   const out=[cityOf(s)];
-  if(has(S,s,'reserve')){for(const j of ringNb(S,cityOf(s))){const c=S.B[j];if(c.t===0||c.o===s)out.push(j)}}
+  if(has(S,s,'reserve')){for(const j of adj(S,cityOf(s))){const c=S.B[j];if(c.t===0||c.o===s)out.push(j)}}
   if(isGod(S,s,'brahma')&&S.M.hong&&S.M.hong.o===s&&!out.includes(S.M.hong.c))out.push(S.M.hong.c);
   return out.filter(j=>j===cityOf(s)||S.B[j].t<cap(S,s,j));
 }
@@ -233,7 +251,7 @@ function postBattle(S,post){
   if(f.bonusFrom!==null&&!(S.B[f.bonusFrom].o===A&&S.B[f.bonusFrom].t>0))f.bonusFrom=null;
   if(f.vajra||f.bonusFrom!==null)S.follow=f;else advance(S);
 }
-function cname(S,i){const t=ctype(S,i);if(t==='sumeru')return'เขาพระสุเมรุ';if(t==='city')return'เมือง'+gname(S,citySeat(i));return t==='temple'?'วัด':'ป่า'}
+function cname(S,i){if(i===0)return'เขาพระสุเมรุ';const k=kOf(i);if(k===0)return'เมือง'+gname(S,citySeat(i));return KNAME[k]}
 
 function vajraTargets(S,s){
   const out=new Set();
@@ -284,7 +302,7 @@ function endRound(S){
   log(S,`เริ่มรอบใหม่ · ${S.moon==='wax'?'ข้างขึ้น':'ข้างแรม'}`);
 }
 function setupGame(S){
-  const cells=3*S.n+1;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
+  S.mapV=2;S.seed=Math.floor(Math.random()*1e9);const cells=SECT*S.n+1;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
   for(let s=0;s<S.n;s++){S.B[cityOf(s)]={o:s,t:4}}
   S.P=[...Array(S.n)].map(()=>({merit:3,sin:0,vp:0,pw:[],uc:[],used:[],f:{}}));
   S.M={};S.round=1;S.moon='wax';
@@ -294,3 +312,42 @@ function setupGame(S){
 }
 const clone=o=>JSON.parse(JSON.stringify(o));
 if(typeof module!=='undefined')module.exports={GODS,MOUNTS,POWERS,CARD,setupGame,resolveBattle,advance,endRound};
+/* คำอธิบายเต็มของการ์ดพลัง ใช้ในป๊อปอัปรายละเอียด */
+const PW_DETAIL={
+ weapon:'ทุกครั้งที่คุณเป็นฝ่ายบุก พลังรบ +1',
+ swift:'เดินทัพได้ไกลสุด 2 ช่องต่อครั้ง ช่องที่ผ่านต้องว่างหรือเป็นกองของคุณ ถ้าเจอศัตรูระหว่างทางจะหยุดรบที่ช่องนั้น',
+ banner:'รอบข้างแรมฝ่ายบุกได้ +1 อยู่แล้ว การ์ดนี้เพิ่มให้อีก +1 รวมเป็น +2',
+ rally:'ตอนคุณเป็นฝ่ายบุก ความเสียหายที่ได้รับลดลง 1 (เสียทหารน้อยลง 1 ตัว)',
+ raid:'บุกแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายรับเสียทหารเพิ่ม',
+ vanguard:'ตอนบุก ถ้าทหารของคุณมากกว่าฝ่ายรับ ฝ่ายรับเสียทหาร 1 ตัวทันทีก่อนเปิดการ์ด',
+ secret:'เดินเข้าและออกจากเขาพระสุเมรุได้จากทุกช่อง ไม่ต้องผ่านป่าลึก',
+ chain:'บุกชนะและยังเหลือทหาร เดินต่อจากช่องนั้นได้อีก 1 ช่องในตาเดียวกัน ถ้าเจอศัตรูก็รบต่อได้ (ไม่นับเป็นแอคชัน)',
+ manual:'ได้การ์ดรบ "พิชัยยุทธ" (พลัง 4 ฆ่า 2) เพิ่มในมือ เป็นการ์ดรบที่แรงที่สุด',
+ divine:'ทุกครั้งที่คุณเป็นฝ่ายบุก พลังรบ +2',
+ sky:'แอคชันเดินทัพใช้ได้ 2 ครั้งต่อรอบ และมีแอคชันรวมเป็น 4 ต่อรอบ',
+ vpR:'ได้ 1 คะแนนถาวรทันทีที่ซื้อ',
+ armor:'ทุกครั้งที่คุณเป็นฝ่ายตั้งรับ พลังรบ +1',
+ levy:'แอคชันเกณฑ์ทัพได้ทหารเพิ่ม 1 ตัว',
+ wall:'ตั้งรับในวัด พลังรบ +1',
+ ward:'ตอนคุณเป็นฝ่ายตั้งรับ ความเสียหายที่ได้รับลดลง 1',
+ reserve:'เกณฑ์ทัพลงช่องที่ติดกับเมืองของคุณได้ ถ้าช่องนั้นว่างหรือมีกองของคุณอยู่',
+ unity:'ตั้งรับด้วยทหาร 5 ตัวขึ้นไป พลังรบ +1',
+ counter:'ตั้งรับแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายบุกเสียทหารเพิ่ม',
+ fort:'กองนอกเมืองมีทหารได้สูงสุด 6 ตัว (ปกติ 5)',
+ guardian:'ทุกครั้งที่คุณเป็นฝ่ายตั้งรับ พลังรบ +2',
+ dominion:'ทุกครั้งที่จบรอบ ถ้าคุณยึดวัดไว้ตั้งแต่ 2 แห่งขึ้นไป ได้ 1 คะแนนถาวร',
+ reinforce:'ทุกครั้งที่จบรอบ ได้ทหาร 2 ตัวจากคลังลงเมืองฟรี',
+ vpK:'ได้ 1 คะแนนถาวรทันทีที่ซื้อ',
+ holy:'แอคชันทำบุญได้บุญ +3 แทน +2',
+ alms:'ซื้อการ์ดพลังและพาหนะถูกลง 1 บุญ (จ่ายอย่างน้อย 1)',
+ chant:'ทุกครั้งที่จบรอบ ได้บุญ +1',
+ pray:'ทุกครั้งที่จบรอบ การ์ดรบที่ใช้ไปแล้วใบที่แรงที่สุดกลับขึ้นมือ 1 ใบ',
+ angel:'ทุกครั้งที่จบรอบ บาป −1',
+ offer:'ทุกครั้งที่จบรอบ ได้บุญ +1 ต่อวัดที่คุณยึดอยู่',
+ atone:'แอคชันทำบุญได้ทั้งบุญและลบบาป 1 พร้อมกัน ไม่ต้องเลือก',
+ foresight:'รอบละครั้ง จ่าย 1 บุญเพื่อเปลี่ยนการ์ดรบหลังเปิดแล้ว ยังไม่เปิดใช้ในเวอร์ชันเว็บ',
+ miracle:'รอบละครั้ง ได้แอคชันเพิ่ม 1 ครั้ง ใช้ทำแอคชันที่ใช้ไปแล้วซ้ำได้',
+ pure:'บาปถึง 3 แล้วไม่เสียทหาร แค่รีเซ็ตบาปเป็น 0',
+ blessed:'ทุกครั้งที่จบรอบ ถ้าบาปเป็น 0 ได้บุญ +2',
+ vpB:'ได้ 1 คะแนนถาวรทันทีที่ซื้อ'
+};

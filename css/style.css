@@ -2,19 +2,19 @@
 :root{
   --bg:#E9F0EA; --surface:#F8FBF8; --surface2:#F0F5F1; --ink:#18222C; --muted:#56636B; --line:#C6D4CB;
   --gold:#9A6E17; --goldtint:#F3E6C4; --accent:#256352; --accentink:#FFFFFF;
-  --forest:#DCEBDD; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
+  --forest:#DCEBDD; --plain:#EFECD6; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
   --s0:#C2402F; --s1:#2F68B0; --s2:#A9781E; --s3:#6B42A3; --s4:#2C8250; --s5:#B84F8A; --s6:#16808E;
   --f-display:"Chonburi","Anuphan",serif; --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
-  --forest:#1D2D22; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --forest:#1D2D22; --plain:#2A2A1F; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
-  --forest:#1D2D22; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --forest:#1D2D22; --plain:#2A2A1F; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
@@ -38,7 +38,8 @@ select,input{font:inherit;color:var(--ink);background:var(--surface);border:1px 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
 .stack{display:flex;flex-direction:column;gap:14px}
 .mapbox{position:relative}
-.mapbox svg{width:100%;height:auto;display:block;max-width:640px;margin:0 auto}
+.mapbox{overflow-x:auto}
+.mapbox svg{width:100%;min-width:560px;height:auto;display:block;margin:0 auto}
 .cell{cursor:default}
 .cell.click{cursor:pointer}
 .cell.click .ring{stroke:var(--accent);stroke-width:3;stroke-dasharray:5 3}
@@ -93,3 +94,17 @@ table.ref td,table.ref th{border-bottom:1px solid var(--line);padding:4px 6px;te
 .share{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .share code{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;word-break:break-all;font-size:.85rem}
 .code{font-family:var(--f-display);letter-spacing:.12em;font-size:1.4rem;color:var(--gold)}
+
+/* ชิปพรและป๊อปอัปรายละเอียด */
+button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);cursor:pointer}
+.chip.info{position:relative}
+.chip.line-rit{border-color:var(--s0)}.chip.line-kum{border-color:var(--s1)}.chip.line-bun{border-color:var(--gold)}.chip.mount{border-style:dashed}
+.godlink,.loglink{font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;border-radius:4px}
+.loglink{color:var(--accent);text-decoration:underline dotted;text-underline-offset:3px}
+.godlink:hover,.loglink:hover{text-decoration:underline}
+[data-tip]{position:relative}
+@media (hover:hover){[data-tip]:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:8px;font-size:.78rem;font-weight:400;line-height:1.4;width:max-content;max-width:230px;white-space:normal;text-align:left;z-index:20;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.18)}}
+[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:8px;font-size:.78rem;font-weight:400;width:max-content;max-width:230px;white-space:normal;z-index:20;pointer-events:none}
+.pop{position:fixed;inset:0;background:rgba(10,16,14,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30}
+.popcard{background:var(--surface);color:var(--ink);border:1px solid var(--gold);border-radius:14px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:8px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.popcard p{margin:0}
