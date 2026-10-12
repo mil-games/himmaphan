@@ -2,19 +2,19 @@
 :root{
   --bg:#E9F0EA; --surface:#F8FBF8; --surface2:#F0F5F1; --ink:#18222C; --muted:#56636B; --line:#C6D4CB;
   --gold:#9A6E17; --goldtint:#F3E6C4; --accent:#256352; --accentink:#FFFFFF;
-  --forest:#DCEBDD; --plain:#EFECD6; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
+  --forest:#DCEBDD; --plain:#EFECD6; --daytint:#FBF0D2; --nighttint:#DDE3F3; --nightline:#4E62A0; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
   --s0:#C2402F; --s1:#2F68B0; --s2:#A9781E; --s3:#6B42A3; --s4:#2C8250; --s5:#B84F8A; --s6:#16808E;
   --f-display:"Chonburi","Anuphan",serif; --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
-  --forest:#1D2D22; --plain:#2A2A1F; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --forest:#1D2D22; --plain:#2A2A1F; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
-  --forest:#1D2D22; --plain:#2A2A1F; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --forest:#1D2D22; --plain:#2A2A1F; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
@@ -108,3 +108,16 @@ button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);curso
 .pop{position:fixed;inset:0;background:rgba(10,16,14,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30}
 .popcard{background:var(--surface);color:var(--ink);border:1px solid var(--gold);border-radius:14px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:8px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
 .popcard p{margin:0}
+
+/* แถบกลางวัน/กลางคืน และเลขลำดับเล่น */
+.phase{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:12px 16px;border-radius:12px;border:1px solid}
+.phase.day{background:var(--daytint);border-color:var(--gold)}
+.phase.night{background:var(--nighttint);border-color:var(--nightline)}
+.phicon{width:44px;height:44px;flex:none}
+.phtitle{font-family:var(--f-display);font-weight:400;font-size:1.15rem}
+.phnext{text-align:right;color:var(--muted)}
+@media (max-width:560px){.phnext{text-align:left}}
+@media (prefers-reduced-motion:no-preference){.phase.day .phicon{animation:sunspin 30s linear infinite}@keyframes sunspin{to{transform:rotate(360deg)}}}
+.ordno{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:var(--surface);font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums;flex:none}
+.ordno.sm{width:18px;height:18px;font-size:.7rem;margin-right:3px;vertical-align:-3px}
+.nxt{white-space:nowrap;margin-right:8px}

@@ -24,7 +24,7 @@ const OWNER_GOD={erawan:'indra',garuda:'narai',hong:'brahma',nonthi:'shiva',buff
 const LINES={rit:'สายฤทธิ์',kum:'สายคุ้มกัน',bun:'สายบุญ'};
 const P=(id,line,lv,name,txt,todo)=>({id,line,lv,name,txt,todo:!!todo});
 const POWERS=[
- P('weapon','rit',1,'ศาสตราวุธ','บุก +1'),P('swift','rit',1,'ม้าเร็ว','เดินทัพได้ 2 ช่อง'),P('banner','rit',1,'ธงรบ','ข้างแรม บุก +1 เพิ่ม'),P('rally','rit',1,'ปลุกใจ','ตอนบุก รับความเสียหาย −1'),
+ P('weapon','rit',1,'ศาสตราวุธ','บุก +1'),P('swift','rit',1,'ม้าเร็ว','เดินทัพได้ 2 ช่อง'),P('banner','rit',1,'ธงรบ','กลางคืน บุก +1 เพิ่ม'),P('rally','rit',1,'ปลุกใจ','ตอนบุก รับความเสียหาย −1'),
  P('raid','rit',2,'จู่โจม','บุกชนะ ศัตรูเสียเพิ่ม 1'),P('vanguard','rit',2,'ทัพหน้า','บุกด้วยทหารมากกว่า ศัตรูเสีย 1 ก่อนรบ'),P('secret','rit',2,'ทางลับ','เข้าเขาพระสุเมรุจากช่องไหนก็ได้'),P('chain','rit',2,'ชัยต่อเนื่อง','บุกชนะ เดินต่อได้อีก 1 ช่อง'),
  P('manual','rit',3,'ตำราพิชัยสงคราม','ได้การ์ดรบเลข 4'),P('divine','rit',3,'อาวุธเทวะ','บุก +2'),P('sky','rit',3,'กองทัพฟ้า','เดินทัพได้ 2 ครั้งต่อรอบ (แอคชันที่ 4)'),P('vpR','rit',3,'ชัยชนะอมตะ','ได้ 1 คะแนนถาวรทันที'),
  P('armor','kum',1,'เกราะเพชร','ตั้งรับ +1'),P('levy','kum',1,'ไพร่พล','เกณฑ์ทัพ +1 ตัว'),P('wall','kum',1,'กำแพงวัด','ตั้งรับในวัด +1'),P('ward','kum',1,'มนต์คุ้มกาย','ตอนตั้งรับ รับความเสียหาย −1'),
@@ -183,7 +183,7 @@ function resolveBattle(S,defCard){
   const pA=[['ทหาร',nA],['การ์ด',cA.s]],pD=[['ทหาร',nD],['การ์ด',cD.s]];
   const a=(l,v)=>pA.push([l,v]),d=(l,v)=>pD.push([l,v]);
   if(has(S,A,'weapon'))a('ศาสตราวุธ',1);if(has(S,A,'divine'))a('อาวุธเทวะ',2);
-  if(S.moon==='wane'){a('ข้างแรม',1);if(has(S,A,'banner'))a('ธงรบ',1)}
+  if(S.moon==='wane'){a('กลางคืน',1);if(has(S,A,'banner'))a('ธงรบ',1)}
   if(isGod(S,A,'agni'))a('เผาผลาญ',1);
   if(mA==='garuda')a('ครุฑ',1);if(mA==='nonthi')a('โคนนทิ',1);if(mA==='rhino')a('แรด',2);
   if(mA==='naga'&&temple&&isGod(S,A,'varuna'))a('นาคในวัด',1);
@@ -299,7 +299,7 @@ function endRound(S){
   S.round++;
   S.order=[...Array(S.n).keys()].sort((a,b)=>scores[a]-scores[b]||S.order.indexOf(a)-S.order.indexOf(b));
   S.pos=0;S.follow=null;
-  log(S,`เริ่มรอบใหม่ · ${S.moon==='wax'?'ข้างขึ้น':'ข้างแรม'}`);
+  log(S,`เริ่มรอบใหม่ · ${S.moon==='wax'?'กลางวัน':'กลางคืน'}`);
 }
 function setupGame(S){
   S.mapV=2;S.seed=Math.floor(Math.random()*1e9);const cells=SECT*S.n+1;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
@@ -308,15 +308,17 @@ function setupGame(S){
   S.M={};S.round=1;S.moon='wax';
   S.order=[...Array(S.n).keys()].sort(()=>Math.random()-.5);S.pos=0;
   S.battle=null;S.follow=null;S.status='play';S.log=[];
-  log(S,'เกมเริ่ม · ข้างขึ้น');
+  log(S,'เกมเริ่ม · กลางวัน');
 }
 const clone=o=>JSON.parse(JSON.stringify(o));
 if(typeof module!=='undefined')module.exports={GODS,MOUNTS,POWERS,CARD,setupGame,resolveBattle,advance,endRound};
+/* ลำดับเล่นรอบหน้าถ้าคะแนนเป็นแบบตอนนี้: คะแนนน้อยสุดก่อน เสมอกันใครเคยเล่นก่อนได้ก่อน */
+function nextOrder(S){const sc=[...Array(S.n).keys()].map(s=>total(S,s));return [...Array(S.n).keys()].sort((a,b)=>sc[a]-sc[b]||S.order.indexOf(a)-S.order.indexOf(b))}
 /* คำอธิบายเต็มของการ์ดพลัง ใช้ในป๊อปอัปรายละเอียด */
 const PW_DETAIL={
  weapon:'ทุกครั้งที่คุณเป็นฝ่ายบุก พลังรบ +1',
  swift:'เดินทัพได้ไกลสุด 2 ช่องต่อครั้ง ช่องที่ผ่านต้องว่างหรือเป็นกองของคุณ ถ้าเจอศัตรูระหว่างทางจะหยุดรบที่ช่องนั้น',
- banner:'รอบข้างแรมฝ่ายบุกได้ +1 อยู่แล้ว การ์ดนี้เพิ่มให้อีก +1 รวมเป็น +2',
+ banner:'รอบกลางคืนฝ่ายบุกได้ +1 อยู่แล้ว การ์ดนี้เพิ่มให้อีก +1 รวมเป็น +2',
  rally:'ตอนคุณเป็นฝ่ายบุก ความเสียหายที่ได้รับลดลง 1 (เสียทหารน้อยลง 1 ตัว)',
  raid:'บุกแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายรับเสียทหารเพิ่ม',
  vanguard:'ตอนบุก ถ้าทหารของคุณมากกว่าฝ่ายรับ ฝ่ายรับเสียทหาร 1 ตัวทันทีก่อนเปิดการ์ด',

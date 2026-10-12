@@ -109,7 +109,7 @@ function rulesRef(){return `<details class="panel" style="margin-top:20px"><summ
 <p>แต่ละรอบ ผู้เล่นผลัดกันทำคนละ 1 แอคชัน รวม 3 แอคชันต่อคน แอคชันเดียวกันใช้ได้ครั้งเดียวต่อรอบ: เกณฑ์ทัพ, เดินทัพ, ทำบุญ, ขอพร (ซื้อการ์ดพลังหรือพาหนะ)</p>
 <p>เดินเข้าช่องศัตรู = รบ ทั้งสองฝ่ายลงการ์ดคว่ำแล้วเปิดพร้อมกัน พลังรบ = ทหาร + พลังการ์ด + โบนัส พลังสูงกว่าชนะ เสมอฝ่ายรับชนะ ทั้งสองฝ่ายเสียทหารตามแต้มฆ่าในการ์ดของอีกฝ่าย ฝ่ายแพ้ที่เหลือรอดถอย 1 ช่อง ฝ่ายชนะเป็นคนเลือก บุกชนะและยังเหลือทหารได้ 1 คะแนนถาวรและบาป +1 บาปถึง 3 เสียทหาร 2 ตัว</p>
 <table class="ref"><tr><th>การ์ดรบ</th><th>พลัง</th><th>ฆ่า</th></tr>${CARD.map((c,i)=>`<tr><td>${c.n}${i===4?' (ตำราพิชัยสงคราม)':''}</td><td>${c.s}</td><td>${c.k}</td></tr>`).join('')}</table>
-<p>ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน ข้างขึ้นได้บุญ +1 ต่อวัด ข้างแรมฝ่ายบุก +1 ใครถึงคะแนนเป้าตอนจบรอบชนะ</p>
+<p>ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 ใครถึงคะแนนเป้าตอนจบรอบชนะ</p>
 <table class="ref"><tr><th>เทพ</th><th>ความสามารถ</th><th>พาหนะประจำองค์</th></tr>${GODS.map(g=>`<tr><td>${g.name}</td><td><b>${g.ab}</b>: ${g.txt} · ${g.weak}</td><td>${MOUNTS[g.mount].name}</td></tr>`).join('')}</table>
 <p class="muted">ฝ่ายบุกเห็นการ์ดของตัวเองระหว่างรอ หลังรบทุกคนเห็นการ์ดทั้งสองฝ่ายและที่มาของพลังรบในกล่อง "ศึกล่าสุด" ห้องที่ติ๊ก "เปิดการ์ด" ฝ่ายรับจะเห็นการ์ดฝ่ายบุกก่อนเลือกด้วย</p>
 </div></details>`}
@@ -245,10 +245,11 @@ function renderGame(){
     if(ui.mode==='avatar-dst'){S.B.forEach((c,i)=>{if((c.o===act&&c.t>0||i===cityOf(act))&&!mountAt(S,i,act))clickable.push(i)})}
   }
   if(S.retreat&&mine&&S.status==='play'){clickable=S.retreat.opts;selected=S.retreat.from}
-  const moonPill=`<span class="pill">${S.moon==='wax'?'◐ ข้างขึ้น: วัดได้บุญ +1':'◑ ข้างแรม: ฝ่ายบุก +1'}</span>`;
-  app.innerHTML=topBar(S,`${isTut(GID)?'':`<button class="ghost small" id="copy">คัดลอกลิงก์ห้อง</button>`}<span class="pill tab">รอบ ${S.round}</span>${moonPill}<span class="pill tab">เป้า ${S.target}</span>`)+`
+  const moonPill=`<span class="pill">${S.moon==='wax'?'◐ กลางวัน: วัดได้บุญ +1':'◑ กลางคืน: ฝ่ายบุก +1'}</span>`;
+  app.innerHTML=topBar(S,`${isTut(GID)?'':`<button class="ghost small" id="copy">คัดลอกลิงก์ห้อง</button>`}<span class="pill tab">รอบ ${S.round}</span><span class="pill tab">เป้า ${S.target}</span>`)+`
   <div class="stack">
   ${tutBox()}
+  ${phaseBox(S)}
   <div class="panel mapbox">${mapSVG(S,clickable,selected,(TUT&&GID==='tut'&&tutStep()&&tutStep().hl)||[])}</div>
   <div class="game">
     <div class="stack">${statusBox(S,act,mine)}${lastBattleBox(S)}${myTurn?shopBox(S,act):''}</div>
@@ -340,18 +341,33 @@ function modeBox(S,act){
   return '';
 }
 function atkBonusText(S,s,m,cell,n){const t=[];
-  if(has(S,s,'weapon'))t.push('ศาสตราวุธ +1');if(has(S,s,'divine'))t.push('อาวุธเทวะ +2');if(S.moon==='wane'){t.push('ข้างแรม +1');if(has(S,s,'banner'))t.push('ธงรบ +1')}
+  if(has(S,s,'weapon'))t.push('ศาสตราวุธ +1');if(has(S,s,'divine'))t.push('อาวุธเทวะ +2');if(S.moon==='wane'){t.push('กลางคืน +1');if(has(S,s,'banner'))t.push('ธงรบ +1')}
   if(isGod(S,s,'agni'))t.push('เผาผลาญ +1');if(m==='garuda')t.push('ครุฑ +1');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='rhino')t.push('แรด +2');
   if(has(S,s,'vanguard')&&n>S.B[cell].t)t.push('ทัพหน้า: ศัตรูเสีย 1 ก่อนรบ');
   return t.length?t.join(', '):'ไม่มี';}
+const SUN=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="10" fill="var(--gold)"/>${[0,45,90,135,180,225,270,315].map(d=>`<line x1="24" y1="5" x2="24" y2="11" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" transform="rotate(${d} 24 24)"/>`).join('')}</svg>`;
+const MOON=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><path d="M30 7a17 17 0 1 0 11 29A14 14 0 0 1 30 7z" fill="var(--nightline)"/><circle cx="12" cy="12" r="1.6" fill="var(--nightline)"/><circle cx="40" cy="18" r="1.2" fill="var(--nightline)"/><circle cx="36" cy="42" r="1.4" fill="var(--nightline)"/></svg>`;
+function phaseBox(S){
+  if(S.status!=='play')return '';
+  const day=S.moon==='wax';
+  const left=[...Array(S.n).keys()].filter(s=>hasActions(S,s)).length;
+  return `<div class="phase ${day?'day':'night'}" role="status">${day?SUN:MOON}
+    <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b>
+      <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ เหมาะกับการยึดวัดให้อยู่':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบในรอบนี้ เหมาะกับการบุก'}</div></div>
+    <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้</div></div>`;
+}
 function playersBox(S,act){
-  return `<div class="panel"><h3 style="margin-bottom:8px">ผู้เล่น</h3><div class="players">${S.order.map(s=>{const p=S.P[s];
-    return `<div class="pl ${s===act?'turn':''}"><span class="dot" style="background:${SEATC(s)}"></span>
-     <div><button class="godlink" ${infoAttr('god:'+godOf(S,s))}><b>${esc(gname(S,s))}</b></button> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span></div>
+  const nxt=S.status==='play'?nextOrder(S):S.order;
+  return `<div class="panel"><h3 style="margin-bottom:4px">ลำดับเล่นรอบนี้</h3><p class="small muted" style="margin:0 0 8px">ทุกต้นรอบเรียงใหม่ คะแนนน้อยสุดเล่นก่อน</p><div class="players">${S.order.map((s,idx)=>{const p=S.P[s];
+    const doneAll=S.status==='play'&&!hasActions(S,s);
+    return `<div class="pl ${s===act?'turn':''}" style="${doneAll?'opacity:.7':''}"><span class="ordno" style="background:${SEATC(s)}" aria-label="ลำดับที่ ${idx+1}">${idx+1}</span>
+     <div><button class="godlink" ${infoAttr('god:'+godOf(S,s))}><b>${esc(gname(S,s))}</b></button> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
+       <div class="small muted">${s===act?'<b style="color:var(--ink)">กำลังเดิน</b> · ':''}แอคชัน ${p.used.length}/${actionLimit(S,s)}${doneAll?' · เดินครบแล้ว':''}</div></div>
      <div class="stats"><span title="คะแนนรวม">★ ${total(S,s)}</span><span title="บุญ">บุญ ${p.merit}</span><span title="บาป" style="color:${p.sin>=2?'var(--warn)':'inherit'}">บาป ${p.sin}/3</span></div>
      <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span><span class="chip tab">การ์ดรบ ${availCards(S,s).map(c=>CARD[c].s+'/'+CARD[c].k).join(' ')}</span><span class="chip tab">คลัง ${reserve(S,s)}</span>
      ${mountsOf(S,s).map(k=>`<button class="chip info mount" ${infoAttr('mount:'+k)}>${MOUNTS[k].name}</button>`).join('')}${p.pw.map(id=>`<button class="chip info line-${PW[id].line}" ${infoAttr('pw:'+id)}>${PW[id].name}</button>`).join('')}</div></div>`}).join('')}</div>
-     <p class="small muted" style="margin-top:6px">เรียงตามลำดับเล่นรอบนี้ · ${GOD[godOf(S,act)]?esc(GOD[godOf(S,act)].ab)+': '+esc(GOD[godOf(S,act)].txt):''}</p></div>`;
+     ${S.status==='play'?`<p class="small" style="margin:10px 0 0"><b>รอบหน้า</b> (ถ้าคะแนนเป็นแบบตอนนี้): ${nxt.map((s,i)=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}">${i+1}</span>${esc(gname(S,s))}</span>`).join(' ')}</p>`:''}
+     <p class="small muted" style="margin-top:6px">${GOD[godOf(S,act)]?esc(GOD[godOf(S,act)].ab)+': '+esc(GOD[godOf(S,act)].txt):''}</p></div>`;
 }
 function shopBox(S,s){
   if(S.follow||S.battle)return '';
@@ -476,7 +492,7 @@ const TSTEPS=[
  {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
  {k:'do',t:'ยึดวัดแรก',hl:[3],allow:['move'],b:`คุณมีกองหน้า 2 ตัวรออยู่ในป่าข้างเมือง และวัดที่ถัดไปยังว่าง กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[3].o===0&&S.B[3].t>0&&!S.follow},
  {k:'do',t:'ทำบุญ',allow:['merit'],b:`คุณได้ 1 คะแนนจากวัดแล้ว ดูดาว ★ ในแถบผู้เล่น ต่อไปกด <b>ทำบุญ</b> รับบุญ +2 บุญเอาไว้ซื้อการ์ดพลัง`,done:S=>S.round>1||S.P[0].used.includes('merit')},
- {k:'info',t:'จบรอบ และดวงจันทร์',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>ข้างขึ้น</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นดวงจันทร์สลับ รอบนี้เป็น <b>ข้างแรม</b>: ฝ่ายบุกได้พลังรบ +1 (ดูป้ายด้านบน)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป`},
+ {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
  {k:'do',t:'บุก!',hl:[10],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์ (ระวัง พระพิรุณตั้งรับในป่าได้ +1)`,done:S=>!!(S.last&&S.last.A===0)},
  {k:'do',t:'วชิราวุธของพระอินทร์',allow:[],b:`ดูกล่อง <b>ศึกล่าสุด</b> ว่าพลังรบมาจากไหน ฝ่ายแพ้ที่เหลือรอดต้องถอยไป 1 ช่อง โดยฝ่ายชนะเป็นคนเลือกช่อง (ถ้ามีช่องเดียวระบบถอยให้เอง)<br>หลังเดินทัพ พระอินทร์ใช้ <b>วชิราวุธ</b> ได้รอบละครั้ง ทำให้กองศัตรูที่อยู่ติดกับกองคุณเสียทหาร 1 ตัวโดยไม่ต้องรบ ลองกด <b>ใช้วชิราวุธ</b> แล้วเลือกกองศัตรู หรือกด <b>จบตา</b>`,done:S=>!S.follow&&!S.battle&&!S.retreat},
  {k:'info',t:'บาป: ราคาของสงคราม',b:`บุกชนะได้คะแนนถาวร แต่ได้ <b>บาป +1</b> ด้วย (ดูในแถบผู้เล่น) ถ้าบาปถึง <b>3</b> จะเสียทหาร 2 ตัวทันที<br>บุกบ่อยได้คะแนนเร็ว แต่ต้องหาจังหวะทำบุญลบบาป นี่คือการตัดสินใจหลักของเกม`},
@@ -487,7 +503,7 @@ const TSTEPS=[
 function tutState(){
   const S={v:1,created:Date.now(),host:ME,status:'lobby',solo:false,n:2,target:8,useL3:false,openCards:false,
     seats:[{uid:ME,god:'indra'},{uid:'bot',god:'varuna'}],log:[]};
-  setupGame(S);S.seed=20261012;S.order=[0,1];S.pos=0;S.B[2]={o:0,t:2};S.B[10]={o:1,t:2};S.log=[];log(S,'บทเรียนเริ่ม · ข้างขึ้น');
+  setupGame(S);S.seed=20261012;S.order=[0,1];S.pos=0;S.B[2]={o:0,t:2};S.B[10]={o:1,t:2};S.log=[];log(S,'บทเรียนเริ่ม · กลางวัน');
   return S;
 }
 function startTutorial(){
