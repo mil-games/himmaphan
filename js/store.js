@@ -1,0 +1,90 @@
+// ที่เก็บข้อมูลห้องเล่น: ใช้ Firebase ถ้าตั้งค่าแล้ว ไม่งั้นใช้หน่วยความจำในเครื่อง
+import { firebaseConfig } from './firebase-config.js';
+
+const V = '10.12.2';
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+const uidsOf = S => [...new Set([S.host, ...(S.seats || []).map(x => x.uid)].filter(u => u && u !== 'bot'))];
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function localStore() {
+  const games = {};
+  const subs = new Map(); let sid = 0;
+  const fire = () => subs.forEach(f => f());
+  let me = null;
+  try { me = localStorage.getItem('hmp-local-uid'); } catch (e) {}
+  if (!me) { me = 'local-' + Math.random().toString(36).slice(2, 10); try { localStorage.setItem('hmp-local-uid', me); } catch (e) {} }
+  return {
+    online: false, me,
+    async create(data) { let id; do { id = newCode(); } while (games[id]); data.uids = uidsOf(data); games[id] = clone(data); fire(); return id; },
+    async get(id) { return games[id] ? clone(games[id]) : null; },
+    async mutate(id, fn) {
+      if (!games[id]) return { ok: false, why: 'missing' };
+      const S = clone(games[id]); if (fn(S) === false) return { ok: false };
+      S.upd = Date.now(); S.uids = uidsOf(S); games[id] = S; fire(); return { ok: true };
+    },
+    watchGame(id, cb) { const k = ++sid; const f = () => cb(games[id] ? clone(games[id]) : null); subs.set(k, f); f(); return () => subs.delete(k); },
+    watchMine(cb) { const k = ++sid; const f = () => cb(Object.entries(games).map(([id, d]) => ({ id, d: clone(d) }))); subs.set(k, f); f(); return () => subs.delete(k); },
+    async del(id) { delete games[id]; fire(); }
+  };
+}
+
+async function firebaseStore() {
+  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  const { getAuth, signInAnonymously, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  const F = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = F.getFirestore(app);
+  const me = await new Promise((resolve, reject) => {
+    const stop = onAuthStateChanged(auth, u => { if (u) { stop(); resolve(u.uid); } });
+    signInAnonymously(auth).catch(reject);
+  });
+  const ref = id => F.doc(db, 'games', id);
+  return {
+    online: true, me,
+    async create(data) {
+      data.uids = uidsOf(data);
+      for (let i = 0; i < 6; i++) {
+        const id = newCode();
+        const made = await F.runTransaction(db, async t => {
+          const snap = await t.get(ref(id));
+          if (snap.exists()) return false;
+          t.set(ref(id), data); return true;
+        });
+        if (made) return id;
+      }
+      throw new Error('สร้างรหัสห้องไม่สำเร็จ');
+    },
+    async get(id) { const s = await F.getDoc(ref(id)); return s.exists() ? s.data() : null; },
+    async mutate(id, fn) {
+      try {
+        const ok = await F.runTransaction(db, async t => {
+          const snap = await t.get(ref(id));
+          if (!snap.exists()) return 'missing';
+          const S = clone(snap.data());
+          if (fn(S) === false) return false;
+          S.upd = Date.now(); S.uids = uidsOf(S);
+          t.set(ref(id), S); return true;
+        });
+        return ok === true ? { ok: true } : { ok: false, why: ok === 'missing' ? 'missing' : undefined };
+      } catch (e) {
+        return { ok: false, why: e && e.code === 'permission-denied' ? 'denied' : 'error' };
+      }
+    },
+    watchGame(id, cb) { return F.onSnapshot(ref(id), s => cb(s.exists() ? s.data() : null), () => cb(undefined)); },
+    watchMine(cb) {
+      const q = F.query(F.collection(db, 'games'), F.where('uids', 'array-contains', me), F.limit(30));
+      return F.onSnapshot(q, qs => cb(qs.docs.map(d => ({ id: d.id, d: d.data() }))), () => cb([]));
+    },
+    async del(id) { await F.deleteDoc(ref(id)); }
+  };
+}
+
+const configured = firebaseConfig && firebaseConfig.apiKey && !/ใส่/.test(firebaseConfig.apiKey);
+let store, error = null;
+try { store = configured ? await firebaseStore() : localStore(); }
+catch (e) { error = e; store = localStore(); }
+store.configured = configured; store.error = error ? String(error.message || error) : null;
+window.HMP_STORE = store;
+window.dispatchEvent(new Event('hmp-store-ready'));
