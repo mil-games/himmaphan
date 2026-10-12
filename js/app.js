@@ -109,7 +109,7 @@ function rulesRef(){return `<details class="panel" style="margin-top:20px"><summ
 <p>แต่ละรอบ ผู้เล่นผลัดกันทำคนละ 1 แอคชัน รวม 3 แอคชันต่อคน แอคชันเดียวกันใช้ได้ครั้งเดียวต่อรอบ: เกณฑ์ทัพ, เดินทัพ, ทำบุญ, ขอพร (ซื้อการ์ดพลังหรือพาหนะ)</p>
 <p>เดินเข้าช่องศัตรู = รบ ทั้งสองฝ่ายลงการ์ดคว่ำแล้วเปิดพร้อมกัน พลังรบ = ทหาร + พลังการ์ด + โบนัส พลังสูงกว่าชนะ เสมอฝ่ายรับชนะ ทั้งสองฝ่ายเสียทหารตามแต้มฆ่าในการ์ดของอีกฝ่าย ฝ่ายแพ้ที่เหลือรอดถอย 1 ช่อง ฝ่ายชนะเป็นคนเลือก บุกชนะและยังเหลือทหารได้ 1 คะแนนถาวรและบาป +1 บาปถึง 3 เสียทหาร 2 ตัว</p>
 <table class="ref"><tr><th>การ์ดรบ</th><th>พลัง</th><th>ฆ่า</th></tr>${CARD.map((c,i)=>`<tr><td>${c.n}${i===4?' (ตำราพิชัยสงคราม)':''}</td><td>${c.s}</td><td>${c.k}</td></tr>`).join('')}</table>
-<p>ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 ใครถึงคะแนนเป้าตอนจบรอบชนะ</p>
+<p>วัดมีจำนวนเท่าผู้เล่น +1 (รวมวัดหลวงข้างเขาพระสุเมรุ) ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน <b>ครองแดน</b>: จบรอบ ยึดวัด 2 แห่งขึ้นไปหรือเขาพระสุเมรุ ได้ +1 คะแนนถาวร กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 ใครถึงคะแนนเป้าตอนจบรอบชนะ</p>
 <table class="ref"><tr><th>เทพ</th><th>ความสามารถ</th><th>พาหนะประจำองค์</th></tr>${GODS.map(g=>`<tr><td>${g.name}</td><td><b>${g.ab}</b>: ${g.txt} · ${g.weak}</td><td>${MOUNTS[g.mount].name}</td></tr>`).join('')}</table>
 <p class="muted">ฝ่ายบุกเห็นการ์ดของตัวเองระหว่างรอ หลังรบทุกคนเห็นการ์ดทั้งสองฝ่ายและที่มาของพลังรบในกล่อง "ศึกล่าสุด" ห้องที่ติ๊ก "เปิดการ์ด" ฝ่ายรับจะเห็นการ์ดฝ่ายบุกก่อนเลือกด้วย</p>
 </div></details>`}
@@ -188,16 +188,17 @@ function renderSeating(){
 function mrng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
 const LAYOUT_CACHE={};
 function mapLayout(S){
-  const key=S.n+':'+(S.seed||1);if(LAYOUT_CACHE[key])return LAYOUT_CACHE[key];
-  const n=S.n,rnd=mrng((S.seed||1)^0x9e3779b9),W=1000,H=700,cx=500,cy=355,Rx=440,Ry=300;
+  const key=S.n+':'+(S.seed||1)+':'+(hasRoyal(S)?1:0);if(LAYOUT_CACHE[key])return LAYOUT_CACHE[key];
+  const n=S.n,rnd=mrng((S.seed||1)^0x9e3779b9),W=1000,H=730,cx=500,cy=365,Rx=415,Ry=282;
   const span=Math.PI*2/n;
   // ตำแหน่งตามบล็อก k: [รัศมี, ระยะมุมในบล็อก]
   const K=[[1.00,0.00],[0.95,0.27],[1.02,0.52],[0.93,0.77],[0.60,0.24],[0.56,0.63]];
-  const pos=[{x:cx,y:cy}];
+  const roy=hasRoyal(S);const pos=[{x:roy?cx-60:cx,y:cy}];
   for(let s=0;s<n;s++)for(let k=0;k<6;k++){
     const [r0,o]=K[k];const r=r0*(1+(rnd()-.5)*0.16);const a=-Math.PI/2+s*span+o*span+(rnd()-.5)*span*0.07;
     pos.push({x:cx+Rx*r*Math.cos(a),y:cy+Ry*r*Math.sin(a)});
   }
+  if(roy)pos.push({x:cx+100,y:cy+18});
   // ความโค้งของเส้นทาง สุ่มคงที่ต่อห้อง
   const bend={};for(let i=0;i<pos.length;i++)for(const j of adj(S,i))if(j>i)bend[i+'-'+j]=(rnd()-.5)*0.45;
   const ring=Math.PI*(Rx+Ry)/(4*n);
@@ -207,16 +208,24 @@ function mapLayout(S){
 function mapSVG(S,clickable,selected,hl){hl=hl||[];
   const M=mapLayout(S),n=L(S);
   let lines='';
-  for(let i=0;i<=n;i++)for(const j of adj(S,i)){if(j<i)continue;const a=M.pos[i],b=M.pos[j];
+  for(let i=0;i<S.B.length;i++)for(const j of adj(S,i)){if(j<i)continue;const a=M.pos[i],b=M.pos[j];
     const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,bd=M.bend[i+'-'+j]||0;
-    const qx=mx-dy*bd,qy=my+dx*bd;const toC=i===0||j===0;
+    const qx=mx-dy*bd,qy=my+dx*bd;const toC=i===0||j===0||isRoyal(S,i)||isRoyal(S,j);
     lines+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}Q${qx.toFixed(1)} ${qy.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}" fill="none" stroke="var(--line)" stroke-width="${toC?2:3}" stroke-linecap="round" ${toC?'stroke-dasharray="3 7"':''}/>`}
+  // ทะเลสีทันดร: แถบน้ำวงในผ่านช่องริมน้ำทุกช่อง
+  const wpts=[];for(let s=0;s<S.n;s++)wpts.push(M.pos[1+SECT*s+4]);
+  let river='';if(wpts.length>1){const cxm=M.pos[0].x,pts=wpts.map((p,i)=>p);
+    const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+    let d=`M${mid(pts.at(-1),pts[0]).x.toFixed(1)} ${mid(pts.at(-1),pts[0]).y.toFixed(1)}`;
+    for(let i=0;i<pts.length;i++){const m=mid(pts[i],pts[(i+1)%pts.length]);d+=`Q${pts[i].x.toFixed(1)} ${pts[i].y.toFixed(1)} ${m.x.toFixed(1)} ${m.y.toFixed(1)}`}
+    river=`<path d="${d}Z" fill="none" stroke="var(--water)" stroke-width="${(M.r*1.5).toFixed(0)}" stroke-linejoin="round" opacity=".9"/><path d="${d}Z" fill="none" stroke="var(--waterline)" stroke-width="1.5" stroke-dasharray="2 10" opacity=".8"/>`}
+  lines=river+lines;
   let cells='';
-  for(let i=0;i<=n;i++){
+  for(let i=0;i<S.B.length;i++){
     const p=M.pos[i],t=ctype(S,i),c=S.B[i];const rr=i===0?M.r*1.7:M.r;
-    const fill=t==='sumeru'?'var(--goldtint)':t==='temple'?'var(--temple)':t==='forest'?'var(--forest)':t==='plain'?'var(--plain)':'var(--surface)';
+    const fill=t==='sumeru'?'var(--goldtint)':t==='temple'?'var(--temple)':t==='forest'?'var(--forest)':t==='plain'?'var(--plain)':t==='water'?'var(--water)':'var(--surface)';
     const oc=c.t>0&&c.o>=0?SEATC(c.o):(t==='city'?SEATC(citySeat(i)):'var(--line)');
-    const lab=i===0?'เขาพระสุเมรุ':t==='city'?GOD[godOf(S,citySeat(i))].name.replace('พระ',''):KNAME[kOf(i)];
+    const lab=i===0?'เขาพระสุเมรุ':isRoyal(S,i)?'วัดหลวง':t==='city'?GOD[godOf(S,citySeat(i))].name.replace('พระ',''):KNAME[kOf(i)];
     const ms=MK.filter(k=>S.M[k]&&S.M[k].c===i);
     const cls=['cell',clickable.includes(i)?'click':'',selected===i?'sel':''].join(' ');
     const fs=Math.max(12,Math.min(15,rr*0.36));
@@ -308,7 +317,7 @@ function lastBattleBox(S){
 function defBonusText(S,s,cell){const t=[];const m=mountAt(S,cell,s);
   if(has(S,s,'armor'))t.push('เกราะเพชร +1');if(ctype(S,cell)==='temple'&&has(S,s,'wall'))t.push('กำแพงวัด +1');if(S.B[cell].t>=5&&has(S,s,'unity'))t.push('สามัคคี +1');if(has(S,s,'guardian'))t.push('ทวารบาล +2');
   if(isGod(S,s,'agni')&&m!=='rhino')t.push('เผาผลาญ −1');if(isGod(S,s,'varuna')&&ctype(S,cell)==='forest')t.push('ป่า +1');
-  if(m==='erawan')t.push('เอราวัณ +2');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='naga')t.push('นาค (รับความเสียหาย −1)');
+  if(m==='erawan')t.push('เอราวัณ +2');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='naga')t.push('นาค (รับความเสียหาย −1)');if(inHome(S,m,cell))t.push(MOUNTS[m].name+'ในถิ่น +1');
   return t.length?t.join(', '):'ไม่มี';}
 function modeBox(S,act){
   const cancel=`<button class="ghost" id="cancel">ยกเลิก</button>`;
@@ -342,7 +351,7 @@ function modeBox(S,act){
 }
 function atkBonusText(S,s,m,cell,n){const t=[];
   if(has(S,s,'weapon'))t.push('ศาสตราวุธ +1');if(has(S,s,'divine'))t.push('อาวุธเทวะ +2');if(S.moon==='wane'){t.push('กลางคืน +1');if(has(S,s,'banner'))t.push('ธงรบ +1')}
-  if(isGod(S,s,'agni'))t.push('เผาผลาญ +1');if(m==='garuda')t.push('ครุฑ +1');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='rhino')t.push('แรด +2');
+  if(isGod(S,s,'agni'))t.push('เผาผลาญ +1');if(m==='garuda')t.push('ครุฑ +1');if(inHome(S,m,cell))t.push(MOUNTS[m].name+'ในถิ่น +1');if(m==='nonthi')t.push('โคนนทิ +1');if(m==='rhino')t.push('แรด +2');
   if(has(S,s,'vanguard')&&n>S.B[cell].t)t.push('ทัพหน้า: ศัตรูเสีย 1 ก่อนรบ');
   return t.length?t.join(', '):'ไม่มี';}
 const SUN=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="10" fill="var(--gold)"/>${[0,45,90,135,180,225,270,315].map(d=>`<line x1="24" y1="5" x2="24" y2="11" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" transform="rotate(${d} 24 24)"/>`).join('')}</svg>`;
@@ -354,7 +363,8 @@ function phaseBox(S){
   return `<div class="phase ${day?'day':'night'}" role="status">${day?SUN:MOON}
     <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b>
       <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ เหมาะกับการยึดวัดให้อยู่':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบในรอบนี้ เหมาะกับการบุก'}</div></div>
-    <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้</div></div>`;
+    <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้</div>
+    <div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จนจบรอบ ได้ +1 ถาวร) · ตอนนี้: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))}</span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
 }
 function playersBox(S,act){
   const nxt=S.status==='play'?nextOrder(S):S.order;
@@ -364,7 +374,7 @@ function playersBox(S,act){
      <div><button class="godlink" ${infoAttr('god:'+godOf(S,s))}><b>${esc(gname(S,s))}</b></button> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
        <div class="small muted">${s===act?'<b style="color:var(--ink)">กำลังเดิน</b> · ':''}แอคชัน ${p.used.length}/${actionLimit(S,s)}${doneAll?' · เดินครบแล้ว':''}</div></div>
      <div class="stats"><span title="คะแนนรวม">★ ${total(S,s)}</span><span title="บุญ">บุญ ${p.merit}</span><span title="บาป" style="color:${p.sin>=2?'var(--warn)':'inherit'}">บาป ${p.sin}/3</span></div>
-     <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span><span class="chip tab">การ์ดรบ ${availCards(S,s).map(c=>CARD[c].s+'/'+CARD[c].k).join(' ')}</span><span class="chip tab">คลัง ${reserve(S,s)}</span>
+     <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span><span class="bcmini-wrap" aria-label="การ์ดรบ">${hand(S,s).map(c=>{const used=p.uc.includes(c);return `<span class="bcmini ${used?'used':''}" data-tip="${esc(CARD[c].n)} · พลัง ${CARD[c].s} ฆ่า ${CARD[c].k}${used?' · ใช้ไปแล้ว':' · ยังอยู่ในมือ'}" tabindex="0"><b>${CARD[c].s}</b>/${CARD[c].k}</span>`}).join('')}<span class="small muted" style="margin-left:2px">${p.uc.length?`ใช้แล้ว ${p.uc.length} · ใช้ครบเมื่อไรได้คืนทั้งชุด`:'ครบมือ'}</span></span><span class="chip tab">คลัง ${reserve(S,s)}</span>
      ${mountsOf(S,s).map(k=>`<button class="chip info mount" ${infoAttr('mount:'+k)}>${MOUNTS[k].name}</button>`).join('')}${p.pw.map(id=>`<button class="chip info line-${PW[id].line}" ${infoAttr('pw:'+id)}>${PW[id].name}</button>`).join('')}</div></div>`}).join('')}</div>
      ${S.status==='play'?`<p class="small" style="margin:10px 0 0"><b>รอบหน้า</b> (ถ้าคะแนนเป็นแบบตอนนี้): ${nxt.map((s,i)=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}">${i+1}</span>${esc(gname(S,s))}</span>`).join(' ')}</p>`:''}
      <p class="small muted" style="margin-top:6px">${GOD[godOf(S,act)]?esc(GOD[godOf(S,act)].ab)+': '+esc(GOD[godOf(S,act)].txt):''}</p></div>`;
@@ -378,7 +388,7 @@ function shopBox(S,s){
   return `<details class="panel" ${ui.shop?'open':''} id="shopd"><summary>ขอพร: การ์ดพลังและพาหนะ (บุญคุณมี ${S.P[s].merit})</summary>
    <div class="stack" style="margin-top:10px">${canBuy?'':'<p class="small muted">รอบนี้ใช้แอคชันขอพรไปแล้ว</p>'}
    <div><b>พาหนะ</b><div class="shop" style="margin-top:6px">${MK.map(k=>{const st=mountState(S,s,k);const m=MOUNTS[k];const own=OWNER_GOD[k]===godOf(S,s);
-     return `<button class="pw ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-mount="${k}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span>${m.name}</span><span class="tab">${priceOf(S,s,{mount:k})}</span></span><span class="tx">${m.txt}${own?' · <b>ของคุณได้โบนัส</b>: '+m.bonus.split(': ')[1]:''}${lab[st]?' · '+lab[st]:''}</span></button>`}).join('')}</div></div>
+     return `<button class="pw ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-mount="${k}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span>${m.name}</span><span class="tab">${priceOf(S,s,{mount:k})}</span></span><span class="tx">${m.txt} · ถิ่น: ${HOME[k]} +1${own?' · <b>ของคุณได้โบนัส</b>: '+m.bonus.split(': ')[1]:''}${lab[st]?' · '+lab[st]:''}</span></button>`}).join('')}</div></div>
    <div class="shop">${col('rit')}${col('kum')}${col('bun')}</div></div></details>`;
 }
 
@@ -487,12 +497,12 @@ function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
 let TUT=null;
 const isTut=gid=>String(gid||'').startsWith('tut');
 const TSTEPS=[
- {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,3,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือได้ <b>8 คะแนน</b> ก่อนตอนจบรอบ<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
+ {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,3,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือได้ <b>8 คะแนน</b> ก่อนตอนจบรอบ<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
  {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: เพิ่มทหารในเมือง<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
  {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
  {k:'do',t:'ยึดวัดแรก',hl:[3],allow:['move'],b:`คุณมีกองหน้า 2 ตัวรออยู่ในป่าข้างเมือง และวัดที่ถัดไปยังว่าง กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[3].o===0&&S.B[3].t>0&&!S.follow},
  {k:'do',t:'ทำบุญ',allow:['merit'],b:`คุณได้ 1 คะแนนจากวัดแล้ว ดูดาว ★ ในแถบผู้เล่น ต่อไปกด <b>ทำบุญ</b> รับบุญ +2 บุญเอาไว้ซื้อการ์ดพลัง`,done:S=>S.round>1||S.P[0].used.includes('merit')},
- {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
+ {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จนจบรอบ ได้ <b>ครองแดน</b> +1 คะแนนถาวร (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
  {k:'do',t:'บุก!',hl:[10],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์ (ระวัง พระพิรุณตั้งรับในป่าได้ +1)`,done:S=>!!(S.last&&S.last.A===0)},
  {k:'do',t:'วชิราวุธของพระอินทร์',allow:[],b:`ดูกล่อง <b>ศึกล่าสุด</b> ว่าพลังรบมาจากไหน ฝ่ายแพ้ที่เหลือรอดต้องถอยไป 1 ช่อง โดยฝ่ายชนะเป็นคนเลือกช่อง (ถ้ามีช่องเดียวระบบถอยให้เอง)<br>หลังเดินทัพ พระอินทร์ใช้ <b>วชิราวุธ</b> ได้รอบละครั้ง ทำให้กองศัตรูที่อยู่ติดกับกองคุณเสียทหาร 1 ตัวโดยไม่ต้องรบ ลองกด <b>ใช้วชิราวุธ</b> แล้วเลือกกองศัตรู หรือกด <b>จบตา</b>`,done:S=>!S.follow&&!S.battle&&!S.retreat},
  {k:'info',t:'บาป: ราคาของสงคราม',b:`บุกชนะได้คะแนนถาวร แต่ได้ <b>บาป +1</b> ด้วย (ดูในแถบผู้เล่น) ถ้าบาปถึง <b>3</b> จะเสียทหาร 2 ตัวทันที<br>บุกบ่อยได้คะแนนเร็ว แต่ต้องหาจังหวะทำบุญลบบาป นี่คือการตัดสินใจหลักของเกม`},
@@ -557,7 +567,7 @@ function wireTut(){
 /* ===================== INFO POPUP ===================== */
 function infoTip(spec){const [kind,id]=spec.split(':');
   if(kind==='pw')return PW[id]?PW[id].txt:'';
-  if(kind==='mount')return MOUNTS[id]?MOUNTS[id].txt:'';
+  if(kind==='mount')return MOUNTS[id]?MOUNTS[id].txt+' · ถิ่น: '+HOME[id]+' +1':'';
   if(kind==='god')return GOD[id]?GOD[id].ab+': '+GOD[id].txt:'';
   return ''}
 const infoAttr=spec=>`data-info="${esc(spec)}" data-tip="${esc(infoTip(spec))}" aria-haspopup="dialog"`;
@@ -572,7 +582,7 @@ function infoHTML(spec){const [kind,id]=spec.split(':');const own=ownerOf(kind,i
     return `<p class="small muted">${LINES[p.line]} · เลเวล ${p.lv} · ราคา ${COST[p.lv]} บุญ</p><h2>${esc(p.name)}</h2><p>${esc(PW_DETAIL[id]||p.txt)}</p>${owner}
       ${p.lv>1?`<p class="small muted">ซื้อได้เมื่อมีการ์ด${LINES[p.line]}เลเวล ${p.lv-1} อย่างน้อย 1 ใบ</p>`:''}`}
   if(kind==='mount'){const m=MOUNTS[id];if(!m)return '';const g=GOD[OWNER_GOD[id]];
-    return `<p class="small muted">พาหนะ · ราคา ${m.cost} บุญ</p><h2>${esc(m.name)}</h2><p>${esc(m.txt)}</p>
+    return `<p class="small muted">พาหนะ · ราคา ${m.cost} บุญ</p><h2>${esc(m.name)}</h2><p>${esc(m.txt)}</p><p><b>ถิ่น: ${HOME[id]}</b> รบในช่อง${HOME[id]} ได้พลังรบ +1 ทั้งบุกและรับ</p>
       <p class="small"><b>โบนัสเมื่ออยู่กับ${esc(g.name)}</b> (เจ้าของในตำนาน): ${esc(m.bonus.split(': ')[1]||m.bonus)}</p>
       ${id==='garuda'||id==='naga'?'<p class="small">ครุฑข่มนาค: เมื่อกองที่มีครุฑรบกับกองที่มีนาค ฝ่ายครุฑได้ +2 และนาคใช้ความสามารถไม่ได้</p>':''}
       <p class="small muted">พาหนะอยู่กับกองทหาร 1 กอง ไม่นับเป็นทหาร และไม่ตาย ถ้ากองหมด พาหนะกลับเมือง</p>${owner}`}

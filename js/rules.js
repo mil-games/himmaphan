@@ -19,6 +19,16 @@ const MOUNTS={
  rhino:{name:'แรด',sh:'ร',cost:3,txt:'บุก +2',bonus:'พระเพลิง: กองนี้ไม่โดนตั้งรับ −1'},
  naga:{name:'นาค',sh:'น',cost:4,txt:'รับความเสียหาย −1 (ครุฑลบล้าง)',bonus:'พระพิรุณ: +1 เมื่ออยู่ในวัด'}
 };
+/* ถิ่นของพาหนะ: รบในช่องถิ่นของตัวเอง พลังรบ +1 ทั้งบุกและรับ */
+const HOME={erawan:'ป่า',rhino:'ป่าลึก',buffalo:'ทุ่ง',naga:'ริมน้ำ',garuda:'เขาพระสุเมรุ',hong:'วัด',nonthi:'วัดหลวง'};
+function inHome(S,m,i){
+  if(!m)return false;
+  if(m==='garuda')return i===0;
+  if(m==='nonthi')return isRoyal(S,i);
+  if(i===0||isRoyal(S,i))return false;
+  const k=kOf(i);
+  return (m==='erawan'&&k===1)||(m==='rhino'&&k===5)||(m==='buffalo'&&k===3)||(m==='naga'&&k===4)||(m==='hong'&&k===2);
+}
 const MK=Object.keys(MOUNTS);
 const OWNER_GOD={erawan:'indra',garuda:'narai',hong:'brahma',nonthi:'shiva',buffalo:'yama',rhino:'agni',naga:'varuna'};
 const LINES={rit:'สายฤทธิ์',kum:'สายคุ้มกัน',bun:'สายบุญ'};
@@ -29,7 +39,7 @@ const POWERS=[
  P('manual','rit',3,'ตำราพิชัยสงคราม','ได้การ์ดรบเลข 4'),P('divine','rit',3,'อาวุธเทวะ','บุก +2'),P('sky','rit',3,'กองทัพฟ้า','เดินทัพได้ 2 ครั้งต่อรอบ (แอคชันที่ 4)'),P('vpR','rit',3,'ชัยชนะอมตะ','ได้ 1 คะแนนถาวรทันที'),
  P('armor','kum',1,'เกราะเพชร','ตั้งรับ +1'),P('levy','kum',1,'ไพร่พล','เกณฑ์ทัพ +1 ตัว'),P('wall','kum',1,'กำแพงวัด','ตั้งรับในวัด +1'),P('ward','kum',1,'มนต์คุ้มกาย','ตอนตั้งรับ รับความเสียหาย −1'),
  P('reserve','kum',2,'กองหนุน','เกณฑ์ทัพลงช่องติดเมืองได้'),P('unity','kum',2,'สามัคคี','กอง 5 ตัวขึ้นไป ตั้งรับ +1'),P('counter','kum',2,'โต้กลับ','ตั้งรับชนะ ฝ่ายบุกเสียเพิ่ม 1'),P('fort','kum',2,'ป้อมค่าย','กองละ 6 ตัวได้'),
- P('guardian','kum',3,'ทวารบาล','ตั้งรับ +2'),P('dominion','kum',3,'ครองแผ่นดิน','จบรอบยึด 2 วัดขึ้นไป ได้ 1 คะแนนถาวร'),P('reinforce','kum',3,'กำลังเสริม','จบรอบได้ทหาร 2 ตัวลงเมือง'),P('vpK','kum',3,'ผู้พิทักษ์อมตะ','ได้ 1 คะแนนถาวรทันที'),
+ P('guardian','kum',3,'ทวารบาล','ตั้งรับ +2'),P('dominion','kum',3,'ครองแผ่นดิน','ยึดวัดแห่งเดียวก็ได้ครองแดน'),P('reinforce','kum',3,'กำลังเสริม','จบรอบได้ทหาร 2 ตัวลงเมือง'),P('vpK','kum',3,'ผู้พิทักษ์อมตะ','ได้ 1 คะแนนถาวรทันที'),
  P('holy','bun',1,'น้ำมนต์','ทำบุญได้ +3'),P('alms','bun',1,'ทานบารมี','ซื้อของถูกลง 1 บุญ'),P('chant','bun',1,'สวดมนต์','จบรอบได้บุญ +1'),P('pray','bun',1,'อธิษฐาน','จบรอบได้การ์ดรบที่ใช้แล้วคืน 1 ใบ'),
  P('angel','bun',2,'เทวดารักษา','จบรอบลบบาป 1'),P('offer','bun',2,'ถวายวัด','จบรอบได้บุญ +1 ต่อวัด'),P('atone','bun',2,'ไถ่บาป','ทำบุญได้ทั้งบุญและลบบาป'),P('foresight','bun',2,'ญาณหยั่งรู้','เปลี่ยนการ์ดหลังเปิด (ยังไม่เปิดในเวอร์ชันออนไลน์)',1),
  P('miracle','bun',3,'ปาฏิหาริย์','รอบละครั้ง ทำแอคชันที่ใช้แล้วซ้ำได้'),P('pure','bun',3,'ผู้ทรงศีล','บาปเต็มไม่เสียทหาร'),P('blessed','bun',3,'บุญหนุนนำ','จบรอบถ้าบาป 0 ได้บุญ +2'),P('vpB','bun',3,'บุญบารมีอมตะ','ได้ 1 คะแนนถาวรทันที')
@@ -43,13 +53,17 @@ const SEATC=i=>`var(--s${i})`;
 
 /* ===================== RULES ===================== */
 /* แผนที่ v2: ผู้เล่นละ 6 ช่อง เรียงเป็นบล็อก
-   k=0 เมือง · 1 ป่า · 2 วัด · 3 ทุ่ง (วงนอก)  k=4 เนิน · 5 ป่าลึก (วงใน ป่าลึกติดเขาพระสุเมรุ) */
+   k=0 เมือง · 1 ป่า · 2 วัด · 3 ทุ่ง (วงนอก)  k=4 ริมน้ำ (ทะเลสีทันดรล้อมเขาพระสุเมรุ) · 5 ป่าลึก (วงใน ป่าลึกติดเขาพระสุเมรุ) */
 const SECT=6;
 const L=S=>SECT*S.n;
-const KTYPE=['city','forest','temple','plain','plain','forest'];
-const KNAME=['เมือง','ป่า','วัด','ทุ่ง','เนิน','ป่าลึก'];
+const KTYPE=['city','forest','temple','plain','water','forest'];
+const KNAME=['เมือง','ป่า','วัด','ทุ่ง','ริมน้ำ','ป่าลึก'];
 const kOf=i=>(i-1)%SECT;
-const ctype=(S,i)=>i===0?'sumeru':KTYPE[kOf(i)];
+/* วัดหลวง: วัดที่ n+1 อยู่ติดเขาพระสุเมรุและป่าลึกทุกช่อง (ห้องที่สร้างก่อนมีวัดหลวงจะไม่มีช่องนี้) */
+const royalOf=S=>SECT*S.n+1;
+const hasRoyal=S=>!!(S.B&&S.B.length>SECT*S.n+1);
+const isRoyal=(S,i)=>hasRoyal(S)&&i===royalOf(S);
+const ctype=(S,i)=>i===0?'sumeru':isRoyal(S,i)?'temple':KTYPE[kOf(i)];
 const citySeat=i=>(i-1)/SECT;
 const cityOf=s=>1+SECT*s;
 const has=(S,s,id)=>S.P[s].pw.includes(id);
@@ -57,7 +71,9 @@ const godOf=(S,s)=>S.seats[s].god;
 const isGod=(S,s,k)=>godOf(S,s)===k;
 function adj(S,i){
   const n=S.n,B=(t,k)=>1+SECT*(((t%n)+n)%n)+k;
-  if(i===0){const out=[];for(let t=0;t<n;t++)out.push(B(t,5));return out}
+  const R=hasRoyal(S)?[royalOf(S)]:[];
+  if(i===0){const out=[];for(let t=0;t<n;t++)out.push(B(t,5));return out.concat(R)}
+  if(isRoyal(S,i)){const out=[0];for(let t=0;t<n;t++)out.push(B(t,5));return out}
   const t=Math.floor((i-1)/SECT),k=kOf(i);
   switch(k){
     case 0:return [B(t,1),B(t-1,3)];
@@ -65,11 +81,11 @@ function adj(S,i){
     case 2:return [B(t,1),B(t,3),B(t,5)];
     case 3:return [B(t,2),B(t+1,0)];
     case 4:return [B(t,1),B(t,5),B(t-1,5)];
-    default:return [B(t,2),B(t,4),B(t+1,4),0];
+    default:return [B(t,2),B(t,4),B(t+1,4),0].concat(R);
   }
 }
 function nbs(S,i,s){
-  if(i===0){if(has(S,s,'secret')){const out=[];for(let j=1;j<=L(S);j++)out.push(j);return out}return adj(S,0)}
+  if(i===0){if(has(S,s,'secret')){const out=[];for(let j=1;j<S.B.length;j++)out.push(j);return out}return adj(S,0)}
   const out=adj(S,i);
   if(has(S,s,'secret')&&!out.includes(0))out.push(0);
   return out;
@@ -194,6 +210,8 @@ function resolveBattle(S,defCard){
   if(mD==='naga'&&temple&&isGod(S,D,'varuna'))d('นาคในวัด',1);
   if(mA==='garuda'&&mD==='naga'){a('ครุฑข่มนาค',2);notes.push('ครุฑข่มนาค')}
   if(mD==='garuda'&&mA==='naga'){d('ครุฑข่มนาค',2);notes.push('ครุฑข่มนาค')}
+  if(inHome(S,mA,cell))a(MOUNTS[mA].name+'ในถิ่น',1);
+  if(inHome(S,mD,cell))d(MOUNTS[mD].name+'ในถิ่น',1);
   const sA=pA.reduce((t,x)=>t+x[1],0),sD=pD.reduce((t,x)=>t+x[1],0);
   const aWin=sA>sD;
   // damage each side deals
@@ -251,7 +269,7 @@ function postBattle(S,post){
   if(f.bonusFrom!==null&&!(S.B[f.bonusFrom].o===A&&S.B[f.bonusFrom].t>0))f.bonusFrom=null;
   if(f.vajra||f.bonusFrom!==null)S.follow=f;else advance(S);
 }
-function cname(S,i){if(i===0)return'เขาพระสุเมรุ';const k=kOf(i);if(k===0)return'เมือง'+gname(S,citySeat(i));return KNAME[k]}
+function cname(S,i){if(i===0)return'เขาพระสุเมรุ';if(isRoyal(S,i))return'วัดหลวง';const k=kOf(i);if(k===0)return'เมือง'+gname(S,citySeat(i));return KNAME[k]}
 
 function vajraTargets(S,s){
   const out=new Set();
@@ -272,7 +290,13 @@ function advance(S){
   for(let k=1;k<=S.n;k++){const pos=(S.pos+k)%S.n;const s=S.order[pos];if(hasActions(S,s)){S.pos=pos;return}}
   endRound(S);
 }
+/* ครองแดน: จบรอบ ยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ +1 ถาวร (มีการ์ดครองแผ่นดิน: วัดแห่งเดียวก็พอ) */
+function holdsSumeru(S,s){return S.B[0].o===s&&S.B[0].t>0}
+function rulesLand(S,s){const th=templesHeld(S,s);return th>=2||holdsSumeru(S,s)||(has(S,s,'dominion')&&th>=1)}
 function endRound(S){
+  const lords=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));
+  lords.forEach(s=>S.P[s].vp+=1);
+  if(lords.length)log(S,`ครองแดน +1 ถาวร: ${lords.map(s=>gname(S,s)).join(', ')}`);
   const scores=[...Array(S.n).keys()].map(s=>total(S,s));
   const best=Math.max(...scores);
   if(best>=S.target){
@@ -290,7 +314,6 @@ function endRound(S){
     if(has(S,s,'offer'))p.merit+=th;
     if(has(S,s,'angel'))p.sin=Math.max(0,p.sin-1);
     if(has(S,s,'pray')&&p.uc.length){p.uc.sort((a,b)=>b-a);p.uc.shift()}
-    if(has(S,s,'dominion')&&th>=2)p.vp+=1;
     if(has(S,s,'reinforce')){const r=Math.min(2,reserve(S,s));if(r>0)placeTroops(S,s,cityOf(s),r)}
     if(has(S,s,'blessed')&&p.sin===0)p.merit+=2;
     p.used=[];p.f={};
@@ -302,7 +325,7 @@ function endRound(S){
   log(S,`เริ่มรอบใหม่ · ${S.moon==='wax'?'กลางวัน':'กลางคืน'}`);
 }
 function setupGame(S){
-  S.mapV=2;S.seed=Math.floor(Math.random()*1e9);const cells=SECT*S.n+1;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
+  S.mapV=2;S.seed=Math.floor(Math.random()*1e9);const cells=SECT*S.n+2;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
   for(let s=0;s<S.n;s++){S.B[cityOf(s)]={o:s,t:4}}
   S.P=[...Array(S.n)].map(()=>({merit:3,sin:0,vp:0,pw:[],uc:[],used:[],f:{}}));
   S.M={};S.round=1;S.moon='wax';
@@ -337,7 +360,7 @@ const PW_DETAIL={
  counter:'ตั้งรับแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายบุกเสียทหารเพิ่ม',
  fort:'กองนอกเมืองมีทหารได้สูงสุด 6 ตัว (ปกติ 5)',
  guardian:'ทุกครั้งที่คุณเป็นฝ่ายตั้งรับ พลังรบ +2',
- dominion:'ทุกครั้งที่จบรอบ ถ้าคุณยึดวัดไว้ตั้งแต่ 2 แห่งขึ้นไป ได้ 1 คะแนนถาวร',
+ dominion:'ครองแดนปกติต้องยึดวัด 2 แห่งหรือเขาพระสุเมรุตอนจบรอบ การ์ดนี้ทำให้ยึดวัดแค่แห่งเดียวก็ได้ +1 คะแนนถาวรทุกจบรอบ',
  reinforce:'ทุกครั้งที่จบรอบ ได้ทหาร 2 ตัวจากคลังลงเมืองฟรี',
  vpK:'ได้ 1 คะแนนถาวรทันทีที่ซื้อ',
  holy:'แอคชันทำบุญได้บุญ +3 แทน +2',

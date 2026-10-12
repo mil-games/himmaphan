@@ -2,19 +2,19 @@
 :root{
   --bg:#E9F0EA; --surface:#F8FBF8; --surface2:#F0F5F1; --ink:#18222C; --muted:#56636B; --line:#C6D4CB;
   --gold:#9A6E17; --goldtint:#F3E6C4; --accent:#256352; --accentink:#FFFFFF;
-  --forest:#DCEBDD; --plain:#EFECD6; --daytint:#FBF0D2; --nighttint:#DDE3F3; --nightline:#4E62A0; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
+  --forest:#DCEBDD; --plain:#EFECD6; --water:#CFE3EE; --waterline:#3F7FA6; --daytint:#FBF0D2; --nighttint:#DDE3F3; --nightline:#4E62A0; --temple:#F6E3D3; --warn:#B4441F; --good:#2D7A4C;
   --s0:#C2402F; --s1:#2F68B0; --s2:#A9781E; --s3:#6B42A3; --s4:#2C8250; --s5:#B84F8A; --s6:#16808E;
   --f-display:"Chonburi","Anuphan",serif; --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
-  --forest:#1D2D22; --plain:#2A2A1F; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --forest:#1D2D22; --plain:#2A2A1F; --water:#16303D; --waterline:#6FB3DB; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101513; --surface:#18201C; --surface2:#1E2722; --ink:#E7EEE8; --muted:#9AA9A0; --line:#2D3933;
   --gold:#DDB35A; --goldtint:#3A321E; --accent:#6DB8A0; --accentink:#0E1A16;
-  --forest:#1D2D22; --plain:#2A2A1F; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
+  --forest:#1D2D22; --plain:#2A2A1F; --water:#16303D; --waterline:#6FB3DB; --daytint:#352D1A; --nighttint:#1B2134; --nightline:#93A6E0; --temple:#3A2A20; --warn:#F08A63; --good:#6CC28E;
   --s0:#F07560; --s1:#6FA4F0; --s2:#E0B357; --s3:#A98BE6; --s4:#63C48A; --s5:#EE8CC2; --s6:#5CC6D3; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
@@ -121,3 +121,9 @@ button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);curso
 .ordno{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:var(--surface);font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums;flex:none}
 .ordno.sm{width:18px;height:18px;font-size:.7rem;margin-right:3px;vertical-align:-3px}
 .nxt{white-space:nowrap;margin-right:8px}
+
+/* การ์ดรบในแถบผู้เล่น */
+.bcmini-wrap{display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px}
+.bcmini{display:inline-flex;align-items:baseline;gap:1px;padding:1px 6px;border-radius:5px;border:1px solid var(--line);background:var(--surface);font-size:.75rem;font-variant-numeric:tabular-nums;cursor:default}
+.bcmini b{font-size:.85rem}
+.bcmini.used{opacity:.45;text-decoration:line-through;background:transparent;border-style:dashed}
