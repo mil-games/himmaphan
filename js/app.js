@@ -163,6 +163,15 @@ function renderInner(){
 function topBar(S,extra){
   return `<div class="top"><div class="row"><button class="ghost" id="back">← ห้องทั้งหมด</button><h1>ศึกเทพหิมพานต์</h1></div>
   <div class="meta"><span class="pill tab">${isTut(GID)?'บทเรียน':'ห้อง '+esc(GID)}</span>${extra||''}</div></div>`}
+/* แผนที่ของห้องนี้ ให้ทุกคนเห็นก่อนเลือกเทพ */
+function draftMapBox(S,isHost){
+  if(!S.map)return '';const P=previewState(S);const M=mapOf(P);const c=terrCount(P);
+  const order=['temple','forest','deep','plain','water'];
+  const homes=t=>MK.filter(k=>MOUNTS[k].home===t).map(k=>MOUNTS[k].ic).join('');
+  return `<div class="panel stack"><div class="row" style="justify-content:space-between"><h2>แผนที่: ${esc(M.name)}</h2>${isHost&&S.draftPos===0&&(!S.mapPick||S.mapPick==='random')?`<button class="ghost small" id="remap">สุ่มแผนที่ใหม่</button>`:''}</div>
+    <p class="small">${esc(M.desc)} · วงสีคือเมืองของแต่ละที่นั่ง ดูก่อนเลือกเทพได้เลย</p>
+    <div class="row small">${order.filter(t=>c[t]).map(t=>`<span class="chip">${TNAME[t]} ${c[t]} ช่อง ${homes(t)}</span>`).join('')}<span class="chip">วัดหลวง ${c.royal||0} ${homes('royal')}</span><span class="chip">เขาพระสุเมรุ 1 ${homes('sumeru')}</span></div>
+    <div class="mapbox">${mapSVG(P,[],null,[])}</div></div>`}
 function draftPicker(S){return S.status==='draft'?S.draftOrder[S.draftPos]:-1}
 function renderSeating(){
   const S=G;const isHost=S.host===ME;const mine=mySeats(S);const seated=mine.length>0;
@@ -178,7 +187,7 @@ function renderSeating(){
   let body='';
   if(!draft){
     body=`<div class="panel stack"><h2>ขั้นที่ 1 · เข้านั่ง</h2>
-      <p class="small">รหัสห้อง <span class="code">${esc(GID)}</span> ส่งลิงก์ให้เพื่อน ทุกคนเข้านั่งให้ครบ ${S.n} ที่ แล้วเจ้าของห้องกดเริ่มเลือกเทพ ระบบจะสุ่มว่าใครได้เลือกก่อน</p>
+      <p class="small">รหัสห้อง <span class="code">${esc(GID)}</span> ส่งลิงก์ให้เพื่อน ทุกคนเข้านั่งให้ครบ ${S.n} ที่ แล้วเจ้าของห้องกดเริ่มเลือกเทพ ระบบจะเปิดแผนที่ให้ทุกคนเห็น (${S.mapPick&&MAPBY[S.mapPick]?esc(MAPBY[S.mapPick].name):'สุ่ม'}) และสุ่มว่าใครได้เลือกก่อน</p>
       <div class="share"><code id="slink">${esc(linkFor(GID))}</code><button id="copy">คัดลอกลิงก์</button></div>
       <div class="seats">${order.map(seatCard).join('')}</div>
       ${seated?`<p><button class="ghost" id="leave">ลุกจากที่นั่ง</button></p>`:full?'<p class="muted">ห้องเต็มแล้ว</p>':`<div class="row"><label class="form" style="flex:1 1 220px"><span class="small">ชื่อในเกมของคุณ</span><input id="nick2" maxlength="20" placeholder="เช่น มิล" value="${esc(myName())}"></label><button class="primary" id="sit" style="align-self:flex-end">เข้านั่ง</button></div>`}
@@ -188,6 +197,7 @@ function renderSeating(){
     body=`<div class="panel stack"><h2>ขั้นที่ 2 · เลือกเทพตามลำดับ</h2>
       <p class="small">${myPick?'<b>ถึงตาคุณเลือกแล้ว</b> เลือกเทพที่ยังว่างด้านล่าง':`รอ <b>${esc(who(picker))}</b> เลือก`} · คนที่เลือกทีหลังสุดจะได้เดินก่อนในรอบแรก</p>
       <div class="seats">${order.map(seatCard).join('')}</div></div>
+      ${draftMapBox(S,isHost)}
       <div class="panel"><h3>เทพ</h3><div class="gods" style="margin-top:10px">${GODS.map(g=>{const t=taken.has(g.k);const owner=S.seats.findIndex(x=>x.god===g.k);
         return `<button class="god ${t?'taken':''}" data-god="${g.k}" ${t||!myPick?'disabled':''}><b>${g.name}</b>${t?` · ${esc(who(owner))}`:''}<div class="small"><b>${g.ab}</b>: ${g.txt}</div><div class="small muted">${g.weak} · พาหนะ ${MOUNTS[g.mount].ic} ${MOUNTS[g.mount].name}</div></button>`}).join('')}</div></div>
       ${isHost?`<div class="row"><button class="ghost" id="del">ลบห้องนี้</button></div>`:''}`;
@@ -201,7 +211,8 @@ function renderSeating(){
   if($('leave'))$('leave').onclick=()=>mutate(GID,T=>{if(T.status!=='lobby')return false;const i=T.seats.findIndex(x=>x.uid===ME);if(i<0)return false;T.seats[i]={uid:null,god:null,name:''}});
   if($('startsolo'))$('startsolo').onclick=()=>mutate(GID,T=>{if(T.status!=='lobby'||T.host!==ME)return false;setupGame(T)});
   if($('startdraft'))$('startdraft').onclick=()=>mutate(GID,T=>{if(T.status!=='lobby'||T.host!==ME||!T.seats.every(x=>x.uid))return false;
-    T.seats.forEach(x=>x.god=null);T.draftOrder=[...Array(T.n).keys()].sort(()=>Math.random()-.5);T.draftPos=0;T.status='draft'});
+    T.seats.forEach(x=>x.god=null);T.map=pickMap(T);T.seed=Math.floor(Math.random()*1e9);T.draftOrder=[...Array(T.n).keys()].sort(()=>Math.random()-.5);T.draftPos=0;T.status='draft'});
+  if($('remap'))$('remap').onclick=()=>mutate(GID,T=>{if(T.status!=='draft'||T.host!==ME||T.draftPos>0)return false;const cur=T.map;let m=cur;if(!T.mapPick||T.mapPick==='random'){const others=MAPS.filter(x=>x.id!==cur);m=others[Math.floor(Math.random()*others.length)].id}T.map=m;T.seed=Math.floor(Math.random()*1e9)});
   app.querySelectorAll('[data-god]').forEach(b=>b.onclick=e=>{e.stopPropagation();const k=b.dataset.god;
     mutate(GID,T=>{if(T.status!=='draft')return false;const s=T.draftOrder[T.draftPos];if(!iControl(T,s))return false;if(T.seats.some(x=>x.god===k))return false;
       T.seats[s].god=k;T.draftPos++;
@@ -252,7 +263,7 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
     const p=M.pos[i],t=ctype(S,i),c=S.B[i];const rr=i===0?M.r*1.7:M.r;
     const fill=t==='sumeru'?'var(--goldtint)':t==='temple'?'var(--temple)':terr(S,i)==='deep'?'var(--deep)':t==='forest'?'var(--forest)':t==='plain'?'var(--plain)':t==='water'?'var(--water)':'var(--surface)';
     const oc=c.t>0&&c.o>=0?SEATC(c.o):(t==='city'?SEATC(citySeat(i)):'var(--line)');
-    const tt=terr(S,i);const lab=tt==='city'?GOD[godOf(S,citySeat(i))].name.replace(/^(พระแม่|พระ|ท้าว)/,''):TNAME[tt];
+    const tt=terr(S,i);const cs=tt==='city'?S.seats[citySeat(i)]:null;const lab=tt==='city'?(cs.god?GOD[cs.god].name.replace(/^(พระแม่|พระ|ท้าว)/,''):(cs.name||'ที่นั่ง '+(citySeat(i)+1))):TNAME[tt];
     const ms=MK.filter(k=>S.M[k]&&S.M[k].c===i);
     const cls=['cell',clickable.includes(i)?'click':'',selected===i?'sel':''].join(' ');
     const fs=Math.max(12,Math.min(15,rr*0.36));
