@@ -243,6 +243,43 @@ function mapLayout(S){
   const r=Math.max(24,Math.min(44,ring*0.36));
   return LAYOUT_CACHE[key]={W,H,cx,cy,pos,bend,r};
 }
+function showArrows(){try{return localStorage.getItem('hmp-arrows')!=='0'}catch(e){return true}}
+/* ลูกศรการเคลื่อนไหว: ศึกที่รอฝ่ายรับ + การกระทำล่าสุด 6 อย่าง (1 = ล่าสุด) */
+function arrowsSVG(S,M){
+  const rad=i=>i===0?M.r*1.7:M.r;let out='';
+  const arrow=(f,t,col,op,w,dash,label,cls)=>{const a=M.pos[f],b=M.pos[t];if(!a||!b)return '';
+    const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;
+    const x1=a.x+ux*(rad(f)+4),y1=a.y+uy*(rad(f)+4),x2=b.x-ux*(rad(t)+8),y2=b.y-uy*(rad(t)+8);
+    const cx=(x1+x2)/2-uy*18,cy=(y1+y2)/2+ux*18;
+    const hx=x2-ux*16,hy=y2-uy*16,px=-uy*9,py=ux*9;
+    return `<g class="arw ${cls||''}" opacity="${op}"><path d="M${x1.toFixed(1)} ${y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${(hx).toFixed(1)} ${(hy).toFixed(1)}" fill="none" stroke="var(--surface)" stroke-width="${w+5}" stroke-linecap="round"/>
+      <path d="M${x1.toFixed(1)} ${y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${(hx).toFixed(1)} ${(hy).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" ${dash?`stroke-dasharray="${dash}"`:''}/>
+      <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>
+      ${label?`<g><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${cx.toFixed(1)}" y="${(cy+5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">${label}</text></g>`:''}</g>`};
+  const tr=(S.trail||[]).slice().reverse();const N=tr.length;
+  tr.forEach((x,j)=>{const idx=N-j;const op=idx===1?1:Math.max(.3,1-idx*.15);const col=SEATC(x.s);
+    if(x.k==='rec'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><circle cx="${p.x-rad(x.t)*0.8}" cy="${p.y+rad(x.t)*0.8}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x-rad(x.t)*0.8}" y="${p.y+rad(x.t)*0.8+5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">+${x.n}</text></g>`;return}
+    if(x.k==='vaj'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><text x="${p.x+rad(x.t)*0.85}" y="${p.y+rad(x.t)*0.95}" text-anchor="middle" font-size="22">⚡</text></g>`;return}
+    if(x.f==null)return;
+    if(S.battle&&x.k==='atk'&&idx===1)return;
+    out+=arrow(x.f,x.t,col,op,x.k==='atk'?6:4,x.k==='ret'?'7 6':'',x.k==='atk'?'⚔':String(idx));
+  });
+  if(S.battle){const b=S.battle;out+=arrow(b.from,b.to,SEATC(b.a),1,7,'','⚔','live');
+    const p=M.pos[b.to],r=rad(b.to);
+    out+=`<g class="atkbadge"><circle cx="${p.x}" cy="${p.y}" r="${r+7}" fill="none" stroke="${SEATC(b.a)}" stroke-width="4" class="pulse"/>
+      <rect x="${p.x-34}" y="${p.y+r-4}" width="68" height="26" rx="13" fill="${SEATC(b.a)}" stroke="var(--surface)" stroke-width="2"/>
+      <text x="${p.x}" y="${p.y+r+14}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">⚔ ${b.n}${b.mount?' '+MOUNTS[b.mount].ic:''}</text></g>`}
+  return out;
+}
+function trailText(S,x){const g=gname(S,x.s);
+  if(x.k==='rec')return `${g} เกณฑ์ทัพ +${x.n} ที่${cname(S,x.t)}`;
+  if(x.k==='vaj')return `${g} ฟาดวชิราวุธที่${cname(S,x.t)}`;
+  if(x.k==='ret')return `${g} ถอย ${x.n} ตัว ${cname(S,x.f)} → ${cname(S,x.t)}`;
+  if(x.k==='atk')return `${g} บุก ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${cname(S,x.f)} → ${cname(S,x.t)}${x.w==null?' · รอฝ่ายรับ':x.w?' · ชนะ':' · แพ้'}`;
+  return `${g} เดิน ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${cname(S,x.f)} → ${cname(S,x.t)}`}
+function trailBox(S){const tr=S.trail||[];if(!tr.length&&!S.battle)return '';const on=showArrows();
+  return `<div class="trailbox small"><div class="row" style="justify-content:space-between"><b>ความเคลื่อนไหวล่าสุด</b><label class="row small"><input type="checkbox" id="arrows" ${on?'checked':''}> แสดงลูกศรบนแผนที่</label></div>
+    <ol>${tr.map((x,i)=>`<li><span class="ordno sm" style="background:${SEATC(x.s)}">${x.k==='atk'?'⚔':x.k==='rec'?'+':x.k==='vaj'?'⚡':i+1}</span>${esc(trailText(S,x))}${x.r!==S.round?` <span class="muted">(รอบ ${x.r})</span>`:''}</li>`).join('')}</ol></div>`}
 function mapSVG(S,clickable,selected,hl){hl=hl||[];
   const M=mapLayout(S),n=L(S);
   let lines='';
@@ -276,7 +313,7 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
       ${i===0?`<text x="${p.x}" y="${p.y+rr*0.55}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Anuphan,sans-serif">2 คะแนน</text>`:''}
     </g>`;
   }
-  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่">${lines}${cells}</svg>`;
+  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่">${lines}${cells}${showArrows()?arrowsSVG(S,M):''}</svg>`;
 }
 
 const mapInfoAttr=S=>`data-info="map:${esc(mapOf(S).id)}" data-tip="${esc(mapOf(S).desc)}" aria-haspopup="dialog"`;
@@ -298,13 +335,15 @@ function renderGame(){
   <div class="stack">
   ${tutBox()}
   ${phaseBox(S)}
-  <div class="panel mapbox">${mapSVG(S,clickable,selected,(TUT&&GID==='tut'&&tutStep()&&tutStep().hl)||[])}</div>
+  <div class="panel mapbox">${mapSVG(S,clickable,selected,(TUT&&GID==='tut'&&tutStep()&&tutStep().hl)||[])}${trailBox(S)}</div>
   <div class="game">
     <div class="stack">${statusBox(S,act,mine)}${lastBattleBox(S)}${myTurn?shopBox(S,act):''}${seatHelpBox(S)}</div>
     <div class="stack">${playersBox(S,act)}<div class="panel"><h3>บันทึก</h3><ul class="log">${S.log.map(t=>`<li>${richLog(t)}</li>`).join('')}</ul></div>${rulesRef()}</div>
   </div></div>`;
   document.getElementById('back').onclick=showLobby;
   wireGame(S,act);wireTut();wireId();
+  {const ob=document.getElementById('openboard');if(ob)ob.onclick=()=>openBoard(G)}
+  {const a=document.getElementById('arrows');if(a)a.onchange=()=>{try{localStorage.setItem('hmp-arrows',a.checked?'1':'0')}catch(e){}render()}}
   {const $=id=>document.getElementById(id);
    if($('delres'))$('delres').onclick=async()=>{if(!confirmTwice($('delres')))return;try{await STORE.del(GID)}catch(e){toast('ลบไม่สำเร็จ')}showLobby()};
    if($('cpme'))$('cpme').onclick=()=>copyText(ME,'คัดลอกรหัสแล้ว ส่งให้เพื่อนในห้องได้เลย');
@@ -467,13 +506,54 @@ const SUN_BIG=`<svg class="orbsvg" viewBox="0 0 120 120" aria-hidden="true"><cir
 const MOON_BIG=`<svg class="orbsvg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="40" fill="#F4ECCB" fill-opacity=".12"/><path d="M72 22a38 38 0 1 0 26 64A32 32 0 0 1 72 22z" fill="#F4ECCB"/></svg>`;
 function skyShow(S){
   const day=S.moon==='wax';const old=document.getElementById('sky');if(old)old.remove();
-  const d=document.createElement('div');d.id='sky';d.className='sky '+(day?'day':'night');d.setAttribute('role','status');
-  d.innerHTML=`${day?'':'<div class="stars" aria-hidden="true"></div>'}<div class="skyorb">${day?SUN_BIG:MOON_BIG}</div>
-    <div class="skytxt"><b>${day?'กลางวัน':'กลางคืน'}</b><span>รอบ ${S.round}</span><small>${day?'จบรอบนี้ วัดที่ยึดอยู่ให้บุญ +1':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ'}</small></div><small class="skytap">แตะเพื่อปิด</small>`;
+  const d=document.createElement('div');d.id='sky';d.className='sky withboard '+(day?'day':'night');d.setAttribute('role','dialog');d.setAttribute('aria-label','สรุปคะแนนจบรอบ');
+  const snap=S.snap&&S.snap.r===S.round-1?S.snap:null;
+  d.innerHTML=`${day?'':'<div class="stars" aria-hidden="true"></div>'}<div class="skyhead"><div class="skyorb sm">${day?SUN_BIG:MOON_BIG}</div>
+    <div class="skytxt"><b>${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b><small>${day?'ฝ่ายบุกไม่มีโบนัส · จบรอบนี้วัดให้บุญ +1 · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 · <b>จบรอบนี้ตัดสินผู้ชนะ!</b>'}</small></div></div>
+    ${boardHTML(S,snap)}<button class="primary skyclose" id="skyclose">ไปต่อ</button>`;
   document.body.appendChild(d);
   const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),450)};
-  d.onclick=close;setTimeout(close,3400);
+  document.getElementById('skyclose').onclick=e=>{e.stopPropagation();close()};
+  d.onclick=e=>{if(e.target===d)close()};
+  animateBoard(d);
 }
+/* ตารางคะแนน: snap = คะแนนตอนจบรอบ (มีอันดับรอบก่อน ใช้ทำแอนิเมชันเลื่อนอันดับ) ถ้าไม่มีใช้คะแนนสด */
+function boardHTML(S,snap){
+  const n=S.n;const sc=snap?snap.sc:[...Array(n).keys()].map(s=>[S.P[s].vp,tempVP(S,s)]);
+  const tot=s=>sc[s][0]+sc[s][1];
+  const rank=snap?snap.rank:[...Array(n).keys()].sort((a,b)=>tot(b)-tot(a)||sc[b][0]-sc[a][0]||a-b);
+  const prev=snap&&snap.prev&&snap.prev.length===n?snap.prev:rank;
+  const prevSc=snap&&snap.prevSc;
+  const T=S.target;const best=tot(rank[0]);const mine=mySeats(S);
+  const nightNext=S.moon==='wane';
+  const rows=rank.map((s,i)=>{const [p,t]=sc[s];const left=Math.max(0,T-tot(s));const was=prev.indexOf(s);const mv=was-i;
+    const gain=prevSc?tot(s)-(prevSc[s][0]+prevSc[s][1]):0;
+    const danger=left<=2;const lord=snap&&snap.lords&&snap.lords.includes(s);
+    const pw=Math.min(100,p/T*100),tw=Math.min(100-pw,t/T*100);
+    return `<div class="brow ${danger?'danger':''} ${mine.includes(s)?'me':''}" data-from="${was}" data-to="${i}">
+      <span class="bpos" data-final="${i===0?'👑':i+1}">${was===0?'👑':was+1}</span>
+      <div class="bmain"><div class="bname"><span class="dot" style="background:${SEATC(s)}"></span><b>${esc(gname(S,s))}</b> <span class="bwho">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
+        ${mv>0?`<span class="bmv up">▲${mv}</span>`:mv<0?`<span class="bmv down">▼${-mv}</span>`:''}${lord?'<span class="btag">ครองแดน +1</span>':''}</div>
+        <div class="bbar" aria-hidden="true"><span class="bp" style="width:${pw}%;background:${SEATC(s)}"></span><span class="bt" style="width:${tw}%;--c:${SEATC(s)}"></span></div>
+        <div class="bsub">ถาวร <b>${p}</b> · ชั่วคราว <b>${t}</b>${gain?` · รอบนี้ ${gain>0?'+':''}${gain}`:''}</div></div>
+      <div class="bscore"><b>${tot(s)}</b><small>${left?`อีก ${left}`:'ถึงเป้า!'}</small></div></div>`}).join('');
+  const lead=rank[0];const leadLeft=Math.max(0,T-best);
+  const warn=leadLeft===0?`⚠ ${esc(gname(S,lead))} ถึง ${T} คะแนนแล้ว${nightNext?' ถ้ารักษาไว้จนจบกลางคืนนี้ = ชนะ! รุมด่วน':' จบกลางคืนรอบหน้ายังถืออยู่ = ชนะ'}`
+    :leadLeft<=2?`⚠ ${esc(gname(S,lead))} ขาดอีกแค่ ${leadLeft} คะแนน ระวังไว้`:`เป้าหมาย ${T} คะแนน · ผู้ชนะตัดสินตอนจบรอบกลางคืน`;
+  return `<div class="boardcard"><div class="bhead"><b>ตารางคะแนน</b><span class="blegend"><span class="lg1"></span>ถาวร <span class="lg2"></span>ชั่วคราว (วัด/เขา หายได้ถ้าโดนยึด)</span></div>
+    <div class="board" style="height:${n*62}px">${rows}</div><div class="bwarn ${leadLeft<=2?'hot':''}">${warn}</div></div>`;
+}
+function animateBoard(root){
+  const rows=[...root.querySelectorAll('.brow')];
+  rows.forEach(r=>{r.style.transform=`translateY(${(+r.dataset.from)*62}px)`});
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(()=>rows.forEach(r=>{r.style.transform=`translateY(${(+r.dataset.to)*62}px)`;const b=r.querySelector('.bpos');if(b)b.textContent=b.dataset.final;if(r.dataset.from!==r.dataset.to)r.classList.add('moved')}),reduce?0:1100);
+}
+function openBoard(S){const old=document.getElementById('sky');if(old)old.remove();
+  const d=document.createElement('div');d.id='sky';d.className='sky withboard plain';d.setAttribute('role','dialog');
+  d.innerHTML=`${boardHTML(S,null)}<button class="primary skyclose" id="skyclose">ปิด</button>`;document.body.appendChild(d);
+  const close=()=>{d.classList.add('out');setTimeout(()=>d.remove(),300)};document.getElementById('skyclose').onclick=close;d.onclick=e=>{if(e.target===d)close()};
+  d.querySelectorAll('.brow').forEach(r=>{r.style.transform=`translateY(${(+r.dataset.to)*62}px)`;const b=r.querySelector('.bpos');if(b)b.textContent=b.dataset.final})}
 function phaseBox(S){
   if(S.status!=='play')return '';
   const day=S.moon==='wax';
@@ -481,7 +561,7 @@ function phaseBox(S){
   return `<div class="phase ${day?'day':'night'}" role="status">${day?SUN:MOON}
     <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b>
       <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ · <b>จบรอบนี้ตัดสินผู้ชนะ</b> ใครถึง '+S.target+' คะแนนชนะ'}</div></div>
-    <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้</div>
+    <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้<br><button class="ghost small" id="openboard">📊 ตารางคะแนน</button></div>
     <div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จนจบรอบ ได้ +1 ถาวร) · ตอนนี้: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))}</span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
 }
 function playersBox(S,act){
@@ -553,7 +633,7 @@ function doRecruit(cell){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'recruit'))return false;if(!recruitTargets(T,s).includes(cell))return false;
     const room=cell===cityOf(s)?99:cap(T,s,cell)-(T.B[cell].o===s?T.B[cell].t:0);
     const n=Math.min(recruitAmt(T,s,cell),reserve(T,s),room);if(n<=0)return false;
-    placeTroops(T,s,cell,n);markAction(T,s,'recruit');log(T,`${gname(T,s)} เกณฑ์ทัพ ${n} ตัว ลง${cname(T,cell)}`);advance(T)})}
+    placeTroops(T,s,cell,n);trail(T,{k:'rec',s,t:cell,n});markAction(T,s,'recruit');log(T,`${gname(T,s)} เกณฑ์ทัพ ${n} ตัว ลง${cname(T,cell)}`);advance(T)})}
 function doMerit(kind){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'merit'))return false;const p=T.P[s];const g=meritAmt(T,s);
     if(has(T,s,'atone')){p.merit+=g;p.sin=Math.max(0,p.sin-1);log(T,`${gname(T,s)} ทำบุญ +${g} และไถ่บาป`)}
@@ -584,12 +664,14 @@ function doMove(){
       if(card==null||!availCards(T,s).includes(card))return false;
       removeTroops(T,src,n);if(takeM)T.M[takeM].c=-1;
       T.battle={a:s,d:T.B[dst].o,to:dst,from:src,n,mount:takeM,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
+      trail(T,{k:'atk',s,f:src,t:dst,n,m:takeM||null});
       log(T,`${gname(T,s)} ยกทัพ ${n} ตัวบุก${cname(T,dst)} ของ${gname(T,T.B[dst].o)}`);
       if(!c.t&&m&&!takeM)sendMountsHome(T,src,s);
       return;
     }
     if(T.B[dst].o===s&&T.B[dst].t+n>cap(T,s,dst))return false;
     removeTroops(T,src,n);placeTroops(T,s,dst,n);if(takeM)T.M[takeM].c=dst;
+    trail(T,{k:'move',s,f:src,t:dst,n,m:takeM||null});
     log(T,`${gname(T,s)} เดินทัพ ${n} ตัว ไป${cname(T,dst)}`);
     if(bonus){T.follow={seat:s,vajra:wasVajra,bonusFrom:null};if(!T.follow.vajra){T.follow=null;advance(T)}}
     else computeFollow(T,s,true,null);
@@ -605,7 +687,7 @@ function doRetreat(cell){ui={mode:null};
 }
 function doVajra(cell){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!T.follow||T.follow.seat!==s||!T.follow.vajra||!iControl(T,s))return false;if(!vajraTargets(T,s).includes(cell))return false;
-    const victim=T.B[cell].o;removeTroops(T,cell,1);T.P[s].f.vajra=true;log(T,`${gname(T,s)} ฟาดวชิราวุธ ${gname(T,victim)} เสีย 1 ตัวที่${cname(T,cell)}`);
+    const victim=T.B[cell].o;trail(T,{k:'vaj',s,t:cell,n:1});removeTroops(T,cell,1);T.P[s].f.vajra=true;log(T,`${gname(T,s)} ฟาดวชิราวุธ ${gname(T,victim)} เสีย 1 ตัวที่${cname(T,cell)}`);
     T.follow.vajra=false;if(T.follow.bonusFrom===null){T.follow=null;advance(T)}})}
 function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!isGod(T,s,'narai')||T.P[s].f.avatar)return false;if(!T.M[k]||T.M[k].o!==s)return false;

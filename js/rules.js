@@ -283,6 +283,7 @@ function resolveBattle(S,defCard){
   }
   for(const s of [A,D]){if(isGod(S,s,'yama')&&deaths>0){const grpM=s===A?mA:mD;const g=deaths*(grpM==='buffalo'?2:1);S.P[s].merit+=g;notes.push(`ยมโลก +${g} บุญ`)}}
   const ob=x=>x.map(([l,v])=>({l,v}));
+  if(S.trail&&S.trail[0]&&S.trail[0].k==='atk'&&S.trail[0].t===cell)S.trail[0].w=aWin?1:0;
   S.last={cell,A,D,ac:b.ac,dc:defCard,sA,sD,pA:ob(pA),pD:ob(pD),kA:ob(kA),kD:ob(kD),aWin,lossA,lossD,round:S.round,retreat:null};
   log(S,`ศึก${cname(S,cell)}: ${gname(S,A)} ${cA.n} พลัง ${sA} ต่อ ${gname(S,D)} ${cD.n} พลัง ${sD} → ${gname(S,W)} ชนะ · บุกเสีย ${lossA} รับเสีย ${lossD}${notes.length?' ('+notes.join(', ')+')':''}${aWin&&survA===0?' · ฝ่ายบุกไม่เหลือทหาร ไม่ได้คะแนน':''}`);
   S.battle=null;
@@ -328,8 +329,10 @@ function battleMods(S,A,D,nA,nD,mA,mD,cell){
   if(inHome(S,mD,cell))D_(MOUNTS[mD].name+'ในถิ่น',1);
   return {a,d,note};
 }
+/* ร่องรอยการเคลื่อนไหวล่าสุด ให้ทุกคนเห็นบนแผนที่ว่าใครเดินจากไหนไปไหน */
+function trail(S,o){S.trail=S.trail||[];S.seq=(S.seq||0)+1;S.trail.unshift(Object.assign({r:S.round,q:S.seq},o));if(S.trail.length>6)S.trail.length=6}
 function doRetreatApply(S,s,j,n,m,from){
-  placeRetreat(S,s,j,n,m);
+  placeRetreat(S,s,j,n,m);trail(S,{k:'ret',s,f:from,t:j,n});
   if(S.last)S.last.retreat={s,to:j};
   log(S,`${gname(S,s)} ถอย ${n} ตัว จาก${cname(S,from)} ไป${cname(S,j)}`);
 }
@@ -367,6 +370,9 @@ function rulesLand(S,s){const th=templesHeld(S,s);return th>=2||holdsSumeru(S,s)
 function endRound(S){
   const lords=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));
   lords.forEach(s=>S.P[s].vp+=1);
+  /* บันทึกคะแนนตอนจบรอบ ไว้แสดงตารางคะแนนและการเลื่อนอันดับ */
+  {const sc=[...Array(S.n).keys()].map(s=>[S.P[s].vp,tempVP(S,s)]);const rank=[...Array(S.n).keys()].sort((a,b)=>(sc[b][0]+sc[b][1])-(sc[a][0]+sc[a][1])||sc[b][0]-sc[a][0]||a-b);
+   S.snap={r:S.round,moon:S.moon,sc,rank,prev:S.snap?S.snap.rank:null,prevSc:S.snap?S.snap.sc:null,lords}}
   if(lords.length)log(S,`ครองแดน +1 ถาวร: ${lords.map(s=>gname(S,s)).join(', ')}`);
   const scores=[...Array(S.n).keys()].map(s=>total(S,s));
   const best=Math.max(...scores);
