@@ -330,6 +330,12 @@ function battleMods(S,A,D,nA,nD,mA,mD,cell){
   return {a,d,note};
 }
 /* ร่องรอยการเคลื่อนไหวล่าสุด ให้ทุกคนเห็นบนแผนที่ว่าใครเดินจากไหนไปไหน */
+/* ตรวจข้อมูลก่อนบันทึก: Firestore ไม่รับ undefined และอาร์เรย์ซ้อนอาร์เรย์ */
+function checkSavable(o,path){path=path||'S';
+  if(o===undefined)throw new Error('ค่าว่าง (undefined) ที่ '+path);
+  if(Array.isArray(o)){o.forEach((x,i)=>{if(Array.isArray(x))throw new Error('อาร์เรย์ซ้อนที่ '+path+'['+i+']');checkSavable(x,path+'['+i+']')});return}
+  if(o&&typeof o==='object')for(const k in o)checkSavable(o[k],path+'.'+k);
+}
 function trail(S,o){S.trail=S.trail||[];S.seq=(S.seq||0)+1;S.trail.unshift(Object.assign({r:S.round,q:S.seq},o));if(S.trail.length>6)S.trail.length=6}
 function doRetreatApply(S,s,j,n,m,from){
   placeRetreat(S,s,j,n,m);trail(S,{k:'ret',s,f:from,t:j,n});
@@ -372,7 +378,9 @@ function endRound(S){
   lords.forEach(s=>S.P[s].vp+=1);
   /* บันทึกคะแนนตอนจบรอบ ไว้แสดงตารางคะแนนและการเลื่อนอันดับ */
   {const sc=[...Array(S.n).keys()].map(s=>[S.P[s].vp,tempVP(S,s)]);const rank=[...Array(S.n).keys()].sort((a,b)=>(sc[b][0]+sc[b][1])-(sc[a][0]+sc[a][1])||sc[b][0]-sc[a][0]||a-b);
-   S.snap={r:S.round,moon:S.moon,sc,rank,prev:S.snap?S.snap.rank:null,prevSc:S.snap?S.snap.sc:null,lords}}
+   const old=S.snap&&S.snap.vp?S.snap:null;
+   /* Firestore เก็บอาร์เรย์ซ้อนอาร์เรย์ไม่ได้ จึงแยกเป็น vp กับ tp */
+   S.snap={r:S.round,moon:S.moon,vp:sc.map(x=>x[0]),tp:sc.map(x=>x[1]),rank,prev:old?old.rank:null,pvp:old?old.vp:null,ptp:old?old.tp:null,lords}}
   if(lords.length)log(S,`ครองแดน +1 ถาวร: ${lords.map(s=>gname(S,s)).join(', ')}`);
   const scores=[...Array(S.n).keys()].map(s=>total(S,s));
   const best=Math.max(...scores);

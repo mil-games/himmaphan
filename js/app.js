@@ -5,7 +5,7 @@ const localGames={};let localSubs=[];
 function fireLocal(){localSubs.forEach(f=>f())}
 async function createGame(data){return STORE.create(data)}
 async function mutate(gid,fn){
-  if(isTut(gid)){const S=clone(localGames[gid]);let res;try{res=fn(S)}catch(e){console.error(e);toast('เกิดข้อผิดพลาด: '+(e&&e.message||e));render();return false}if(res===false){render();return false}localGames[gid]=S;fireLocal();return true}
+  if(isTut(gid)){const S=clone(localGames[gid]);let res;try{res=fn(S)}catch(e){console.error(e);toast('เกิดข้อผิดพลาด: '+(e&&e.message||e));render();return false}if(res===false){render();return false}try{checkSavable(S)}catch(e){console.error(e);toast('ข้อมูลผิดรูปแบบ: '+e.message)}localGames[gid]=S;fireLocal();return true}
   let r;
   try{r=await STORE.mutate(gid,fn)}catch(e){console.error(e);r={ok:false,why:'error',detail:String(e&&e.message||e).slice(0,80)}}
   if(!r.ok)setTimeout(render,0);
@@ -522,11 +522,12 @@ function skyShow(S){
 }
 /* ตารางคะแนน: snap = คะแนนตอนจบรอบ (มีอันดับรอบก่อน ใช้ทำแอนิเมชันเลื่อนอันดับ) ถ้าไม่มีใช้คะแนนสด */
 function boardHTML(S,snap){
-  const n=S.n;const sc=snap?snap.sc:[...Array(n).keys()].map(s=>[S.P[s].vp,tempVP(S,s)]);
+  const n=S.n;if(snap&&!snap.vp)snap=null;
+  const sc=snap?snap.vp.map((v,i)=>[v,snap.tp[i]]):[...Array(n).keys()].map(s=>[S.P[s].vp,tempVP(S,s)]);
   const tot=s=>sc[s][0]+sc[s][1];
   const rank=snap?snap.rank:[...Array(n).keys()].sort((a,b)=>tot(b)-tot(a)||sc[b][0]-sc[a][0]||a-b);
   const prev=snap&&snap.prev&&snap.prev.length===n?snap.prev:rank;
-  const prevSc=snap&&snap.prevSc;
+  const prevSc=snap&&snap.pvp?snap.pvp.map((v,i)=>[v,snap.ptp[i]]):null;
   const T=S.target;const best=tot(rank[0]);const mine=mySeats(S);
   const nightNext=S.moon==='wane';
   const rows=rank.map((s,i)=>{const [p,t]=sc[s];const left=Math.max(0,T-tot(s));const was=prev.indexOf(s);const mv=was-i;

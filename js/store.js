@@ -21,7 +21,7 @@ function localStore() {
     async mutate(id, fn) {
       if (!games[id]) return { ok: false, why: 'missing' };
       const S = clone(games[id]); if (fn(S) === false) return { ok: false };
-      S.upd = Date.now(); S.uids = uidsOf(S); games[id] = S; fire(); return { ok: true };
+      S.upd = Date.now(); S.uids = uidsOf(S); if (window.checkSavable) window.checkSavable(S); games[id] = S; fire(); return { ok: true };
     },
     watchGame(id, cb) { const k = ++sid; const f = () => cb(games[id] ? clone(games[id]) : null); subs.set(k, f); f(); return () => subs.delete(k); },
     watchMine(cb) { const k = ++sid; const f = () => cb(Object.entries(games).map(([id, d]) => ({ id, d: clone(d) }))); subs.set(k, f); f(); return () => subs.delete(k); },
@@ -82,6 +82,7 @@ async function firebaseStore() {
           const S = clone(snap.data());
           if (fn(S) === false) return false;
           S.upd = Date.now(); S.uids = uidsOf(S);
+          if (window.checkSavable) window.checkSavable(S);
           t.set(ref(id), S); return true;
         });
         return ok === true ? { ok: true } : { ok: false, why: ok === 'missing' ? 'missing' : undefined };
