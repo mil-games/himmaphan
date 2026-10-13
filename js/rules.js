@@ -79,22 +79,25 @@ const SEATC=i=>`var(--s${i})`;
 /* ===================== RULES ===================== */
 /* แผนที่ v2: ผู้เล่นละ 6 ช่อง เรียงเป็นบล็อก
    k=0 เมือง · 1 ป่า · 2 วัด · 3 ทุ่ง (วงนอก)  k=4 ริมน้ำ (ทะเลสีทันดรล้อมเขาพระสุเมรุ) · 5 ป่าลึก (วงใน ป่าลึกติดเขาพระสุเมรุ) */
-const SECT=6;
+const SECT=8;
 const L=S=>SECT*S.n;
 const TNAME={city:'เมือง',forest:'ป่า',temple:'วัด',plain:'ทุ่ง',water:'ริมน้ำ',deep:'ป่าลึก',sumeru:'เขาพระสุเมรุ',royal:'วัดหลวง'};
 const kOf=i=>(i-1)%SECT;
-/* แผนที่ 7 แบบ ทุกแบบสมมาตรต่อผู้เล่น จึงแฟร์ทุกที่นั่ง
+/* แผนที่ 7 แบบ (รุ่น 3: ผู้เล่นละ 8 ช่อง) ทุกแบบสมมาตรต่อผู้เล่น จึงแฟร์ทุกที่นั่ง
+   ช่องในบล็อก k: 0 เมือง · 1 ป่านอก · 2 ทุ่งนอก · 3 ป่าใน · 4 ทุ่งใน · 5 วัด · 6 ริมน้ำ · 7 ป่าลึก
+   ระยะจากเมือง: วัดของตัวเอง 3 ก้าว · วัดเพื่อนบ้าน 3 ก้าวขึ้นไป · เขาพระสุเมรุและวัดหลวง 5 ก้าวขึ้นไป
    edges: [k1, dt, k2] = ช่อง k1 ของผู้เล่น t ติดกับช่อง k2 ของผู้เล่น t+dt
    sumK: ช่องที่ติดเขาพระสุเมรุ · royK: ช่องที่ติดวัดหลวง */
-const BASE_EDGES=[[0,0,1],[3,1,0],[1,0,2],[1,0,4],[2,0,3],[2,0,5],[4,0,5],[5,1,4]];
+const T8=['city','forest','plain','forest','plain','temple','water','deep'];
+const BASE_EDGES=[[0,0,1],[0,0,2],[1,0,3],[2,0,4],[3,0,5],[4,0,5],[3,0,6],[5,0,7],[6,0,7],[2,1,1],[7,1,6]];
 const MAPS=[
- {id:'classic',name:'วงแหวนหิมพานต์',desc:'แผนที่มาตรฐาน วัดอยู่วงนอก ทางไปเขาพระสุเมรุต้องผ่านป่าลึก',types:['city','forest','temple','plain','water','deep'],edges:BASE_EDGES,sumK:[5],royK:[5]},
- {id:'sea',name:'ทะเลสีทันดร',desc:'ริมน้ำทุกช่องต่อกันเป็นวง เดินอ้อมไปตีเพื่อนบ้านทางน้ำได้เร็ว',types:['city','forest','temple','plain','water','deep'],edges:[...BASE_EDGES,[4,1,4]],sumK:[5],royK:[5]},
- {id:'grove',name:'ทางลัดป่าลึก',desc:'ป่าหน้าเมืองเชื่อมตรงไปป่าลึก ถึงเขาพระสุเมรุเร็วขึ้น 1 ก้าว ตรงกลางแย่งกันดุ',types:['city','forest','temple','plain','water','deep'],edges:[...BASE_EDGES,[1,0,5]],sumK:[5],royK:[5]},
- {id:'rivertemple',name:'วัดริมฝั่ง',desc:'วัดย้ายเข้าไปอยู่วงใน ติดป่าลึกของเพื่อนบ้าน วัดถูกแย่งง่ายขึ้นมาก',types:['city','forest','water','plain','temple','deep'],edges:BASE_EDGES,sumK:[5],royK:[5]},
- {id:'lonely',name:'เขาโดดเดี่ยว',desc:'เขาพระสุเมรุติดกับวัดหลวงเท่านั้น ต้องยึดวัดหลวงก่อนถึงจะขึ้นเขาได้',types:['city','forest','temple','plain','water','deep'],edges:BASE_EDGES,sumK:[],royK:[5]},
- {id:'border',name:'ชายแดนเปิด',desc:'ทุ่งติดกับป่าของเพื่อนบ้านด้วย มีทางบุกเข้าบ้านกันมากขึ้น',types:['city','forest','temple','plain','water','deep'],edges:[...BASE_EDGES,[3,1,1]],sumK:[5],royK:[5]},
- {id:'pier',name:'ท่าน้ำหน้าเมือง',desc:'เมืองมีท่าน้ำต่อตรงไปริมน้ำ ออกจากเมืองไปวงในได้ทันที',types:['city','forest','temple','plain','water','deep'],edges:[...BASE_EDGES,[0,0,4]],sumK:[5],royK:[5,4]}
+ {id:'classic',name:'วงแหวนหิมพานต์',desc:'แผนที่มาตรฐาน วัดอยู่ห่างเมือง 3 ก้าว ทางไปเขาพระสุเมรุต้องผ่านป่าลึก',types:T8,edges:BASE_EDGES,sumK:[7],royK:[7]},
+ {id:'sea',name:'ทะเลสีทันดร',desc:'ริมน้ำทุกช่องต่อกันเป็นวง เดินอ้อมไปตีเพื่อนบ้านทางน้ำได้',types:T8,edges:[...BASE_EDGES,[6,1,6]],sumK:[7],royK:[7]},
+ {id:'border',name:'ชายแดนเปิด',desc:'ทุ่งนอกติดทุ่งในของเพื่อนบ้านด้วย วัดเพื่อนบ้านอยู่ใกล้แค่ 3 ก้าว บุกกันดุ',types:T8,edges:[...BASE_EDGES,[2,1,4]],sumK:[7],royK:[7]},
+ {id:'rivertemple',name:'วัดริมฝั่ง',desc:'วัดย้ายไปอยู่ริมน้ำวงใน ติดป่าลึกของเพื่อนบ้าน วัดถูกแย่งง่ายขึ้น',types:['city','forest','plain','forest','plain','water','temple','deep'],edges:BASE_EDGES,sumK:[7],royK:[7]},
+ {id:'lonely',name:'เขาโดดเดี่ยว',desc:'เขาพระสุเมรุติดกับวัดหลวงเท่านั้น ต้องยึดวัดหลวงก่อนถึงจะขึ้นเขาได้',types:T8,edges:BASE_EDGES,sumK:[],royK:[7]},
+ {id:'divide',name:'แม่น้ำแบ่งแดน',desc:'วงนอกไม่ติดกับเพื่อนบ้านเลย ต้องเดินเข้าวงในแล้วข้ามทางน้ำไปหากัน ช่วงแรกสงบ',types:T8,edges:[...BASE_EDGES.filter(e=>!(e[0]===2&&e[1]===1&&e[2]===1)),[6,1,6]],sumK:[7],royK:[7]},
+ {id:'dense',name:'ป่ารก',desc:'ทางในบ้านตัดกันไปมา เดินอ้อมหลบศึกได้หลายทาง',types:T8,edges:[...BASE_EDGES,[1,0,4],[2,0,3]],sumK:[7],royK:[7]}
 ];
 const MAPBY=Object.fromEntries(MAPS.map(m=>[m.id,m]));
 const mapOf=S=>MAPBY[S.map]||MAPS[0];
@@ -431,10 +434,10 @@ function endRound(S){
 }
 function pickMap(S){return (S.mapPick&&MAPBY[S.mapPick])?S.mapPick:MAPS[Math.floor(Math.random()*MAPS.length)].id}
 /* กระดานเปล่าสำหรับดูแผนที่ก่อนเลือกเทพ */
-function previewState(S){return {n:S.n,map:S.map,seed:S.seed,seats:S.seats,B:Array.from({length:SECT*S.n+2},(_,i)=>({o:i>0&&kOf(i)===0?citySeat(i):-1,t:0})),M:{}}}
+function previewState(S){return {n:S.n,map:S.map,seed:S.seed,seats:S.seats,B:Array.from({length:SECT*S.n+2},(_,i)=>({o:i>0&&i<=SECT*S.n&&kOf(i)===0?citySeat(i):-1,t:0})),M:{}}}
 function terrCount(S){const c={};for(let i=0;i<S.B.length;i++){const t=terr(S,i);c[t]=(c[t]||0)+1}return c}
 function setupGame(S){
-  S.mapV=2;S.seed=S.seed||Math.floor(Math.random()*1e9);const cells=SECT*S.n+2;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
+  S.mapV=3;S.seed=S.seed||Math.floor(Math.random()*1e9);const cells=SECT*S.n+2;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
   for(let s=0;s<S.n;s++){S.B[cityOf(s)]={o:s,t:4}}
   S.map=MAPBY[S.map]?S.map:pickMap(S);
   S.P=[...Array(S.n)].map((_,s)=>({merit:S.seats&&S.seats[s]&&S.seats[s].god==='ganesha'?6:3,sin:0,vp:0,pw:[],uc:[],used:[],f:{}}));
