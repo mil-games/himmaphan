@@ -43,7 +43,9 @@ function copyText(t,msg){const done=()=>toast(msg||'คัดลอกลิง�
 
 /* ===================== RENDER: LOBBY ===================== */
 let lobbyRows=[];
+function clearPops(){['battlepop','turnpop','sky'].forEach(i=>{const e=document.getElementById(i);if(e)e.remove()})}
 function showLobby(){
+  clearPops();
   try{document.title='ศึกเทพหิมพานต์'}catch(e){}
   TUT=null;
   view={name:'lobby'};GID=null;G=null;ui={mode:null};
@@ -133,21 +135,22 @@ function rulesRef(){return `<details class="panel" style="margin-top:20px"><summ
 <p>แต่ละรอบ ผู้เล่นผลัดกันทำคนละ 1 แอคชัน รวม 3 แอคชันต่อคน แอคชันเดียวกันใช้ได้ครั้งเดียวต่อรอบ: เกณฑ์ทัพ, เดินทัพ, ทำบุญ, ขอพร (ซื้อการ์ดพลังหรือพาหนะ)</p>
 <p>เดินเข้าช่องศัตรู = รบ ทั้งสองฝ่ายลงการ์ดคว่ำแล้วเปิดพร้อมกัน พลังรบ = ทหาร + พลังการ์ด + โบนัส พลังสูงกว่าชนะ เสมอฝ่ายรับชนะ ทั้งสองฝ่ายเสียทหารตามแต้มฆ่าในการ์ดของอีกฝ่าย ฝ่ายแพ้ที่เหลือรอดถอย 1 ช่อง ฝ่ายชนะเป็นคนเลือก บุกชนะและยังเหลือทหารได้ 1 คะแนนถาวรและบาป +1 บาปถึง 3 เสียทหาร 2 ตัว</p>
 <table class="ref"><tr><th>การ์ดรบ</th><th>พลัง</th><th>ฆ่า</th></tr>${CARD.map((c,i)=>`<tr><td>${c.n}${i===4?' (ตำราพิชัยสงคราม)':''}</td><td>${c.s}</td><td>${c.k}</td></tr>`).join('')}</table>
-<p>วัดมีจำนวนเท่าผู้เล่น +1 (รวมวัดหลวงข้างเขาพระสุเมรุ) ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน <b>ครองแดน</b>: จบรอบ ยึดวัด 2 แห่งขึ้นไปหรือเขาพระสุเมรุ ได้ +1 คะแนนถาวร กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 ผู้ชนะตัดสินตอน<b>จบรอบกลางคืน</b>เท่านั้น ใครถึงคะแนนเป้าตอนนั้นชนะ (จบรอบกลางวันยังไม่ชนะ อีกฝ่ายยังมีกลางคืนให้แย่งคืน)</p>
+<p>วัดมีจำนวนเท่าผู้เล่น +1 (รวมวัดหลวงข้างเขาพระสุเมรุ) ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน <b>ครองแดน</b>: จบรอบ<b>กลางคืน</b> ยึดวัด 2 แห่งขึ้นไปหรือเขาพระสุเมรุ ได้ +1 คะแนนถาวร กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 ผู้ชนะตัดสินตอน<b>จบรอบกลางคืน</b>เท่านั้น ใครถึงคะแนนเป้าตอนนั้นชนะ (จบรอบกลางวันยังไม่ชนะ อีกฝ่ายยังมีกลางคืนให้แย่งคืน)</p>
 <table class="ref"><tr><th>เทพ</th><th>ความสามารถ</th><th>พาหนะประจำองค์</th></tr>${GODS.map(g=>`<tr><td>${g.name}</td><td><b>${g.ab}</b>: ${g.txt} · ${g.weak}</td><td>${MOUNTS[g.mount].name}</td></tr>`).join('')}</table>
 <p class="muted">ฝ่ายบุกเห็นการ์ดของตัวเองระหว่างรอ หลังรบทุกคนเห็นการ์ดทั้งสองฝ่ายและที่มาของพลังรบในกล่อง "ศึกล่าสุด" ห้องที่ติ๊ก "เปิดการ์ด" ฝ่ายรับจะเห็นการ์ดฝ่ายบุกก่อนเลือกด้วย</p>
 </div></details>`}
 
 /* ===================== RENDER: GAME ===================== */
 function openGame(id){
+  clearPops();
   GID=id;view={name:'game'};ui={mode:null};G=null;
   try{history.replaceState(null,'','#g-'+id)}catch(e){}
   try{localStorage.setItem('hmp-last',id)}catch(e){}
   watchGame(id,S=>{
     if(!S){G=null;render();return}
-    const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
+    const firstCb=!G;const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
     if(prevTurn!==activeSeat(S))ui={mode:null};
-    noteNames(S);render();tutTick(S);checkPhase(S);endShow(S);
+    noteNames(S);render();tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
     if(S.status==='play'&&turnKey(S)!==prevKey)turnPopup(S,prevKey===null);
   });
   render();
@@ -334,8 +337,8 @@ function turnPopup(S,first){
   if(first&&!mine)return;
   clearTimeout(turnTimer);
   const show=()=>{
-    if(document.getElementById('sky')){turnTimer=setTimeout(show,400);return}
-    if(!G||turnKey(G)!==turnKey(S))return;
+    if(document.getElementById('sky')||document.getElementById('battlepop')){turnTimer=setTimeout(show,400);return}
+    if(!G||view.name!=='game'||turnKey(G)!==turnKey(S))return;
     const old=document.getElementById('turnpop');if(old)old.remove();
     const w=turnWhat(S,a);const d=document.createElement('div');d.id='turnpop';d.className='turnpop'+(mine?' mine':'');d.setAttribute('role','status');
     d.style.setProperty('--c',SEATC(a));
@@ -396,11 +399,12 @@ function statusBox(S,act,mine){
     const showAtk=S.openCards||S.solo;
     if(mine){return `<div class="banner warn"><h2>${esc(gname(S,b.a))} บุก${esc(cname(S,b.to))}!</h2><p class="small">ฝ่ายบุกมาด้วยทหาร ${b.n} ตัว${b.mount?' และ'+MOUNTS[b.mount].name:''} คุณตั้งรับด้วย ${S.B[b.to].t} ตัว เลือกการ์ดรบ</p>
       ${showAtk?`<p class="small"><b>ฝ่ายบุกลงการ์ด ${CARD[b.ac].n} (พลัง ${CARD[b.ac].s} ฆ่า ${CARD[b.ac].k})</b> (ห้องนี้เปิดการ์ด)</p>`:'<p class="small muted">ฝ่ายบุกลงการ์ดคว่ำไว้แล้ว จะเปิดพร้อมกันหลังคุณเลือก</p>'}
-      <div class="cards" id="defcards">${availCards(S,b.d).map(c=>cardBtn(c,'data-dc',false)).join('')}</div>
-      <p class="small muted" style="margin-top:6px">ฝ่ายรับมีโบนัส: ${defBonusText(S,b.d,b.to)}</p></div>`}
+      ${previewHTML(S,'def')}
+      <div class="cards" id="defcards">${availCards(S,b.d).map(c=>cardBtn(c,'data-dc',false)).join('')}</div></div>`}
     const iAtk=iControl(S,b.a);
     return `<div class="banner">รอ${esc(gname(S,b.d))} (${esc(pname(S.seats[b.d].uid,'ผู้เล่น'))}) เลือกการ์ดตั้งรับ ที่${esc(cname(S,b.to))}
-      ${iAtk?`<div class="small" style="margin-top:4px">คุณลงการ์ด <b>${CARD[b.ac].n} (พลัง ${CARD[b.ac].s} ฆ่า ${CARD[b.ac].k})</b> ไว้ · โบนัสบุก: ${esc(atkBonusText(S,b.a,b.mount,b.to,b.n))}</div>`:showAtk?`<div class="small" style="margin-top:4px">ฝ่ายบุกลงการ์ด <b>${CARD[b.ac].n}</b></div>`:''}</div>`}
+      ${iAtk?`<div class="small" style="margin-top:4px">คุณลงการ์ด <b>${CARD[b.ac].n} (พลัง ${CARD[b.ac].s} ฆ่า ${CARD[b.ac].k})</b> ไว้</div>`:showAtk?`<div class="small" style="margin-top:4px">ฝ่ายบุกลงการ์ด <b>${CARD[b.ac].n}</b></div>`:''}
+      ${previewHTML(S,iAtk?'atk':'watch')}</div>`}
   if(S.retreat){const rt=S.retreat;
     if(mine)return `<div class="banner"><h2>คุณชนะ! เลือกช่องให้${esc(gname(S,rt.loser))}ถอย</h2><p class="small">ทหารที่เหลือ ${rt.n} ตัว${rt.m?' และ'+MOUNTS[rt.m].name:''} จะถอยไป 1 ช่อง กดช่องวงประบนแผนที่</p></div>`;
     return `<div class="banner">รอ${esc(gname(S,rt.chooser))}เลือกช่องให้${esc(gname(S,rt.loser))}ถอย</div>`}
@@ -464,6 +468,54 @@ function endShow(S){
   const d=document.createElement('div');d.id='sky';d.className='sky '+(lost?'night':'day')+' endsky';d.setAttribute('role','status');
   d.innerHTML=`<div class="skyorb"><div class="bigtrophy">${lost?'🎖️':'🏆'}</div></div><div class="skytxt"><b>${lost?'จบเกม':'ชัยชนะ!'}</b><span>${esc(gname(S,S.winner))} ชนะด้วย ${total(S,S.winner)} คะแนน</span><small>${lost?'สู้ใหม่ได้เสมอ':'เทพแห่งหิมพานต์'}</small></div><small class="skytap">แตะเพื่อดูสรุปผล</small>`;
   document.body.appendChild(d);const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),450)};d.onclick=close;setTimeout(close,4200);
+}
+/* กล่องพรีวิวศึก: พลังรบก่อนลงการ์ดของทั้งสองฝ่าย กดดูที่มาได้ */
+function previewHTML(S,who){
+  const v=battlePreview(S);if(!v)return '';
+  const fmtL=l=>l.map(([n,x])=>`<li><span>${esc(n)}</span><b class="tab">${x>=0?'+':'−'}${Math.abs(x)}</b></li>`).join('');
+  const kl=(l,cond)=>l.map(([n,x])=>`<li><span>${esc(n)}${cond?' <i>(ถ้าชนะ)</i>':''}</span><b class="tab">${x>=0?'+':'−'}${Math.abs(x)}</b></li>`).join('');
+  const side=(s,base,parts,kAlways,kWin,label)=>`<div class="bpside" style="--c:${SEATC(s)}">
+     <div class="bphead"><span class="dot" style="background:${SEATC(s)}"></span>${label} · <b>${esc(gname(S,s))}</b></div>
+     <div class="bpnum"><b class="tab">${base}</b><span>+ การ์ด ?</span></div>
+     <details><summary>ดูที่มาของพลังรบ</summary><ul class="bplist">${fmtL(parts)}</ul></details>
+     <div class="bpkill">แต้มฆ่า = การ์ด${kAlways.concat(kWin).length?'':' (ไม่มีตัวปรับ)'}${kAlways.length||kWin.length?`<ul class="bplist">${kl(kAlways,false)}${kl(kWin,true)}</ul>`:''}</div></div>`;
+  const diff=v.baseA-v.baseD;
+  const tip=who==='def'?(diff>0?`ฝ่ายบุกนำอยู่ <b>${diff}</b> แต้ม · ต้องลงการ์ดพลังมากกว่าฝ่ายบุก <b>${diff}</b> ขึ้นไป ถึงจะชนะ (เสมอ = คุณชนะ)`:diff===0?`พลังเท่ากัน · ลงการ์ดพลังเท่าหรือมากกว่าฝ่ายบุก = คุณชนะ`:`คุณนำอยู่ <b>${-diff}</b> แต้ม · ฝ่ายบุกต้องลงการ์ดพลังมากกว่าคุณเกิน ${-diff} ถึงจะชนะ`)
+    :who==='atk'?(diff>0?`คุณนำ <b>${diff}</b> แต้มก่อนลงการ์ด`:`ฝ่ายรับนำ <b>${-diff}</b> แต้ม (เสมอ = ฝ่ายรับชนะ)`)
+    :(diff>0?`ฝ่ายบุกนำ ${diff} แต้มก่อนลงการ์ด`:diff===0?'พลังเท่ากันก่อนลงการ์ด (เสมอ = ฝ่ายรับชนะ)':`ฝ่ายรับนำ ${-diff} แต้มก่อนลงการ์ด`);
+  const hand=availCards(S,v.A);
+  return `<div class="bprev"><div class="bptitle">⚔ พลังรบก่อนลงการ์ด</div>
+    <div class="bpgrid">${side(v.A,v.baseA,v.pA,v.km.a,v.km.aWin,'ฝ่ายบุก')}<div class="bpvs">VS</div>${side(v.D,v.baseD,v.pD,v.km.d,v.km.dWin,'ฝ่ายรับ')}</div>
+    ${v.pre.length?`<div class="small">${esc(v.pre.join(' · '))}</div>`:''}
+    <div class="bptip">${tip}</div>
+    ${who==='def'?`<div class="small muted">การ์ดที่ฝ่ายบุกยังมีในมือ (ใบที่ลงอยู่ในนี้): ${hand.map(c=>`<span class="chip">${CARD[c].n} ${CARD[c].s}/${CARD[c].k}</span>`).join(' ')}</div>`:''}</div>`}
+/* ป๊อปอัปผลศึก: เปิดการ์ดทั้งสองฝ่ายให้ทุกคนเห็นหลังรบ */
+const BATTLE_SEEN={};
+function battleShow(S,first){
+  const r=S.last;if(!GID)return;
+  if(first){BATTLE_SEEN[GID]=r&&r.id||0;return}
+  if(!r||!r.id||!r.pA)return;
+  if(BATTLE_SEEN[GID]===r.id)return;BATTLE_SEEN[GID]=r.id;
+  if(Date.now()-r.id>10*60*1000)return;
+  const nm=l=>l.map(x=>Array.isArray(x)?x:[x.l,x.v]);
+  const pA=nm(r.pA),pD=nm(r.pD);const cardOf=l=>(l.find(x=>x[0]==='การ์ด')||[0,0])[1];
+  const mine=mySeats(S);
+  const side=(s,parts,tot,card,lost,win)=>`<div class="brside ${win?'win':''}" style="--c:${SEATC(s)}">
+    <div class="bphead"><span class="dot" style="background:${SEATC(s)}"></span><b>${esc(gname(S,s))}</b>${win?' <span class="chip">ชนะ</span>':''}</div>
+    <div class="flip"><div class="bcard big"><span class="cn">${esc(CARD[card].n)}</span><span class="cs">พลัง <b>${CARD[card].s}</b></span><span class="ck">ฆ่า <b>${CARD[card].k}</b></span></div></div>
+    <div class="bpnum"><b class="tab">${tot}</b><span>${tot-cardOf(parts)} + การ์ด ${cardOf(parts)}</span></div>
+    <div class="brloss">เสีย <b>${lost}</b> ตัว</div></div>`;
+  const rt=r.retreat?`${gname(S,r.retreat.s)}ถอยไป${cname(S,r.retreat.to)}`:'';
+  const atkWon=r.aWin;
+  const head=mine.includes(r.A)?(atkWon?'บุกสำเร็จ!':'บุกไม่สำเร็จ'):mine.includes(r.D)?(atkWon?'เสียช่องนี้ไป':'ป้องกันได้!'):`ศึกที่${cname(S,r.cell)}`;
+  const d=document.createElement('div');d.id='battlepop';d.className='sky plain withboard';d.setAttribute('role','dialog');
+  d.innerHTML=`<div class="boardcard bres"><div class="bhead"><b>${esc(head)}</b><span class="small muted">${esc(cname(S,r.cell))} · รอบ ${r.round}</span></div>
+    <div class="bpgrid">${side(r.A,pA,r.sA,r.ac,r.lossA,atkWon)}<div class="bpvs">VS</div>${side(r.D,pD,r.sD,r.dc,r.lossD,!atkWon)}</div>
+    <div class="bwarn">${atkWon?`${esc(gname(S,r.A))} ชนะ${r.lossA<(pA[0]||[0,0])[1]?' · ได้ +1 คะแนนถาวรและบาป +1':''}`:`${esc(gname(S,r.D))} ป้องกันได้${r.sA===r.sD?' (เสมอ ฝ่ายรับชนะ)':''}`}${rt?' · '+esc(rt):''}</div></div>
+    <button class="primary skyclose" id="bpclose">ตกลง</button>`;
+  const gid=GID;const show=()=>{if(view.name!=='game'||GID!==gid)return;if(document.getElementById('sky')){setTimeout(show,400);return}const o=document.getElementById('battlepop');if(o)o.remove();document.body.appendChild(d);
+    const close=()=>{d.classList.add('out');setTimeout(()=>d.remove(),300)};document.getElementById('bpclose').onclick=close;d.onclick=e=>{if(e.target===d)close()}};
+  show();
 }
 function lastBattleBox(S){
   const r=S.last;if(!r||S.battle||!r.kA)return '';
@@ -602,7 +654,7 @@ function phaseBox(S){
     <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b>
       <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ · <b>จบรอบนี้ตัดสินผู้ชนะ</b> ใครถึง '+S.target+' คะแนนชนะ'}</div></div>
     <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้<br><button class="ghost small" id="openboard">📊 ตารางคะแนน</button></div>
-    <div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จนจบรอบ ได้ +1 ถาวร) · ตอนนี้: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))}</span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
+    <div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จน<b>จบรอบกลางคืน</b> ได้ +1 ถาวร${S.moon==='wax'?' · รอบนี้กลางวัน ยังไม่นับ':' · <b>นับตอนจบรอบนี้</b>'}) · ตอนนี้เข้าเงื่อนไข: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))} <span class="muted">(${esc(landWhy(S,s))})</span></span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
 }
 function playersBox(S,act){
   const nxt=S.status==='play'?nextOrder(S):S.order;
@@ -741,12 +793,12 @@ function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
 let TUT=null;
 const isTut=gid=>String(gid||'').startsWith('tut');
 const TSTEPS=[
- {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,3,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
+ {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,3,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
  {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: เพิ่มทหารในเมือง<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
  {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
  {k:'do',t:'ยึดวัดแรก',hl:[3],allow:['move'],b:`คุณมีกองหน้า 2 ตัวรออยู่ในป่าข้างเมือง และวัดที่ถัดไปยังว่าง กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[3].o===0&&S.B[3].t>0&&!S.follow},
  {k:'do',t:'ทำบุญ',allow:['merit'],b:`คุณได้ 1 คะแนนจากวัดแล้ว ดูดาว ★ ในแถบผู้เล่น ต่อไปกด <b>ทำบุญ</b> รับบุญ +2 บุญเอาไว้ซื้อการ์ดพลัง`,done:S=>S.round>1||S.P[0].used.includes('merit')},
- {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จนจบรอบ ได้ <b>ครองแดน</b> +1 คะแนนถาวร (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
+ {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จน<b>จบรอบกลางคืน</b> ได้ <b>ครองแดน</b> +1 คะแนนถาวร และตอนนั้นจะตัดสินผู้ชนะด้วย (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
  {k:'do',t:'บุก!',hl:[10],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์ (ระวัง พระพิรุณตั้งรับในป่าได้ +1)`,done:S=>!!(S.last&&S.last.A===0)},
  {k:'do',t:'วชิราวุธของพระอินทร์',allow:[],b:`ดูกล่อง <b>ศึกล่าสุด</b> ว่าพลังรบมาจากไหน ฝ่ายแพ้ที่เหลือรอดต้องถอยไป 1 ช่อง โดยฝ่ายชนะเป็นคนเลือกช่อง (ถ้ามีช่องเดียวระบบถอยให้เอง)<br>หลังเดินทัพ พระอินทร์ใช้ <b>วชิราวุธ</b> ได้รอบละครั้ง ทำให้กองศัตรูที่อยู่ติดกับกองคุณเสียทหาร 1 ตัวโดยไม่ต้องรบ ลองกด <b>ใช้วชิราวุธ</b> แล้วเลือกกองศัตรู หรือกด <b>จบตา</b>`,done:S=>!S.follow&&!S.battle&&!S.retreat},
  {k:'info',t:'บาป: ราคาของสงคราม',b:`บุกชนะได้คะแนนถาวร แต่ได้ <b>บาป +1</b> ด้วย (ดูในแถบผู้เล่น) ถ้าบาปถึง <b>3</b> จะเสียทหาร 2 ตัวทันที<br>บุกบ่อยได้คะแนนเร็ว แต่ต้องหาจังหวะทำบุญลบบาป นี่คือการตัดสินใจหลักของเกม`},
