@@ -239,3 +239,26 @@ button.danger{border-color:var(--warn);color:var(--warn)}
 @media (prefers-reduced-motion:reduce){.brow{transition:none}}
 
 .sky.withboard>*:not(.stars){position:relative;z-index:1}
+
+/* ป๊อปอัปและแถบบอกตา */
+.turnbar{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);box-shadow:0 2px 8px rgba(0,0,0,.08);font-size:.92rem}
+.turnbar.mine{background:var(--goldtint);border-color:var(--gold);border-left-color:var(--c)}
+.turnpop{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:35;cursor:pointer;animation:tpin .35s cubic-bezier(.2,.9,.3,1.3) both;max-width:calc(100vw - 32px)}
+.turnpop.out{animation:tpout .3s ease forwards}
+@keyframes tpin{from{opacity:0;transform:translate(-50%,-14px) scale(.92)}}
+@keyframes tpout{to{opacity:0;transform:translate(-50%,-10px) scale(.96)}}
+.turnpop .tpcard{display:flex;align-items:center;gap:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-left:8px solid var(--c);border-radius:14px;padding:12px 18px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.turnpop .tpcard .dot{width:16px;height:16px}
+.turnpop .tpcard b{font-size:1.15rem}
+.turnpop small{display:block;color:var(--muted);font-size:.85rem}
+.tpkick{font-size:.8rem;color:var(--muted)}
+.turnpop.mine{top:50%;transform:translate(-50%,-50%);animation:tpinm .45s cubic-bezier(.2,.9,.3,1.3) both}
+.turnpop.mine.out{animation:tpoutm .3s ease forwards}
+@keyframes tpinm{from{opacity:0;transform:translate(-50%,-50%) scale(.8)}}
+@keyframes tpoutm{to{opacity:0;transform:translate(-50%,-50%) scale(.95)}}
+.turnpop.mine .tpcard{flex-direction:column;text-align:center;gap:6px;padding:22px 30px;border:3px solid var(--c);border-radius:20px;min-width:min(340px,calc(100vw - 32px));position:relative;overflow:hidden}
+.turnpop.mine .tpcard b{font-family:var(--f-display);font-weight:400;font-size:clamp(1.4rem,5vw,1.9rem);line-height:1.3}
+.turnpop.mine .tpkick{font-size:1rem;color:var(--c);font-weight:700}
+.turnpop.mine button{margin-top:6px;min-width:140px}
+.tpring{position:absolute;inset:-2px;border-radius:20px;border:3px solid var(--c);pointer-events:none}
+@media (prefers-reduced-motion:no-preference){.tpring{animation:tpring 1.4s ease-out infinite}@keyframes tpring{from{opacity:.8;transform:scale(1)}to{opacity:0;transform:scale(1.08)}}}
