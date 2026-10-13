@@ -135,7 +135,7 @@ function rulesRef(){return `<details class="panel" style="margin-top:20px"><summ
 <p>แต่ละรอบ ผู้เล่นผลัดกันทำคนละ 1 แอคชัน รวม 3 แอคชันต่อคน แอคชันเดียวกันใช้ได้ครั้งเดียวต่อรอบ: เกณฑ์ทัพ, เดินทัพ, ทำบุญ, ขอพร (ซื้อการ์ดพลังหรือพาหนะ)</p>
 <p>เดินเข้าช่องศัตรู = รบ ทั้งสองฝ่ายลงการ์ดคว่ำแล้วเปิดพร้อมกัน พลังรบ = ทหาร + พลังการ์ด + โบนัส พลังสูงกว่าชนะ เสมอฝ่ายรับชนะ ทั้งสองฝ่ายเสียทหารตามแต้มฆ่าในการ์ดของอีกฝ่าย ฝ่ายแพ้ที่เหลือรอดถอย 1 ช่อง ฝ่ายชนะเป็นคนเลือก บุกชนะและยังเหลือทหารได้ 1 คะแนนถาวรและบาป +1 บาปถึง 3 เสียทหาร 2 ตัว</p>
 <table class="ref"><tr><th>การ์ดรบ</th><th>พลัง</th><th>ฆ่า</th></tr>${CARD.map((c,i)=>`<tr><td>${c.n}${i===4?' (ตำราพิชัยสงคราม)':''}</td><td>${c.s}</td><td>${c.k}</td></tr>`).join('')}</table>
-<p>วัดมีจำนวนเท่าผู้เล่น +1 (รวมวัดหลวงข้างเขาพระสุเมรุ) ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน <b>ครองแดน</b>: จบรอบ<b>กลางคืน</b> ยึดวัด 2 แห่งขึ้นไปหรือเขาพระสุเมรุ ได้ +1 คะแนนถาวร กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 ผู้ชนะตัดสินตอน<b>จบรอบกลางคืน</b>เท่านั้น ใครถึงคะแนนเป้าตอนนั้นชนะ (จบรอบกลางวันยังไม่ชนะ อีกฝ่ายยังมีกลางคืนให้แย่งคืน)</p>
+<p>วัดมีจำนวนเท่าผู้เล่น +1 (รวมวัดหลวงข้างเขาพระสุเมรุ) ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน <b>ครองแดน</b>: จบรอบ<b>กลางคืน</b> ยึดวัด 2 แห่งขึ้นไปหรือเขาพระสุเมรุ ได้ +1 คะแนนถาวร กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 <b>การชนะ</b>: ใครถึงคะแนนเป้าตอน<b>จบรอบกลางคืน</b> จะกลายเป็น <b>ผู้ท้าชิง</b> (ขึ้นเตือนทุกคน) แล้วต้อง<b>รักษาคะแนนให้ถึงเป้าต่ออีก 1 วัน</b> (ผ่านกลางวันและกลางคืนถัดไป) ถ้าจบกลางคืนถัดไปยังถึงเป้าอยู่ = ชนะ ถ้าหลุดก็เล่นต่อจนกว่าจะมีคนรักษาไว้ได้ (ผู้ท้าชิงหลายคนรักษาได้พร้อมกัน คะแนนมากสุดชนะ)</p>
 <table class="ref"><tr><th>เทพ</th><th>ความสามารถ</th><th>พาหนะประจำองค์</th></tr>${GODS.map(g=>`<tr><td>${g.name}</td><td><b>${g.ab}</b>: ${g.txt} · ${g.weak}</td><td>${MOUNTS[g.mount].name}</td></tr>`).join('')}</table>
 <p class="muted">ฝ่ายบุกเห็นการ์ดของตัวเองระหว่างรอ หลังรบทุกคนเห็นการ์ดทั้งสองฝ่ายและที่มาของพลังรบในกล่อง "ศึกล่าสุด" ห้องที่ติ๊ก "เปิดการ์ด" ฝ่ายรับจะเห็นการ์ดฝ่ายบุกก่อนเลือกด้วย</p>
 </div></details>`}
@@ -281,36 +281,44 @@ function showArrows(){try{return localStorage.getItem('hmp-arrows')!=='0'}catch(
 /* ลูกศรการเคลื่อนไหว: ศึกที่รอฝ่ายรับ + การกระทำล่าสุด 6 อย่าง (1 = ล่าสุด) */
 function arrowsSVG(S,M){
   const rad=i=>i===0?M.r*1.7:M.r;let out='';
-  const arrow=(f,t,col,op,w,dash,label,cls)=>{const a=M.pos[f],b=M.pos[t];if(!a||!b)return '';
-    const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;
-    const x1=a.x+ux*(rad(f)+4),y1=a.y+uy*(rad(f)+4),x2=b.x-ux*(rad(t)+8),y2=b.y-uy*(rad(t)+8);
-    const cx=(x1+x2)/2-uy*18,cy=(y1+y2)/2+ux*18;
-    const hx=x2-ux*16,hy=y2-uy*16,px=-uy*9,py=ux*9;
-    return `<g class="arw ${cls||''}" opacity="${op}"><path d="M${x1.toFixed(1)} ${y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${(hx).toFixed(1)} ${(hy).toFixed(1)}" fill="none" stroke="var(--surface)" stroke-width="${w+5}" stroke-linecap="round"/>
-      <path d="M${x1.toFixed(1)} ${y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${(hx).toFixed(1)} ${(hy).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" ${dash?`stroke-dasharray="${dash}"`:''}/>
-      <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>
-      ${label?`<g><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${cx.toFixed(1)}" y="${(cy+5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">${label}</text></g>`:''}</g>`};
+  /* ลูกศรตามเส้นทางจริง: วิ่งตามเส้นบนแผนที่ผ่านทุกช่องที่เดินผ่าน */
+  const ctrl=(u,v)=>{const i=Math.min(u,v),j=Math.max(u,v),A=M.pos[i],B=M.pos[j],bd=(M.bend[i+'-'+j]||0);const dx=B.x-A.x,dy=B.y-A.y;return {x:(A.x+B.x)/2-dy*bd,y:(A.y+B.y)/2+dx*bd}};
+  const qat=(P0,Q,P1,t)=>{const u=1-t;return {x:u*u*P0.x+2*u*t*Q.x+t*t*P1.x,y:u*u*P0.y+2*u*t*Q.y+t*t*P1.y}};
+  const arrow=(path,col,op,w,dash,label,cls)=>{
+    path=(path||[]).filter(i=>M.pos[i]);if(path.length<2)return '';
+    const segs=[];for(let k=0;k<path.length-1;k++){const u=path[k],v=path[k+1];segs.push({P0:{...M.pos[u]},Q:ctrl(u,v),P1:{...M.pos[v]},u,v})}
+    const f=segs[0],l=segs[segs.length-1];
+    {const dx=f.Q.x-f.P0.x,dy=f.Q.y-f.P0.y,L=Math.hypot(dx,dy)||1,k=(rad(f.u)+4)/L;f.P0={x:f.P0.x+dx*k,y:f.P0.y+dy*k}}
+    let tip;{const dx=l.P1.x-l.Q.x,dy=l.P1.y-l.Q.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;tip={x:l.P1.x-ux*(rad(l.v)+6),y:l.P1.y-uy*(rad(l.v)+6),ux,uy};l.P1={x:tip.x-ux*14,y:tip.y-uy*14}}
+    let d=`M${f.P0.x.toFixed(1)} ${f.P0.y.toFixed(1)}`;for(const g of segs)d+=`Q${g.Q.x.toFixed(1)} ${g.Q.y.toFixed(1)} ${g.P1.x.toFixed(1)} ${g.P1.y.toFixed(1)}`;
+    const px=-tip.uy*9,py=tip.ux*9,hx=tip.x-tip.ux*16,hy=tip.y-tip.uy*16;
+    const lp=qat(l.P0,l.Q,l.P1,.5);
+    const via=path.slice(1,-1).map(i=>`<circle cx="${M.pos[i].x}" cy="${M.pos[i].y}" r="${rad(i)+3}" fill="none" stroke="${col}" stroke-width="2.5" stroke-dasharray="3 4"/>`).join('');
+    return `<g class="arw ${cls||''}" opacity="${op}">${via}<path d="${d}" fill="none" stroke="var(--surface)" stroke-width="${w+5}" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${dash?`stroke-dasharray="${dash}"`:''}/>
+      <polygon points="${tip.x.toFixed(1)},${tip.y.toFixed(1)} ${(hx+px).toFixed(1)},${(hy+py).toFixed(1)} ${(hx-px).toFixed(1)},${(hy-py).toFixed(1)}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>
+      ${label?`<g><circle cx="${lp.x.toFixed(1)}" cy="${lp.y.toFixed(1)}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${lp.x.toFixed(1)}" y="${(lp.y+5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">${label}</text></g>`:''}</g>`};
   const tr=(S.trail||[]).slice().reverse();const N=tr.length;
   tr.forEach((x,j)=>{const idx=N-j;const op=idx===1?1:Math.max(.3,1-idx*.15);const col=SEATC(x.s);
     if(x.k==='rec'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><circle cx="${p.x-rad(x.t)*0.8}" cy="${p.y+rad(x.t)*0.8}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x-rad(x.t)*0.8}" y="${p.y+rad(x.t)*0.8+5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">+${x.n}</text></g>`;return}
     if(x.k==='vaj'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><text x="${p.x+rad(x.t)*0.85}" y="${p.y+rad(x.t)*0.95}" text-anchor="middle" font-size="22">⚡</text></g>`;return}
     if(x.f==null)return;
     if(S.battle&&x.k==='atk'&&idx===1)return;
-    out+=arrow(x.f,x.t,col,op,x.k==='atk'?6:4,x.k==='ret'?'7 6':'',x.k==='atk'?'⚔':String(idx));
+    out+=arrow(x.p&&x.p.length>1?x.p:[x.f,x.t],col,op,x.k==='atk'?6:4,x.k==='ret'?'7 6':'',x.k==='atk'?'⚔':String(idx));
   });
-  if(S.battle){const b=S.battle;out+=arrow(b.from,b.to,SEATC(b.a),1,7,'','⚔','live');
+  if(S.battle){const b=S.battle;out+=arrow(b.path&&b.path.length>1?b.path:[b.from,b.to],SEATC(b.a),1,7,'','⚔','live');
     const p=M.pos[b.to],r=rad(b.to);
     out+=`<g class="atkbadge"><circle cx="${p.x}" cy="${p.y}" r="${r+7}" fill="none" stroke="${SEATC(b.a)}" stroke-width="4" class="pulse"/>
       <rect x="${p.x-34}" y="${p.y+r-4}" width="68" height="26" rx="13" fill="${SEATC(b.a)}" stroke="var(--surface)" stroke-width="2"/>
       <text x="${p.x}" y="${p.y+r+14}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">⚔ ${b.n}${b.mount?' '+MOUNTS[b.mount].ic:''}</text></g>`}
   return out;
 }
-function trailText(S,x){const g=gname(S,x.s);
+function trailText(S,x){const g=gname(S,x.s);const route=()=>x.p&&x.p.length>2?x.p.map(i=>cname(S,i)).join(' → '):`${cname(S,x.f)} → ${cname(S,x.t)}`;
   if(x.k==='rec')return `${g} เกณฑ์ทัพ +${x.n} ที่${cname(S,x.t)}`;
   if(x.k==='vaj')return `${g} ฟาดวชิราวุธที่${cname(S,x.t)}`;
   if(x.k==='ret')return `${g} ถอย ${x.n} ตัว ${cname(S,x.f)} → ${cname(S,x.t)}`;
-  if(x.k==='atk')return `${g} บุก ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${cname(S,x.f)} → ${cname(S,x.t)}${x.w==null?' · รอฝ่ายรับ':x.w?' · ชนะ':' · แพ้'}`;
-  return `${g} เดิน ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${cname(S,x.f)} → ${cname(S,x.t)}`}
+  if(x.k==='atk')return `${g} บุก ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${route()}${x.w==null?' · รอฝ่ายรับ':x.w?' · ชนะ':' · แพ้'}`;
+  return `${g} เดิน ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${route()}`}
 function trailBox(S){const tr=S.trail||[];if(!tr.length&&!S.battle)return '';const on=showArrows();
   return `<div class="trailbox small"><div class="row" style="justify-content:space-between"><b>ความเคลื่อนไหวล่าสุด</b><label class="row small"><input type="checkbox" id="arrows" ${on?'checked':''}> แสดงลูกศรบนแผนที่</label></div>
     <ol>${tr.map((x,i)=>`<li><span class="ordno sm" style="background:${SEATC(x.s)}">${x.k==='atk'?'⚔':x.k==='rec'?'+':x.k==='vaj'?'⚡':i+1}</span>${esc(trailText(S,x))}${x.r!==S.round?` <span class="muted">(รอบ ${x.r})</span>`:''}</li>`).join('')}</ol></div>`}
@@ -622,13 +630,26 @@ function checkPhase(S){
 }
 const SUN_BIG=`<svg class="orbsvg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="26" fill="#F2B21B"/><circle cx="60" cy="60" r="34" fill="none" stroke="#F2B21B" stroke-opacity=".25" stroke-width="6"/>${[0,30,60,90,120,150,180,210,240,270,300,330].map(d=>`<line x1="60" y1="6" x2="60" y2="18" stroke="#F2B21B" stroke-width="5" stroke-linecap="round" transform="rotate(${d} 60 60)"/>`).join('')}</svg>`;
 const MOON_BIG=`<svg class="orbsvg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="40" fill="#F4ECCB" fill-opacity=".12"/><path d="M72 22a38 38 0 1 0 26 64A32 32 0 0 1 72 22z" fill="#F4ECCB"/></svg>`;
+/* ผู้ท้าชิง: ถึงเป้าตอนจบกลางคืน ต้องรักษาไว้จนจบกลางคืนถัดไป */
+function chalOf(S){return (S.chal||[]).filter(s=>s>=0&&s<S.n)}
+const chalNames=(S,l)=>l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span><b>${esc(gname(S,s))}</b></span>`).join(' ');
+function chalAlert(S,snap){
+  if(!snap)return '';const ch=snap.chal||[],lost=(snap.lost||[]).filter(s=>!ch.includes(s));if(!ch.length&&!lost.length)return '';
+  const mine=mySeats(S);const meIn=ch.some(s=>mine.includes(s));
+  return `<div class="chalert ${ch.length?'':'ok'}" role="alert">${ch.length?`<div class="chtitle">⚔ ผู้ท้าชิงบัลลังก์!</div>
+    <div>${chalNames(S,ch)} ถึง <b>${S.target}</b> คะแนนแล้ว</div>
+    <div class="small">${meIn?'คุณต้อง<b>รักษาคะแนนให้ถึงเป้า</b>ผ่านกลางวันนี้และกลางคืนหน้า ถ้าจบกลางคืนหน้ายังถึงอยู่ = ชนะ!':'ยังไม่ชนะ! มีเวลา<b>ทั้งกลางวันนี้และกลางคืนหน้า</b> แย่งวัด/เขาพระสุเมรุคืน ทำให้คะแนนเขาต่ำกว่าเป้าก่อนจบกลางคืน'}</div>`:''}
+    ${lost.length?`<div class="small" style="${ch.length?'margin-top:6px;border-top:1px dashed currentColor;padding-top:6px':''}">🛡 ${chalNames(S,lost)} รักษาคะแนนไม่อยู่ หลุดจากผู้ท้าชิง เกมเล่นต่อ</div>`:''}</div>`;
+}
+function chalBar(S){const ch=chalOf(S);if(!ch.length)return '';const night=S.moon==='wane';
+  return `<div class="chalbar" style="flex:1 1 100%">⚔ <b>ผู้ท้าชิง</b>: ${chalNames(S,ch)} · ${night?'<b>จบกลางคืนนี้ ถ้ายังถึง '+S.target+' คะแนน = ชนะ</b>':'ต้องรักษา '+S.target+' คะแนนผ่านกลางวันนี้และกลางคืนหน้า'} <span class="muted">(ตอนนี้ ${ch.map(s=>esc(gname(S,s))+' '+total(S,s)).join(', ')})</span></div>`}
 function skyShow(S){
   const day=S.moon==='wax';const old=document.getElementById('sky');if(old)old.remove();
   const d=document.createElement('div');d.id='sky';d.className='sky withboard '+(day?'day':'night');d.setAttribute('role','dialog');d.setAttribute('aria-label','สรุปคะแนนจบรอบ');
   const snap=S.snap&&S.snap.r===S.round-1?S.snap:null;
   d.innerHTML=`${day?'':'<div class="stars" aria-hidden="true"></div>'}<div class="skyhead"><div class="skyorb sm">${day?SUN_BIG:MOON_BIG}</div>
-    <div class="skytxt"><b>${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b><small>${day?'ฝ่ายบุกไม่มีโบนัส · จบรอบนี้วัดให้บุญ +1 · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 · <b>จบรอบนี้ตัดสินผู้ชนะ!</b>'}</small></div></div>
-    ${boardHTML(S,snap)}<button class="primary skyclose" id="skyclose">ไปต่อ</button>`;
+    <div class="skytxt"><b>${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b><small>${day?'ฝ่ายบุกไม่มีโบนัส · จบรอบนี้วัดให้บุญ +1 · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 · '+(chalOf(S).length?'<b>จบรอบนี้ ผู้ท้าชิงที่ยังถึงเป้า = ชนะ!</b>':'จบรอบนี้ใครถึงเป้าจะเป็นผู้ท้าชิง')}</small></div></div>
+    ${chalAlert(S,snap)}${boardHTML(S,snap)}<button class="primary skyclose" id="skyclose">ไปต่อ</button>`;
   document.body.appendChild(d);
   const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),450)};
   document.getElementById('skyclose').onclick=e=>{e.stopPropagation();close()};
@@ -652,15 +673,17 @@ function boardHTML(S,snap){
     return `<div class="brow ${danger?'danger':''} ${mine.includes(s)?'me':''}" data-from="${was}" data-to="${i}">
       <span class="bpos" data-final="${i===0?'👑':i+1}">${was===0?'👑':was+1}</span>
       <div class="bmain"><div class="bname"><span class="dot" style="background:${SEATC(s)}"></span><b>${esc(gname(S,s))}</b> <span class="bwho">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
-        ${mv>0?`<span class="bmv up">▲${mv}</span>`:mv<0?`<span class="bmv down">▼${-mv}</span>`:''}${lord?'<span class="btag">ครองแดน +1</span>':''}</div>
+        ${mv>0?`<span class="bmv up">▲${mv}</span>`:mv<0?`<span class="bmv down">▼${-mv}</span>`:''}${lord?'<span class="btag">ครองแดน +1</span>':''}${chalOf(S).includes(s)?'<span class="btag chal">⚔ ผู้ท้าชิง</span>':''}</div>
         <div class="bbar" aria-hidden="true"><span class="bp" style="width:${pw}%;background:${SEATC(s)}"></span><span class="bt" style="width:${tw}%;--c:${SEATC(s)}"></span></div>
         <div class="bsub">ถาวร <b>${p}</b> · ชั่วคราว <b>${t}</b>${gain?` · รอบนี้ ${gain>0?'+':''}${gain}`:''}</div></div>
       <div class="bscore"><b>${tot(s)}</b><small>${left?`อีก ${left}`:'ถึงเป้า!'}</small></div></div>`}).join('');
   const lead=rank[0];const leadLeft=Math.max(0,T-best);
-  const warn=leadLeft===0?`⚠ ${esc(gname(S,lead))} ถึง ${T} คะแนนแล้ว${nightNext?' ถ้ารักษาไว้จนจบกลางคืนนี้ = ชนะ! รุมด่วน':' จบกลางคืนรอบหน้ายังถืออยู่ = ชนะ'}`
-    :leadLeft<=2?`⚠ ${esc(gname(S,lead))} ขาดอีกแค่ ${leadLeft} คะแนน ระวังไว้`:`เป้าหมาย ${T} คะแนน · ผู้ชนะตัดสินตอนจบรอบกลางคืน`;
+  const ch=chalOf(S);
+  const warn=ch.length?`⚔ ผู้ท้าชิง: ${ch.map(x=>esc(gname(S,x))).join(', ')} ${nightNext?'ถ้ายังถึง '+T+' คะแนนตอนจบกลางคืนนี้ = ชนะ! รุมด่วน':'ต้องรักษา '+T+' คะแนนให้ได้จนจบกลางคืนหน้า'}`
+    :leadLeft===0?`⚠ ${esc(gname(S,lead))} ถึง ${T} คะแนนแล้ว${nightNext?' ถ้าถึงเป้าตอนจบกลางคืนนี้ จะเป็นผู้ท้าชิง (ต้องรักษาต่ออีก 1 วัน)':' จบกลางคืนหน้ายังถึงอยู่ จะเป็นผู้ท้าชิง'}`
+    :leadLeft<=2?`⚠ ${esc(gname(S,lead))} ขาดอีกแค่ ${leadLeft} คะแนน ระวังไว้`:`เป้าหมาย ${T} คะแนน · ถึงเป้าตอนจบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน = ชนะ`;
   return `<div class="boardcard"><div class="bhead"><b>ตารางคะแนน</b><span class="blegend"><span class="lg1"></span>ถาวร <span class="lg2"></span>ชั่วคราว (วัด/เขา หายได้ถ้าโดนยึด)</span></div>
-    <div class="board" style="height:${n*62}px">${rows}</div><div class="bwarn ${leadLeft<=2?'hot':''}">${warn}</div></div>`;
+    <div class="board" style="height:${n*62}px">${rows}</div><div class="bwarn ${leadLeft<=2||ch.length?'hot':''}">${warn}</div></div>`;
 }
 function animateBoard(root){
   const rows=[...root.querySelectorAll('.brow')];
@@ -679,9 +702,9 @@ function phaseBox(S){
   const left=[...Array(S.n).keys()].filter(s=>hasActions(S,s)).length;
   return `<div class="phase ${day?'day':'night'}" role="status">${day?SUN:MOON}
     <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b>
-      <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ · <b>จบรอบนี้ตัดสินผู้ชนะ</b> ใครถึง '+S.target+' คะแนนชนะ'}</div></div>
+      <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ · '+(chalOf(S).length?'<b>จบรอบนี้ ผู้ท้าชิงที่ยังถึง '+S.target+' คะแนน = ชนะ</b>':'จบรอบนี้ใครถึง '+S.target+' คะแนน จะเป็นผู้ท้าชิง')}</div></div>
     <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้<br><button class="ghost small" id="openboard">📊 ตารางคะแนน</button></div>
-    <div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จน<b>จบรอบกลางคืน</b> ได้ +1 ถาวร${S.moon==='wax'?' · รอบนี้กลางวัน ยังไม่นับ':' · <b>นับตอนจบรอบนี้</b>'}) · ตอนนี้เข้าเงื่อนไข: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))} <span class="muted">(${esc(landWhy(S,s))})</span></span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
+    ${chalBar(S)}<div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จน<b>จบรอบกลางคืน</b> ได้ +1 ถาวร${S.moon==='wax'?' · รอบนี้กลางวัน ยังไม่นับ':' · <b>นับตอนจบรอบนี้</b>'}) · ตอนนี้เข้าเงื่อนไข: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))} <span class="muted">(${esc(landWhy(S,s))})</span></span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
 }
 function playersBox(S,act){
   const nxt=S.status==='play'?nextOrder(S):S.order;
@@ -784,16 +807,18 @@ function doMove(){
     T.follow=null;
     if(kind==='battle'){
       if(card==null||!availCards(T,s).includes(card))return fail('ยังไม่ได้เลือกการ์ดรบ');
+      const path=movePath(T,s,src,dst,takeM,bonus?1:0);
       removeTroops(T,src,n);if(takeM)T.M[takeM].c=-1;
-      T.battle={a:s,d:T.B[dst].o,to:dst,from:src,n,mount:takeM,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
-      trail(T,{k:'atk',s,f:src,t:dst,n,m:takeM||null});
+      T.battle={a:s,d:T.B[dst].o,to:dst,from:src,path,n,mount:takeM,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
+      trail(T,{k:'atk',s,f:src,t:dst,n,m:takeM||null,p:path});
       log(T,`${gname(T,s)} ยกทัพ ${n} ตัวบุก${cname(T,dst)} ของ${gname(T,T.B[dst].o)}`);
       if(!c.t&&m&&!takeM)sendMountsHome(T,src,s);
       return;
     }
     if(T.B[dst].o===s&&T.B[dst].t+n>cap(T,s,dst))return fail('ช่องปลายทางทหารเต็ม');
+    const mpath=movePath(T,s,src,dst,takeM,bonus?1:0);
     removeTroops(T,src,n);placeTroops(T,s,dst,n);if(takeM)T.M[takeM].c=dst;
-    trail(T,{k:'move',s,f:src,t:dst,n,m:takeM||null});
+    trail(T,{k:'move',s,f:src,t:dst,n,m:takeM||null,p:mpath});
     log(T,`${gname(T,s)} เดินทัพ ${n} ตัว ไป${cname(T,dst)}`);
     if(bonus){T.follow={seat:s,vajra:wasVajra,bonusFrom:null};if(!T.follow.vajra){T.follow=null;advance(T)}}
     else computeFollow(T,s,true,null);
@@ -820,12 +845,12 @@ function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
 let TUT=null;
 const isTut=gid=>String(gid||'').startsWith('tut');
 const TSTEPS=[
- {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,6,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
+ {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,6,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
  {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: เพิ่มทหารในเมือง<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
  {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
  {k:'do',t:'ยึดวัดแรก',hl:[6],allow:['move'],b:`วัดอยู่ห่างเมือง 3 ก้าว คุณมีกองหน้า 2 ตัวรออยู่แล้วในป่าชั้นในที่ติดกับวัด กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[6].o===0&&S.B[6].t>0&&!S.follow},
  {k:'do',t:'ทำบุญ',allow:['merit'],b:`คุณได้ 1 คะแนนจากวัดแล้ว ดูดาว ★ ในแถบผู้เล่น ต่อไปกด <b>ทำบุญ</b> รับบุญ +2 บุญเอาไว้ซื้อการ์ดพลัง`,done:S=>S.round>1||S.P[0].used.includes('merit')},
- {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จน<b>จบรอบกลางคืน</b> ได้ <b>ครองแดน</b> +1 คะแนนถาวร และตอนนั้นจะตัดสินผู้ชนะด้วย (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
+ {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จน<b>จบรอบกลางคืน</b> ได้ <b>ครองแดน</b> +1 คะแนนถาวร (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• ใครถึงเป้าตอนจบกลางคืน = <b>ผู้ท้าชิง</b> ต้องรักษาคะแนนไว้ต่ออีก 1 วันถึงจะชนะ คนอื่นมีเวลาทั้งวันรุมแย่งคืน<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
  {k:'do',t:'บุก!',hl:[3],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์`,done:S=>!!(S.last&&S.last.A===0)},
  {k:'do',t:'วชิราวุธของพระอินทร์',allow:[],b:`ดูกล่อง <b>ศึกล่าสุด</b> ว่าพลังรบมาจากไหน ฝ่ายแพ้ที่เหลือรอดต้องถอยไป 1 ช่อง โดยฝ่ายชนะเป็นคนเลือกช่อง (ถ้ามีช่องเดียวระบบถอยให้เอง)<br>หลังเดินทัพ พระอินทร์ใช้ <b>วชิราวุธ</b> ได้รอบละครั้ง ทำให้กองศัตรูที่อยู่ติดกับกองคุณเสียทหาร 1 ตัวโดยไม่ต้องรบ ลองกด <b>ใช้วชิราวุธ</b> แล้วเลือกกองศัตรู หรือกด <b>จบตา</b>`,done:S=>!S.follow&&!S.battle&&!S.retreat},
  {k:'info',t:'บาป: ราคาของสงคราม',b:`บุกชนะได้คะแนนถาวร แต่ได้ <b>บาป +1</b> ด้วย (ดูในแถบผู้เล่น) ถ้าบาปถึง <b>3</b> จะเสียทหาร 2 ตัวทันที<br>บุกบ่อยได้คะแนนเร็ว แต่ต้องหาจังหวะทำบุญลบบาป นี่คือการตัดสินใจหลักของเกม`},
