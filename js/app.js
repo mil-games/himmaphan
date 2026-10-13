@@ -44,6 +44,7 @@ function copyText(t,msg){const done=()=>toast(msg||'คัดลอกลิง�
 /* ===================== RENDER: LOBBY ===================== */
 let lobbyRows=[];
 function showLobby(){
+  try{document.title='ศึกเทพหิมพานต์'}catch(e){}
   TUT=null;
   view={name:'lobby'};GID=null;G=null;ui={mode:null};
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
@@ -144,9 +145,10 @@ function openGame(id){
   try{localStorage.setItem('hmp-last',id)}catch(e){}
   watchGame(id,S=>{
     if(!S){G=null;render();return}
-    const prevTurn=G?activeSeat(G):null;G=S;
+    const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
     if(prevTurn!==activeSeat(S))ui={mode:null};
     noteNames(S);render();tutTick(S);checkPhase(S);endShow(S);
+    if(S.status==='play'&&turnKey(S)!==prevKey)turnPopup(S,prevKey===null);
   });
   render();
 }
@@ -319,6 +321,38 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
 }
 
 const mapInfoAttr=S=>`data-info="map:${esc(mapOf(S).id)}" data-tip="${esc(mapOf(S).desc)}" aria-haspopup="dialog"`;
+/* ป๊อปอัปเปลี่ยนตา: ทุกคนเห็นว่าตอนนี้ตาใคร คนที่ถึงตาเห็นแบบเด่นชัด */
+const turnKey=S=>activeSeat(S)+'|'+(S.battle?'b':S.retreat?'r':'n');
+function turnWhat(S,a){
+  if(S.battle)return {me:'คุณโดนบุก! เลือกการ์ดตั้งรับ',other:`กำลังเลือกการ์ดตั้งรับ (โดน${gname(S,S.battle.a)}บุก${cname(S,S.battle.to)})`};
+  if(S.retreat)return {me:`คุณชนะ! เลือกช่องให้${gname(S,S.retreat.loser)}ถอย`,other:`กำลังเลือกช่องให้${gname(S,S.retreat.loser)}ถอย`};
+  const p=S.P[a];return {me:`ถึงตาคุณแล้ว · แอคชันที่ ${p.used.length+1} จาก ${actionLimit(S,a)}`,other:`กำลังเดิน · แอคชันที่ ${p.used.length+1} จาก ${actionLimit(S,a)}`};
+}
+let turnTimer=null;
+function turnPopup(S,first){
+  const a=activeSeat(S);if(a<0)return;const mine=iControl(S,a);
+  if(first&&!mine)return;
+  clearTimeout(turnTimer);
+  const show=()=>{
+    if(document.getElementById('sky')){turnTimer=setTimeout(show,400);return}
+    if(!G||turnKey(G)!==turnKey(S))return;
+    const old=document.getElementById('turnpop');if(old)old.remove();
+    const w=turnWhat(S,a);const d=document.createElement('div');d.id='turnpop';d.className='turnpop'+(mine?' mine':'');d.setAttribute('role','status');
+    d.style.setProperty('--c',SEATC(a));
+    d.innerHTML=mine?`<div class="tpcard"><div class="tpring"></div><div class="tpkick">🔔 ${S.solo?esc(gname(S,a)):'ตาของคุณ'}</div><b>${esc(w.me)}</b><small>${esc(gname(S,a))} · รอบ ${S.round} · ${S.moon==='wax'?'☀ กลางวัน':'☾ กลางคืน'}</small><button class="primary" id="tpgo">เริ่มเลย</button></div>`
+      :`<div class="tpcard"><span class="dot" style="background:${SEATC(a)}"></span><div><div class="tpkick">ตอนนี้ตาของ</div><b>${esc(gname(S,a))}</b> <span class="muted">(${esc(pname(S.seats[a].uid,'ผู้เล่น'))})</span><small>${esc(w.other)}</small></div></div>`;
+    document.body.appendChild(d);
+    const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),350)};
+    d.onclick=close;const b=document.getElementById('tpgo');if(b)b.onclick=e=>{e.stopPropagation();close()};
+    setTimeout(close,mine?6000:2600);
+    if(mine&&navigator.vibrate){try{navigator.vibrate(120)}catch(e){}}
+  };
+  show();
+}
+/* แถบบอกตาที่ติดอยู่ด้านบนจอเสมอ */
+function turnBar(S,act,mine){
+  if(S.status!=='play'||act<0)return '';const w=turnWhat(S,act);
+  return `<div class="turnbar ${mine?'mine':''}" style="--c:${SEATC(act)}"><span class="dot" style="background:${SEATC(act)}"></span>${mine?`<b>${esc(w.me)}</b>`:`ตาของ <b>${esc(gname(S,act))}</b> <span class="muted">(${esc(pname(S.seats[act].uid,'ผู้เล่น'))})</span> · ${esc(w.other)}`}</div>`}
 function renderGame(){
   const S=G;const act=activeSeat(S);const mine=iControl(S,act);
   const myTurn=mine&&!S.battle&&!S.retreat&&S.status==='play';
@@ -335,6 +369,7 @@ function renderGame(){
   const moonPill=`<span class="pill">${S.moon==='wax'?'◐ กลางวัน: วัดได้บุญ +1':'◑ กลางคืน: ฝ่ายบุก +1'}</span>`;
   app.innerHTML=topBar(S,`${isTut(GID)?'':`<button class="ghost small" id="copy">คัดลอกลิงก์ห้อง</button>`}<button class="pill mappill" ${mapInfoAttr(S)}>🗺 ${esc(mapOf(S).name)}</button><span class="pill tab">รอบ ${S.round}</span><span class="pill tab">เป้า ${S.target}</span>`)+`
   <div class="stack">
+  ${turnBar(S,act,mine)}
   ${tutBox()}
   ${phaseBox(S)}
   <div class="panel mapbox">${mapSVG(S,clickable,selected,(TUT&&GID==='tut'&&tutStep()&&tutStep().hl)||[])}${trailBox(S)}</div>
@@ -343,6 +378,7 @@ function renderGame(){
     <div class="stack">${playersBox(S,act)}<div class="panel"><h3>บันทึก</h3><ul class="log">${S.log.map(t=>`<li>${richLog(t)}</li>`).join('')}</ul></div>${rulesRef()}</div>
   </div></div>`;
   document.getElementById('back').onclick=showLobby;
+  try{document.title=(mine&&S.status==='play'?'🔔 ถึงตาคุณ · ':'')+'ศึกเทพหิมพานต์'}catch(e){}
   wireGame(S,act);wireTut();wireId();
   {const ob=document.getElementById('openboard');if(ob)ob.onclick=()=>openBoard(G)}
   {const a=document.getElementById('arrows');if(a)a.onchange=()=>{try{localStorage.setItem('hmp-arrows',a.checked?'1':'0')}catch(e){}render()}}
