@@ -245,18 +245,8 @@ function resolveBattle(S,defCard){
   const sA=pA.reduce((t,x)=>t+x[1],0),sD=pD.reduce((t,x)=>t+x[1],0);
   const aWin=sA>sD;
   // damage each side deals
-  const kA=[['การ์ด',cA.k]],kD=[['การ์ด',cD.k]];
-  if(isGod(S,A,'skanda')&&b.n>S.B[cell].t)kA.push(['ขุนพลเทวดา',1]);
-  if(aWin){if(has(S,A,'raid'))kA.push(['จู่โจม',1]);if(isGod(S,A,'shiva'))kA.push(['ระบำทำลายล้าง',1]);if(mA==='rajasi')kA.push(['ราชสีห์',1])}
-  else{if(has(S,D,'counter'))kD.push(['โต้กลับ',1])}
-  // reductions on the receiving side
-  if(mD==='naga'&&mA!=='garuda')kA.push(['นาคกันไว้',-1]);
-  if(has(S,D,'ward'))kA.push(['มนต์คุ้มกาย',-1]);
-  if(mA==='naga'&&mD!=='garuda')kD.push(['นาคกันไว้',-1]);
-  if(has(S,A,'rally'))kD.push(['ปลุกใจ',-1]);
-  if(mD==='khotchasi')kA.push(['คชสีห์',-1]);
-  if(mA==='makara')kD.push(['มกร',-1]);
-  if(mD==='makara'&&isGod(S,D,'ganga'))kA.push(['มกรของพระแม่คงคา',-1]);
+  const km=killMods(S,A,D,mA,mD,b.n,S.B[cell].t);
+  const kA=[['การ์ด',cA.k],...km.a,...(aWin?km.aWin:[])],kD=[['การ์ด',cD.k],...km.d,...(aWin?[]:km.dWin)];
   const dmgA=Math.max(0,kA.reduce((t,x)=>t+x[1],0)),dmgD=Math.max(0,kD.reduce((t,x)=>t+x[1],0));
   const lossD=Math.min(nD,dmgA),lossA=Math.min(nA,dmgD);
   const survA=nA-lossA,survD=nD-lossD;deaths+=lossA+lossD;
@@ -284,7 +274,7 @@ function resolveBattle(S,defCard){
   for(const s of [A,D]){if(isGod(S,s,'yama')&&deaths>0){const grpM=s===A?mA:mD;const g=deaths*(grpM==='buffalo'?2:1);S.P[s].merit+=g;notes.push(`ยมโลก +${g} บุญ`)}}
   const ob=x=>x.map(([l,v])=>({l,v}));
   if(S.trail&&S.trail[0]&&S.trail[0].k==='atk'&&S.trail[0].t===cell)S.trail[0].w=aWin?1:0;
-  S.last={cell,A,D,ac:b.ac,dc:defCard,sA,sD,pA:ob(pA),pD:ob(pD),kA:ob(kA),kD:ob(kD),aWin,lossA,lossD,round:S.round,retreat:null};
+  S.last={id:Date.now(),cell,A,D,ac:b.ac,dc:defCard,sA,sD,pA:ob(pA),pD:ob(pD),kA:ob(kA),kD:ob(kD),aWin,lossA,lossD,round:S.round,retreat:null};
   log(S,`ศึก${cname(S,cell)}: ${gname(S,A)} ${cA.n} พลัง ${sA} ต่อ ${gname(S,D)} ${cD.n} พลัง ${sD} → ${gname(S,W)} ชนะ · บุกเสีย ${lossA} รับเสีย ${lossD}${notes.length?' ('+notes.join(', ')+')':''}${aWin&&survA===0?' · ฝ่ายบุกไม่เหลือทหาร ไม่ได้คะแนน':''}`);
   S.battle=null;
   checkSin(S,A);
@@ -337,6 +327,30 @@ function checkSavable(o,path){path=path||'S';
   if(o&&typeof o==='object')for(const k in o)checkSavable(o[k],path+'.'+k);
 }
 function trail(S,o){S.trail=S.trail||[];S.seq=(S.seq||0)+1;S.trail.unshift(Object.assign({r:S.round,q:S.seq},o));if(S.trail.length>6)S.trail.length=6}
+/* แต้มฆ่าที่ไม่ได้มาจากการ์ด: a/d = ได้เสมอ (รวมการลดความเสียหาย), aWin/dWin = ได้เมื่อชนะ */
+function killMods(S,A,D,mA,mD,nA,nD){
+  const a=[],d=[],aWin=[],dWin=[];
+  if(isGod(S,A,'skanda')&&nA>nD)a.push(['ขุนพลเทวดา',1]);
+  if(has(S,A,'raid'))aWin.push(['จู่โจม',1]);if(isGod(S,A,'shiva'))aWin.push(['ระบำทำลายล้าง',1]);if(mA==='rajasi')aWin.push(['ราชสีห์',1]);
+  if(has(S,D,'counter'))dWin.push(['โต้กลับ',1]);
+  if(mD==='naga'&&mA!=='garuda')a.push(['นาคกันไว้',-1]);
+  if(has(S,D,'ward'))a.push(['มนต์คุ้มกาย',-1]);
+  if(mA==='naga'&&mD!=='garuda')d.push(['นาคกันไว้',-1]);
+  if(has(S,A,'rally'))d.push(['ปลุกใจ',-1]);
+  if(mD==='khotchasi')a.push(['คชสีห์',-1]);
+  if(mA==='makara')d.push(['มกร',-1]);
+  if(mD==='makara'&&isGod(S,D,'ganga'))a.push(['มกรของพระแม่คงคา',-1]);
+  return {a,d,aWin,dWin};
+}
+/* พรีวิวศึกที่รออยู่: พลังรบและแต้มฆ่า "ไม่รวมการ์ด" ให้ทุกคนเห็น */
+function battlePreview(S){
+  const b=S.battle;if(!b)return null;const A=b.a,D=b.d,cell=b.to;const mA=b.mount,mD=mountAt(S,cell,D);
+  let nD=S.B[cell].t;const pre=[];if(has(S,A,'vanguard')&&b.n>nD&&nD>0){nD--;pre.push('ทัพหน้า: ฝ่ายรับเสีย 1 ตัวก่อนรบ')}
+  const bm=battleMods(S,A,D,b.n,nD,mA,mD,cell);
+  const pA=[['ทหาร',b.n],...bm.a],pD=[['ทหาร',nD],...bm.d];
+  const sum=x=>x.reduce((t,y)=>t+y[1],0);
+  return {A,D,mA,mD,nA:b.n,nD,pA,pD,baseA:sum(pA),baseD:sum(pD),km:killMods(S,A,D,mA,mD,b.n,S.B[cell].t),pre,notes:bm.note||[]};
+}
 function doRetreatApply(S,s,j,n,m,from){
   placeRetreat(S,s,j,n,m);trail(S,{k:'ret',s,f:from,t:j,n});
   if(S.last)S.last.retreat={s,to:j};
@@ -372,9 +386,12 @@ function advance(S){
 }
 /* ครองแดน: จบรอบ ยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ +1 ถาวร (มีการ์ดครองแผ่นดิน: วัดแห่งเดียวก็พอ) */
 function holdsSumeru(S,s){return S.B[0].o===s&&S.B[0].t>0}
+/* เหตุผลที่เข้าเงื่อนไขครองแดน (ไว้แสดงบนจอ) */
+function landWhy(S,s){const th=templesHeld(S,s);const r=[];if(holdsSumeru(S,s))r.push('ยึดเขาพระสุเมรุ');if(th>=2)r.push('วัด '+th+' แห่ง');else if(th>=1&&has(S,s,'dominion'))r.push('วัด 1 แห่ง + การ์ดครองแผ่นดิน');return r.join(' · ')}
 function rulesLand(S,s){const th=templesHeld(S,s);return th>=2||holdsSumeru(S,s)||(has(S,s,'dominion')&&th>=1)}
 function endRound(S){
-  const lords=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));
+  /* ครองแดนนับเฉพาะตอนจบรอบกลางคืน (คู่กับการตัดสินผู้ชนะ) */
+  const lords=S.moon==='wane'?[...Array(S.n).keys()].filter(s=>rulesLand(S,s)):[];
   lords.forEach(s=>S.P[s].vp+=1);
   /* บันทึกคะแนนตอนจบรอบ ไว้แสดงตารางคะแนนและการเลื่อนอันดับ */
   {const sc=[...Array(S.n).keys()].map(s=>[S.P[s].vp,tempVP(S,s)]);const rank=[...Array(S.n).keys()].sort((a,b)=>(sc[b][0]+sc[b][1])-(sc[a][0]+sc[a][1])||sc[b][0]-sc[a][0]||a-b);
@@ -453,7 +470,7 @@ const PW_DETAIL={
  counter:'ตั้งรับแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายบุกเสียทหารเพิ่ม',
  fort:'กองนอกเมืองมีทหารได้สูงสุด 6 ตัว (ปกติ 5)',
  guardian:'ทุกครั้งที่คุณเป็นฝ่ายตั้งรับ พลังรบ +2',
- dominion:'ครองแดนปกติต้องยึดวัด 2 แห่งหรือเขาพระสุเมรุตอนจบรอบ การ์ดนี้ทำให้ยึดวัดแค่แห่งเดียวก็ได้ +1 คะแนนถาวรทุกจบรอบ',
+ dominion:'ครองแดนปกติต้องยึดวัด 2 แห่งหรือเขาพระสุเมรุตอนจบรอบกลางคืน การ์ดนี้ทำให้ยึดวัดแค่แห่งเดียวก็ได้ +1 คะแนนถาวร',
  reinforce:'ทุกครั้งที่จบรอบ ได้ทหาร 2 ตัวจากคลังลงเมืองฟรี',
  vpK:'ได้ 1 คะแนนถาวรทันทีที่ซื้อ',
  holy:'แอคชันทำบุญได้บุญ +3 แทน +2',
