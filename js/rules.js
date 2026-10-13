@@ -12,7 +12,7 @@ const GODS=[
  {k:'chan',name:'พระจันทร์',mount:'durong',ab:'จันทรคติ',txt:'กลางคืน ตั้งรับ +1',weak:'กลางวันไม่มีโบนัส'},
  {k:'jupiter',name:'พระพฤหัสบดี',mount:'kwang',ab:'ครูเทวดา',txt:'การ์ดพลังเลเวล 2–3 ถูกลง 1 บุญ',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'ganga',name:'พระแม่คงคา',mount:'makara',ab:'สายน้ำศักดิ์สิทธิ์',txt:'รบในช่องริมน้ำ +1 ทั้งบุกและรับ และเดินจากริมน้ำไปริมน้ำไหนก็ได้',weak:'รบที่อื่นปกติ'},
- {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'กลางวัน เดินทัพได้ 2 ช่อง (ก้าวที่ 2 บุกไม่ได้)',weak:'เกณฑ์ทัพได้น้อยลง 1 ตัว และกองนอกเมืองมีได้แค่ 4 ตัว'},
+ {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'เดินทัพได้ 2 ช่อง ทั้งกลางวันและกลางคืน (ก้าวที่ 2 บุกไม่ได้)',weak:'เกณฑ์ทัพได้น้อยลง 1 ตัว และกองนอกเมืองมีได้แค่ 4 ตัว'},
  {k:'thorani',name:'พระแม่ธรณี',mount:'hera',ab:'ธรณีสาร',txt:'ตั้งรับ +1 ทุกที่',weak:'บุก −1'},
  {k:'vessuwan',name:'ท้าวเวสสุวรรณ',mount:'asura',ab:'จอมอสูร',txt:'บุกชนะ ขโมยบุญฝ่ายแพ้ 1',weak:'บาปเต็มเสียทหาร 3 ตัว (ปกติ 2)'},
  {k:'rahu',name:'พระราหู',mount:'kaisornnaka',ab:'อุปราคา',txt:'กลางคืน บุก +1 เพิ่ม (รวม +2)',weak:'กลางวันไม่มีโบนัส'},
@@ -192,7 +192,7 @@ function recruitTargets(S,s){
 const recruitAmt=(S,s,cell)=>(isGod(S,s,'brahma')?3:isGod(S,s,'vayu')?1:2)+(has(S,s,'levy')?1:0)+(cell!=null&&isGod(S,s,'ganesha')&&ownsM(S,s,'thakthor')&&S.M.thakthor.c===cell&&cell!==cityOf(s)?1:0);
 
 function reachable(S,s,src,carry,maxRange){
-  const fast=has(S,s,'swift')||carry==='garuda'||carry==='durong';let range=fast||(isGod(S,s,'vayu')&&S.moon==='wax')?2:1;const vayuOnly=(!fast&&range===2)||(carry==='durong'&&!has(S,s,'swift'));if(maxRange)range=Math.min(range,maxRange);
+  const fast=has(S,s,'swift')||carry==='garuda'||carry==='durong';let range=fast||isGod(S,s,'vayu')?2:1;const vayuOnly=(!fast&&range===2)||(carry==='durong'&&!has(S,s,'swift'));if(maxRange)range=Math.min(range,maxRange);
   const fly=carry==='garuda'&&isGod(S,s,'narai');
   const res={};const seen=new Set([src]);let front=[src];
   for(let d=0;d<range;d++){const nx=[];
@@ -209,6 +209,25 @@ function reachable(S,s,src,carry,maxRange){
 }
 /* ช่องที่ไปได้จากกองนี้ ไม่ว่าจะพาพาหนะตัวไหนไป (หรือไม่พา) */
 function reachAny(S,s,src,maxRange){const out={};for(const m of [null,...mountsAt(S,src,s)])Object.assign(out,reachable(S,s,src,m,maxRange));return out}
+/* เส้นทางที่เดินจริง (ช่องที่ผ่าน) ใช้วาดลูกศรตามทาง ตรรกะเดียวกับ reachable */
+function movePath(S,s,src,dst,carry,maxRange){
+  const fast=has(S,s,'swift')||carry==='garuda'||carry==='durong';let range=fast||isGod(S,s,'vayu')?2:1;if(maxRange)range=Math.min(range,maxRange);
+  const vayuOnly=(!fast&&range===2)||(carry==='durong'&&!has(S,s,'swift'));
+  const fly=carry==='garuda'&&isGod(S,s,'narai');
+  const par={[src]:-1};let front=[src];
+  for(let d=0;d<range;d++){const nx=[];
+    for(const c of front)for(const nb of nbs(S,c,s)){
+      if(par[nb]!==undefined)continue;
+      if(ctype(S,nb)==='city'&&citySeat(nb)!==s)continue;
+      const o=S.B[nb];const enemy=o.t>0&&o.o!==s;
+      if(enemy){if(vayuOnly&&d>=1)continue;par[nb]=c;if(nb===dst)break;if(fly)nx.push(nb);continue}
+      par[nb]=c;nx.push(nb);
+    }
+    if(par[dst]!==undefined)break;front=nx;
+  }
+  if(par[dst]===undefined)return [src,dst];
+  const path=[];for(let c=dst;c!==-1;c=par[c])path.unshift(c);return path;
+}
 function placeTroops(S,s,cell,n){const c=S.B[cell];if(c.t===0||c.o!==s){c.o=s;c.t=0}c.t+=n}
 function removeTroops(S,cell,n){const c=S.B[cell];c.t=Math.max(0,c.t-n);if(c.t===0){const ow=c.o;if(ctype(S,cell)!=='city')c.o=-1;sendMountsHome(S,cell,ow)}}
 function sendMountsHome(S,cell,ow){if(ow<0)return;for(const k of MK){const m=S.M[k];if(m&&m.o===ow&&m.c===cell&&cell!==cityOf(ow)){m.c=cityOf(ow)}}}
@@ -406,11 +425,23 @@ function endRound(S){
   if(lords.length)log(S,`ครองแดน +1 ถาวร: ${lords.map(s=>gname(S,s)).join(', ')}`);
   const scores=[...Array(S.n).keys()].map(s=>total(S,s));
   const best=Math.max(...scores);
-  /* ตัดสินผู้ชนะเฉพาะตอนจบรอบกลางคืน */
-  if(best>=S.target&&S.moon==='wane'){
-    const cands=[...Array(S.n).keys()].filter(s=>scores[s]===best);
-    cands.sort((a,b)=>S.P[b].vp-S.P[a].vp||S.P[a].sin-S.P[b].sin);
-    S.status='done';S.winner=cands[0];log(S,`${gname(S,cands[0])} ชนะด้วย ${best} คะแนน`);return;
+  /* ตัดสินผู้ชนะเฉพาะตอนจบรอบกลางคืน:
+     ใครถึงเป้าตอนจบกลางคืน = "ผู้ท้าชิง" ต้องรักษาคะแนนให้ถึงเป้าต่ออีก 1 วัน (กลางวัน+กลางคืน)
+     จบกลางคืนถัดไปยังถึงเป้าอยู่ = ชนะ ถ้าหลุดก็เล่นต่อ */
+  if(S.moon==='wane'){
+    const prevChal=S.chal||[];
+    const keep=prevChal.filter(s=>scores[s]>=S.target);
+    if(keep.length){
+      keep.sort((a,b)=>scores[b]-scores[a]||S.P[b].vp-S.P[a].vp||S.P[a].sin-S.P[b].sin);
+      S.snap.kept=keep;S.chal=[];
+      S.status='done';S.winner=keep[0];log(S,`${gname(S,keep[0])} รักษาคะแนนได้ครบ 1 วัน ชนะด้วย ${scores[keep[0]]} คะแนน`);return;
+    }
+    const lost=prevChal.slice();
+    S.chal=[...Array(S.n).keys()].filter(s=>scores[s]>=S.target);
+    S.chalR=S.chal.length?S.round:null;
+    S.snap.chal=S.chal.slice();S.snap.lost=lost;
+    if(lost.length)log(S,`${lost.map(s=>gname(S,s)).join(', ')} รักษาคะแนนไม่อยู่ หลุดจากผู้ท้าชิง`);
+    if(S.chal.length)log(S,`⚠ ${S.chal.map(s=>gname(S,s)).join(', ')} ถึง ${S.target} คะแนนแล้ว ต้องรักษาไว้จนจบกลางคืนหน้าถึงจะชนะ`);
   }
   for(let s=0;s<S.n;s++){
     const p=S.P[s];const th=templesHeld(S,s);
@@ -443,7 +474,7 @@ function setupGame(S){
   for(let s=0;s<S.n;s++){S.B[cityOf(s)]={o:s,t:4}}
   S.map=MAPBY[S.map]?S.map:pickMap(S);
   S.P=[...Array(S.n)].map((_,s)=>({merit:S.seats&&S.seats[s]&&S.seats[s].god==='ganesha'?6:3,sin:0,vp:0,pw:[],uc:[],used:[],f:{}}));
-  S.M={};S.round=1;S.moon='wax';
+  S.M={};S.round=1;S.moon='wax';S.chal=[];S.chalR=null;
   S.order=[...Array(S.n).keys()].sort(()=>Math.random()-.5);S.pos=0;
   S.battle=null;S.follow=null;S.status='play';S.log=[];
   log(S,'เกมเริ่ม · กลางวัน');
