@@ -5,8 +5,10 @@ const localGames={};let localSubs=[];
 function fireLocal(){localSubs.forEach(f=>f())}
 async function createGame(data){return STORE.create(data)}
 async function mutate(gid,fn){
-  if(isTut(gid)){const S=clone(localGames[gid]);if(fn(S)===false)return false;localGames[gid]=S;fireLocal();return true}
-  const r=await STORE.mutate(gid,fn);
+  if(isTut(gid)){const S=clone(localGames[gid]);let res;try{res=fn(S)}catch(e){console.error(e);toast('เกิดข้อผิดพลาด: '+(e&&e.message||e));render();return false}if(res===false){render();return false}localGames[gid]=S;fireLocal();return true}
+  let r;
+  try{r=await STORE.mutate(gid,fn)}catch(e){console.error(e);r={ok:false,why:'error',detail:String(e&&e.message||e).slice(0,80)}}
+  if(!r.ok)setTimeout(render,0);
   if(!r.ok&&r.why){toast(r.why==='missing'?'ไม่พบห้องนี้แล้ว':r.why==='denied'?'คุณไม่ได้อยู่ในห้องนี้ จึงเดินแทนไม่ได้':r.why==='offline'?'ต่ออินเทอร์เน็ตไม่ได้ ลองอีกครั้ง':'บันทึกไม่สำเร็จ ('+(r.detail||'ไม่ทราบสาเหตุ')+') ลองรีเฟรชแล้วทำใหม่ ถ้ายังไม่ได้ส่งภาพหน้าจอนี้มา')}
   return r.ok;
 }
@@ -458,6 +460,7 @@ function modeBox(S,act){
     const room=battle?99:(cap(S,act,dst)-(S.B[dst].o===act?S.B[dst].t:0));
     const nMax=Math.min(maxN,room,battle?(has(S,act,'fort')?6:5):99);
     if(ui.n==null||ui.n>nMax)ui.n=nMax;
+    if(nMax<1)return `<div class="banner row">${esc(cname(S,dst))}มีทหารเต็มแล้ว เลือกช่องอื่น ${cancel}</div>`;
     const co=carryOpts(S,act,src,dst,ui.n,!!ui.bonus);
     if(ui.carry==null||!co.ok.includes(ui.carry))ui.carry=co.def;
     const mlist=mountsAt(S,src,act);
@@ -611,7 +614,7 @@ function wireGame(S,act){
   if($('nm'))$('nm').onclick=()=>{ui.n--;re()};
   if($('np'))$('np').onclick=()=>{ui.n++;re()};
   app.querySelectorAll('input[name=carry]').forEach(r=>r.onchange=()=>{ui.carry=r.value;re()});
-  if($('go'))$('go').onclick=doMove;
+  if($('go'))$('go').onclick=e=>{e.currentTarget.disabled=true;doMove()};
   if($('avatar'))$('avatar').onclick=()=>{ui={mode:'avatar-pick'};re()};
   app.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{ui={mode:'avatar-dst',am:b.dataset.am};re()});
   if($('f-end'))$('f-end').onclick=()=>mutate(GID,T=>{if(!T.follow||!iControl(T,T.follow.seat))return false;T.follow=null;advance(T)});
@@ -648,20 +651,23 @@ function doBuy(item){const s=activeSeat(G);ui={mode:null};
       T.M[item.mount]={o:s,c:cityOf(s)};log(T,`${gname(T,s)} ได้${MOUNTS[item.mount].name}มาเป็นพาหนะ (−${c} บุญ)`)}
     markAction(T,s,'buy');advance(T)})}
 function doMove(){
-  const s=activeSeat(G);const {src,dst,n,card,bonus}=ui;const carry=ui.carry;ui={mode:null};
+  const s=activeSeat(G);const {src,dst,n,card,bonus}=ui;const carry=ui.carry;
+  if(src==null||dst==null||ui.mode!=='move-cfg'){ui={mode:null};render();return}
+  ui={mode:null};
+  const fail=m=>{window.__why=m;toast('เดินไม่ได้: '+m);return false};
   mutate(GID,T=>{
-    if(bonus){if(!T.follow||T.follow.seat!==s||T.follow.bonusFrom!==src||!iControl(T,s))return false}
-    else{if(!guard(T,s)||!actionOK(T,s,'move'))return false}
-    const c=T.B[src];if(c.o!==s||c.t<n||n<1)return false;
-    const takeM=carry||null;if(takeM&&!mountsAt(T,src,s).includes(takeM))return false;
+    if(bonus){if(!T.follow||T.follow.seat!==s||T.follow.bonusFrom!==src||!iControl(T,s))return fail('หมดจังหวะเดินต่อแล้ว')}
+    else{if(!guard(T,s))return fail('ยังไม่ใช่ตาคุณ');if(!actionOK(T,s,'move'))return fail('ใช้แอคชันเดินทัพไปแล้ว')}
+    const c=T.B[src];if(!c||c.o!==s||c.t<n||n<1)return fail('กองต้นทางเปลี่ยนไปแล้ว');
+    const takeM=carry||null;if(takeM&&!mountsAt(T,src,s).includes(takeM))return fail('พาหนะไม่ได้อยู่ในกองนี้');
     const m=takeM||mountAt(T,src,s);
-    const dest=reachable(T,s,src,takeM,bonus?1:0);const kind=dest[dst];if(!kind)return false;
-    if(takeM&&kind!=='battle'&&dst!==cityOf(s)&&mountAt(T,dst,s))return false;
+    const dest=reachable(T,s,src,takeM,bonus?1:0);const kind=dest[dst];if(!kind)return fail('ไปช่องนั้นไม่ถึง');
+    if(takeM&&kind!=='battle'&&dst!==cityOf(s)&&mountAt(T,dst,s))return fail('ปลายทางมีพาหนะอยู่แล้ว');
     if(!bonus)markAction(T,s,'move');
     const wasVajra=T.follow&&T.follow.vajra;
     T.follow=null;
     if(kind==='battle'){
-      if(card==null||!availCards(T,s).includes(card))return false;
+      if(card==null||!availCards(T,s).includes(card))return fail('ยังไม่ได้เลือกการ์ดรบ');
       removeTroops(T,src,n);if(takeM)T.M[takeM].c=-1;
       T.battle={a:s,d:T.B[dst].o,to:dst,from:src,n,mount:takeM,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
       trail(T,{k:'atk',s,f:src,t:dst,n,m:takeM||null});
@@ -669,7 +675,7 @@ function doMove(){
       if(!c.t&&m&&!takeM)sendMountsHome(T,src,s);
       return;
     }
-    if(T.B[dst].o===s&&T.B[dst].t+n>cap(T,s,dst))return false;
+    if(T.B[dst].o===s&&T.B[dst].t+n>cap(T,s,dst))return fail('ช่องปลายทางทหารเต็ม');
     removeTroops(T,src,n);placeTroops(T,s,dst,n);if(takeM)T.M[takeM].c=dst;
     trail(T,{k:'move',s,f:src,t:dst,n,m:takeM||null});
     log(T,`${gname(T,s)} เดินทัพ ${n} ตัว ไป${cname(T,dst)}`);
