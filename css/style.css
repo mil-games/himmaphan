@@ -134,6 +134,8 @@ button.chip{font:inherit;font-size:.75rem;padding:1px 8px;color:var(--ink);curso
 .phase.day .phicon circle,.phase.day .phicon line{fill:#F2B21B;stroke:#F2B21B}
 .phase.night .phicon path,.phase.night .phicon circle{fill:#F4ECCB}
 .phase.night [style*="border-top"]{border-color:#2C3558!important}
+.phase.night button.ghost{color:#EEF1FA;background:transparent;border-color:#4A5578}.phase.night button.ghost:hover{background:#1B2236}
+.phase.night .chalbar{background:#3A1412;color:#FFD9D4;border-color:#E0574C}.phase.night .chalbar .muted{color:#E8B4AE}
 .phicon{width:44px;height:44px;flex:none}
 .phtitle{font-family:var(--f-display);font-weight:400;font-size:1.15rem}
 .phnext{text-align:right;color:var(--muted)}
@@ -287,3 +289,13 @@ button.danger{border-color:var(--warn);color:var(--warn)}
 @media (prefers-reduced-motion:no-preference){.flip{animation:flipin .7s .2s both;transform-origin:center}@keyframes flipin{from{transform:perspective(500px) rotateY(90deg);opacity:0}}}
 @media (max-width:520px){.bpnum b{font-size:1.6rem}}
 #battlepop.out{animation:skyout .3s ease forwards}
+/* ผู้ท้าชิง */
+.btag.chal{background:#B3261E;color:#fff}
+.chalert{width:min(560px,100%);margin:0 auto 10px;background:#FFF1EF;color:#7A1A12;border:2px solid #B3261E;border-radius:14px;padding:12px 14px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25);animation:chpop .5s ease-out}
+.chalert.ok{background:#EEF6EC;color:#1E5A22;border-color:#2E7D32}
+.chalert .chtitle{font-size:1.25rem;font-weight:800;margin-bottom:4px}
+.chalert .nxt{display:inline-flex;align-items:center;gap:4px}
+.chalbar{background:#FFF1EF;color:#7A1A12;border:1px solid #B3261E;border-radius:10px;padding:6px 10px;font-size:.88rem}
+.chalbar .nxt{display:inline-flex;align-items:center;gap:4px}
+@keyframes chpop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.chalert{animation:none}}
