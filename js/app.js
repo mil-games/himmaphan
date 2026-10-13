@@ -243,14 +243,38 @@ function mapLayout(S){
   const K=[[1.00,0.50],[0.97,0.16],[0.97,0.84],[0.80,0.30],[0.80,0.70],[0.66,0.50],[0.50,0.14],[0.42,0.80]];
   const roy=hasRoyal(S);const pos=[{x:roy?cx-60:cx,y:cy}];
   for(let s=0;s<n;s++)for(let k=0;k<SECT;k++){
-    const [r0,o]=K[k];const r=r0*(1+(rnd()-.5)*0.16);const a=-Math.PI/2+s*span+o*span+(rnd()-.5)*span*0.07;
+    const [r0,o]=K[k];const r=r0*(1+(rnd()-.5)*0.08);const a=-Math.PI/2+s*span+o*span+(rnd()-.5)*span*0.05;
     pos.push({x:cx+Rx*r*Math.cos(a),y:cy+Ry*r*Math.sin(a)});
   }
   if(roy)pos.push({x:cx+100,y:cy+18});
   // ความโค้งของเส้นทาง สุ่มคงที่ต่อห้อง
-  const bend={};for(let i=0;i<pos.length;i++)for(const j of adj(S,i))if(j>i)bend[i+'-'+j]=(rnd()-.5)*0.45;
   const ring=Math.PI*(Rx+Ry)/(4*n);
   const r=Math.max(22,Math.min(40,ring*0.30));
+  /* ดันช่องที่อยู่ชิดกันเกินไปให้ห่างออก (ไม่ขยับเขาพระสุเมรุ) */
+  {const minD=r*2.6;for(let it=0;it<80;it++){let moved=false;
+    for(let i=1;i<pos.length;i++)for(let j=i+1;j<pos.length;j++){const a=pos[i],b=pos[j];let dx=b.x-a.x,dy=b.y-a.y;const d=Math.hypot(dx,dy)||0.01;
+      const need=(j===0||i===0)?r*3.2:minD;if(d<need){const push=(need-d)/2;dx/=d;dy/=d;a.x-=dx*push;a.y-=dy*push;b.x+=dx*push;b.y+=dy*push;moved=true}}
+    for(let i=1;i<pos.length;i++){const p=pos[i];const d0=Math.hypot(p.x-pos[0].x,p.y-pos[0].y);if(d0<r*3.4){const k=r*3.4/d0;p.x=pos[0].x+(p.x-pos[0].x)*k;p.y=pos[0].y+(p.y-pos[0].y)*k}
+      p.x=Math.max(r+6,Math.min(W-r-6,p.x));p.y=Math.max(r+6,Math.min(H-r-6,p.y))}
+    if(!moved)break}}
+  /* เลือกความโค้งของเส้นทางให้ไม่ผ่านใกล้ช่องอื่น และไม่ทับเส้นอื่น จะได้ไม่งงว่าเส้นไปช่องไหน */
+  const rad=i=>i===0?r*1.7:r;const bend={};const drawn=[];
+  const qpts=(a,b,bd)=>{const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,qx=mx-dy*bd,qy=my+dx*bd;const out=[];
+    for(let k=1;k<20;k++){const t=k/20,u=1-t;out.push({x:u*u*a.x+2*u*t*qx+t*t*b.x,y:u*u*a.y+2*u*t*qy+t*t*b.y})}return out};
+  const edges=[];for(let i=0;i<pos.length;i++)for(const j of adj(S,i))if(j>i)edges.push([i,j]);
+  const toC=(i,j)=>i===0||j===0||isRoyal(S,i)||isRoyal(S,j);
+  edges.sort((e1,e2)=>toC(...e1)-toC(...e2));
+  for(const [i,j] of edges){const a=pos[i],b=pos[j];const pref=(rnd()-.5)*0.3;
+    let best=null,bestScore=-1e9;
+    for(const bd of [pref,0,0.18,-0.18,0.32,-0.32,0.48,-0.48]){
+      const pts=qpts(a,b,bd);let clear=1e9;
+      for(let k=0;k<pos.length;k++){if(k===i||k===j)continue;const c=pos[k];for(const p of pts){const d=Math.hypot(p.x-c.x,p.y-c.y)-rad(k);if(d<clear)clear=d}}
+      let near=0;for(const q of drawn){for(let m=0;m<pts.length;m+=3)for(let n2=0;n2<q.length;n2+=3){if(Math.hypot(pts[m].x-q[n2].x,pts[m].y-q[n2].y)<10)near++}}
+      const score=Math.min(clear,18)*3-near*4-Math.abs(bd)*10;
+      if(score>bestScore){bestScore=score;best=bd}
+    }
+    bend[i+'-'+j]=best;if(!toC(i,j))drawn.push(qpts(a,b,best));
+  }
   return LAYOUT_CACHE[key]={W,H,cx,cy,pos,bend,r};
 }
 function showArrows(){try{return localStorage.getItem('hmp-arrows')!=='0'}catch(e){return true}}
