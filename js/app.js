@@ -132,7 +132,7 @@ function wireId(){
 function hiddenRooms(){try{return JSON.parse(localStorage.getItem('hmp-hidden')||'[]')}catch(e){return []}}
 function rulesRef(){return `<details class="panel" style="margin-top:20px"><summary>สรุปกติกาแบบย่อ</summary>
 <div class="stack small" style="margin-top:10px">
-<p>แต่ละรอบ ผู้เล่นผลัดกันทำคนละ 1 แอคชัน รวม 3 แอคชันต่อคน แอคชันเดียวกันใช้ได้ครั้งเดียวต่อรอบ: เกณฑ์ทัพ, เดินทัพ, ทำบุญ, ขอพร (ซื้อการ์ดพลังหรือพาหนะ)</p>
+<p>แต่ละรอบ ผู้เล่นผลัดกันทำคนละ 1 แอคชัน รวม 3 แอคชันต่อคน แอคชันเดียวกันใช้ได้ครั้งเดียวต่อรอบ: เกณฑ์ทัพ (ได้ 2 ตัว จ่ายบุญตัวละ 1 บุญ), เดินทัพ, ทำบุญ, ขอพร (ซื้อการ์ดพลังหรือพาหนะ)</p>
 <p>เดินเข้าช่องศัตรู = รบ ทั้งสองฝ่ายลงการ์ดคว่ำแล้วเปิดพร้อมกัน พลังรบ = ทหาร + พลังการ์ด + โบนัส พลังสูงกว่าชนะ เสมอฝ่ายรับชนะ ทั้งสองฝ่ายเสียทหารตามแต้มฆ่าในการ์ดของอีกฝ่าย ฝ่ายแพ้ที่เหลือรอดถอย 1 ช่อง ฝ่ายชนะเป็นคนเลือก บุกชนะและยังเหลือทหารได้ 1 คะแนนถาวรและบาป +1 บาปถึง 3 เสียทหาร 2 ตัว</p>
 <table class="ref"><tr><th>การ์ดรบ</th><th>พลัง</th><th>ฆ่า</th></tr>${CARD.map((c,i)=>`<tr><td>${c.n}${i===4?' (ตำราพิชัยสงคราม)':''}</td><td>${c.s}</td><td>${c.k}</td></tr>`).join('')}</table>
 <p>วัดมีจำนวนเท่าผู้เล่น +1 (รวมวัดหลวงข้างเขาพระสุเมรุ) ยึดวัดได้ 1 คะแนนชั่วคราว เขาพระสุเมรุ 2 คะแนน <b>ครองแดน</b>: จบรอบ<b>กลางคืน</b> ยึดวัด 2 แห่งขึ้นไปหรือเขาพระสุเมรุ ได้ +1 คะแนนถาวร กลางวันได้บุญ +1 ต่อวัด กลางคืนฝ่ายบุก +1 <b>การชนะ</b>: ใครถึงคะแนนเป้าตอน<b>จบรอบกลางคืน</b> จะกลายเป็น <b>ผู้ท้าชิง</b> (ขึ้นเตือนทุกคน) แล้วต้อง<b>รักษาคะแนนให้ถึงเป้าต่ออีก 1 วัน</b> (ผ่านกลางวันและกลางคืนถัดไป) ถ้าจบกลางคืนถัดไปยังถึงเป้าอยู่ = ชนะ ถ้าหลุดก็เล่นต่อจนกว่าจะมีคนรักษาไว้ได้ (ผู้ท้าชิงหลายคนรักษาได้พร้อมกัน คะแนนมากสุดชนะ)</p>
@@ -399,7 +399,7 @@ function renderGame(){
     if(ui.mode==='move-src'){S.B.forEach((c,i)=>{if(c.o===act&&c.t>0&&Object.keys(reachAny(S,act,i)).length)clickable.push(i)})}
     if(ui.mode==='move-dst'){clickable=Object.keys(ui.dest).map(Number);selected=ui.src}
     if(ui.mode==='move-cfg'){selected=ui.dst}
-    if(ui.mode==='recruit'){clickable=recruitTargets(S,act)}
+    if(ui.mode==='recruit'){clickable=recruitTargets(S,act).filter(j=>recruitN(S,act,j)>0)}
     if(ui.mode==='vajra'){clickable=vajraTargets(S,act)}
     if(ui.mode==='avatar-dst'){S.B.forEach((c,i)=>{if((c.o===act&&c.t>0&&!mountAt(S,i,act))||i===cityOf(act))if(S.M[ui.am].c!==i)clickable.push(i)})}
   }
@@ -431,9 +431,9 @@ function renderGame(){
 function statusBox(S,act,mine){
   if(S.status==='done')return resultBox(S);
   if(S.battle){const b=S.battle;
-    const showAtk=S.openCards||S.solo;
+    const showAtk=S.openCards||S.solo||has(S,b.d,'eye');
     if(mine){return `<div class="banner warn"><h2>${esc(gname(S,b.a))} บุก${esc(cname(S,b.to))}!</h2><p class="small">ฝ่ายบุกมาด้วยทหาร ${b.n} ตัว${b.mount?' และ'+MOUNTS[b.mount].name:''} คุณตั้งรับด้วย ${S.B[b.to].t} ตัว เลือกการ์ดรบ</p>
-      ${showAtk?`<p class="small"><b>ฝ่ายบุกลงการ์ด ${CARD[b.ac].n} (พลัง ${CARD[b.ac].s} ฆ่า ${CARD[b.ac].k})</b> (ห้องนี้เปิดการ์ด)</p>`:'<p class="small muted">ฝ่ายบุกลงการ์ดคว่ำไว้แล้ว จะเปิดพร้อมกันหลังคุณเลือก</p>'}
+      ${showAtk?`<p class="small"><b>ฝ่ายบุกลงการ์ด ${CARD[b.ac].n} (พลัง ${CARD[b.ac].s} ฆ่า ${CARD[b.ac].k})</b> ${S.openCards||S.solo?'(ห้องนี้เปิดการ์ด)':'(ตาทิพย์)'}</p>`:'<p class="small muted">ฝ่ายบุกลงการ์ดคว่ำไว้แล้ว จะเปิดพร้อมกันหลังคุณเลือก</p>'}
       ${previewHTML(S,'def')}
       <div class="cards" id="defcards">${availCards(S,b.d).map(c=>cardBtn(c,'data-dc',false)).join('')}</div></div>`}
     const iAtk=iControl(S,b.a);
@@ -451,16 +451,16 @@ function statusBox(S,act,mine){
     ${modeBox(S,act)}</div>`}
   const p=S.P[act];
   const moveable=S.B.some((c,i)=>c.o===act&&c.t>0&&Object.keys(reachAny(S,act,i)).length);
-  const canRecruit=reserve(S,act)>0&&recruitTargets(S,act).length;
+  const canRecruit=canRecruitAny(S,act);const rN=recruitN(S,act,cityOf(act));
   const btn=(a,sub,ok)=>`<button data-act="${a}" ${actionOK(S,act,a)&&ok&&tutAllow(a)?'':'disabled'}><b>${ACT[a]}</b><span>${sub}</span></button>`;
   return `<div class="panel stack"><div class="row">${who}</div>
    <div class="small muted tab">แอคชันที่ใช้แล้ว ${p.used.length}/${actionLimit(S,act)}${p.used.length?' · '+p.used.map(a=>ACT[a]).join(', '):''}</div>
    ${ui.mode?modeBox(S,act):`<div class="actions">
-    ${btn('recruit',`+${Math.min(recruitAmt(S,act),reserve(S,act))} ตัว (คลังเหลือ ${reserve(S,act)})`,canRecruit)}
+    ${btn('recruit',canRecruit?`+${rN} ตัว · จ่าย ${recruitPrice(S,act,rN)} บุญ (คลังเหลือ ${reserve(S,act)})`:reserve(S,act)>0?`ต้องมีบุญ (ตัวละ 1 บุญ)`:'คลังหมดแล้ว',canRecruit)}
     ${btn('move','เลือกกองแล้วเลือกปลายทาง',moveable)}
     ${btn('merit',(has(S,act,'atone')?'บุญ +'+meritAmt(S,act)+' และลบบาป 1':'บุญ +'+meritAmt(S,act)+' หรือลบบาป 1'),true)}
     ${btn('buy','ซื้อการ์ดพลังหรือพาหนะ (รายการด้านล่าง)',true)}
-   </div>`}
+   </div>${stuckNow(S,act)?`<div class="banner row small">ตอนนี้ไม่มีแอคชันที่ทำได้ (บุญไม่พอ/เดินไม่ได้) <button class="primary small" id="pass">ผ่านตา (ได้บุญ +1)</button></div>`:''}`}
    ${isGod(S,act,'narai')&&!p.f.avatar&&mountsOf(S,act).length&&!ui.mode?`<button id="avatar">อวตาร: ย้ายพาหนะ (ฟรี รอบละครั้ง)</button>`:''}
   </div>`;
 }
@@ -741,11 +741,13 @@ function wireGame(S,act){
   app.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.act;
     if(a==='move'){ui={mode:'move-src',shop:ui.shop};re()}
-    else if(a==='recruit'){const t=recruitTargets(S,act);if(t.length===1)doRecruit(t[0]);else{ui={mode:'recruit'};re()}}
+    else if(a==='recruit'){const t=recruitTargets(S,act).filter(j=>recruitN(S,act,j)>0);if(t.length===1)doRecruit(t[0]);else{ui={mode:'recruit',shop:ui.shop};re()}}
     else if(a==='merit'){if(has(S,act,'atone')||S.P[act].sin===0)doMerit('merit');else{ui={mode:'merit'};re()}}
     else if(a==='buy'){ui.shop=true;re();const d=$('shopd');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}}
   });
   app.querySelectorAll('[data-mm]').forEach(b=>b.onclick=()=>doMerit(b.dataset.mm));
+  if($('pass'))$('pass').onclick=doPass;
+
   app.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>doBuy({pw:b.dataset.buy}));
   app.querySelectorAll('[data-mount]').forEach(b=>b.onclick=()=>doBuy({mount:b.dataset.mount}));
   app.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>doDefend(+b.dataset.dc));
@@ -773,14 +775,22 @@ function onCell(S,act,i){
 const guard=(T,s)=>T.status==='play'&&!T.battle&&!T.retreat&&!T.follow&&T.order[T.pos]===s&&iControl(T,s);
 function doRecruit(cell){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'recruit'))return false;if(!recruitTargets(T,s).includes(cell))return false;
-    const room=cell===cityOf(s)?99:cap(T,s,cell)-(T.B[cell].o===s?T.B[cell].t:0);
-    const n=Math.min(recruitAmt(T,s,cell),reserve(T,s),room);if(n<=0)return false;
-    placeTroops(T,s,cell,n);trail(T,{k:'rec',s,t:cell,n});markAction(T,s,'recruit');log(T,`${gname(T,s)} เกณฑ์ทัพ ${n} ตัว ลง${cname(T,cell)}`);advance(T)})}
+    if(!doRecruitRule(T,s,cell))return false;advance(T)})}
+/* ไม่มีแอคชันไหนทำได้จริง เช่น บุญหมด ทำบุญไปแล้ว และเดินไม่ได้ */
+function stuckNow(S,s){
+  const moveable=S.B.some((c,i)=>c.o===s&&c.t>0&&Object.keys(reachAny(S,s,i)).length);
+  const anyBuy=POWERS.some(x=>powerState(S,s,x.id)==='ok')||MK.some(k=>mountState(S,s,k)==='ok');
+  return !(actionOK(S,s,'recruit')&&canRecruitAny(S,s))&&!(actionOK(S,s,'move')&&moveable)&&!actionOK(S,s,'merit')&&!(actionOK(S,s,'buy')&&anyBuy)&&hasActions(S,s);
+}
+function doPass(){const s=activeSeat(G);ui={mode:null};
+  mutate(GID,T=>{if(!guard(T,s)||!stuckNow(T,s))return false;const a=['buy','recruit','move','merit'].find(x=>actionOK(T,s,x));if(!a)return false;
+    markAction(T,s,a);T.P[s].merit+=1;log(T,`${gname(T,s)} ผ่านตา ได้บุญ +1`);advance(T)})}
 function doMerit(kind){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'merit'))return false;const p=T.P[s];const g=meritAmt(T,s);
     if(has(T,s,'atone')){p.merit+=g;p.sin=Math.max(0,p.sin-1);log(T,`${gname(T,s)} ทำบุญ +${g} และไถ่บาป`)}
     else if(kind==='sin'&&p.sin>0){p.sin--;log(T,`${gname(T,s)} ทำบุญลบบาป 1`)}
     else{p.merit+=g;log(T,`${gname(T,s)} ทำบุญ +${g}`)}
+    const mb=monkBonus(T,s);if(mb)log(T,`${gname(T,s)}${mb.replace(' · ',' ')}`);
     markAction(T,s,'merit');advance(T)})}
 function doBuy(item){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'buy'))return false;const p=T.P[s];
@@ -846,8 +856,8 @@ let TUT=null;
 const isTut=gid=>String(gid||'').startsWith('tut');
 const TSTEPS=[
  {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,6,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
- {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: เพิ่มทหารในเมือง<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
- {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
+ {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: จ่ายบุญตัวละ 1 เพิ่มทหารในเมือง 2 ตัว<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
+ {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ (จ่ายบุญตัวละ 1 บุญ) ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
  {k:'do',t:'ยึดวัดแรก',hl:[6],allow:['move'],b:`วัดอยู่ห่างเมือง 3 ก้าว คุณมีกองหน้า 2 ตัวรออยู่แล้วในป่าชั้นในที่ติดกับวัด กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[6].o===0&&S.B[6].t>0&&!S.follow},
  {k:'do',t:'ทำบุญ',allow:['merit'],b:`คุณได้ 1 คะแนนจากวัดแล้ว ดูดาว ★ ในแถบผู้เล่น ต่อไปกด <b>ทำบุญ</b> รับบุญ +2 บุญเอาไว้ซื้อการ์ดพลัง`,done:S=>S.round>1||S.P[0].used.includes('merit')},
  {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จน<b>จบรอบกลางคืน</b> ได้ <b>ครองแดน</b> +1 คะแนนถาวร (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• ใครถึงเป้าตอนจบกลางคืน = <b>ผู้ท้าชิง</b> ต้องรักษาคะแนนไว้ต่ออีก 1 วันถึงจะชนะ คนอื่นมีเวลาทั้งวันรุมแย่งคืน<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
@@ -887,7 +897,7 @@ function botAct(){
     if(T.follow){if(T.seats[T.follow.seat].uid!=='bot')return false;T.follow=null;advance(T);return}
     const s=T.order[T.pos];if(T.seats[s].uid!=='bot')return false;
     if(actionOK(T,s,'merit')){T.P[s].merit+=2;markAction(T,s,'merit');log(T,`${gname(T,s)} ทำบุญ +2`)}
-    else if(actionOK(T,s,'recruit')&&reserve(T,s)>0){const n=Math.min(recruitAmt(T,s),reserve(T,s));placeTroops(T,s,cityOf(s),n);markAction(T,s,'recruit');log(T,`${gname(T,s)} เกณฑ์ทัพ ${n} ตัว`)}
+    else if(actionOK(T,s,'recruit')&&recruitN(T,s,cityOf(s))>0){doRecruitRule(T,s,cityOf(s))}
     else{markAction(T,s,actionOK(T,s,'buy')?'buy':'recruit');log(T,`${gname(T,s)} ผ่านตา`)}
     advance(T);
   });
