@@ -303,7 +303,7 @@ function arrowsSVG(S,M){
       ${label?`<g><circle cx="${lp.x.toFixed(1)}" cy="${lp.y.toFixed(1)}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${lp.x.toFixed(1)}" y="${(lp.y+5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">${label}</text></g>`:''}</g>`};
   const tr=(S.trail||[]).slice().reverse();const N=tr.length;
   tr.forEach((x,j)=>{const idx=N-j;const op=idx===1?1:Math.max(.3,1-idx*.15);const col=SEATC(x.s);
-    if(x.k==='rec'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><circle cx="${p.x-rad(x.t)*0.8}" cy="${p.y+rad(x.t)*0.8}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x-rad(x.t)*0.8}" y="${p.y+rad(x.t)*0.8+5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">+${x.n}</text></g>`;return}
+    if(x.k==='rec'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><circle cx="${p.x-rad(x.t)*0.8}" cy="${p.y+rad(x.t)*0.8}" r="13" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x-rad(x.t)*0.8}" y="${p.y+rad(x.t)*0.8+5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">+${hidesAll(S,x.s)&&!viewers(S).includes(x.s)?'?':x.n}</text></g>`;return}
     if(x.k==='vaj'){const p=M.pos[x.t];if(p)out+=`<g opacity="${op}"><text x="${p.x+rad(x.t)*0.85}" y="${p.y+rad(x.t)*0.95}" text-anchor="middle" font-size="22">⚡</text></g>`;return}
     if(x.f==null)return;
     if(S.battle&&x.k==='atk'&&idx===1)return;
@@ -320,11 +320,11 @@ function arrowsSVG(S,M){
 const TERR_ROLE=[['forest','🌳','ป่า','ตั้งรับ +1'],['plain','🌾','ทุ่ง','บุกออกจากทุ่ง +1'],['deep','🌲','ป่าลึก','เดินไปป่าลึกไหนก็ได้ · คนอื่นไม่เห็นจำนวน'],['water','💧','ริมน้ำ','จบรอบได้การ์ดรบคืน 1 ใบ'],['temple','🛕','วัด','+1 คะแนน · กลางวันได้บุญ']];
 function terrLegend(){return `<div class="terrleg small">${TERR_ROLE.map(([k,ic,n,d])=>`<span><span class="tsw t-${k}"></span>${ic} <b>${n}</b> ${d}</span>`).join('')}</div>`}
 function trailText(S,x){const g=gname(S,x.s);const route=()=>x.p&&x.p.length>2?x.p.map(i=>cname(S,i)).join(' → '):`${cname(S,x.f)} → ${cname(S,x.t)}`;
-  if(x.k==='rec')return `${g} เกณฑ์ทัพ +${x.n} ที่${cname(S,x.t)}`;
+  if(x.k==='rec')return `${g} เกณฑ์ทัพ +${hidesAll(S,x.s)&&!viewers(S).includes(x.s)?'?':x.n} ที่${cname(S,x.t)}`;
   if(x.k==='vaj')return `${g} ฟาดวชิราวุธที่${cname(S,x.t)}`;
   if(x.k==='ret')return `${g} ถอย ${x.n} ตัว ${cname(S,x.f)} → ${cname(S,x.t)}`;
   if(x.k==='atk')return `${g} บุก ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${route()}${x.w==null?' · รอฝ่ายรับ':x.w?' · ชนะ':' · แพ้'}`;
-  const hn=countHidden(S,x.t,viewers(S))||(S.B[x.t]&&S.B[x.t].o!==x.s&&!viewers(S).includes(x.s)&&(has(S,x.s,'shade')||terr(S,x.t)==='deep'));
+  const hn=!viewers(S).includes(x.s)&&(countHidden(S,x.t,viewers(S))||hidesAll(S,x.s)||terr(S,x.t)==='deep');
   return `${g} เดิน ${hn?'?':x.n} ตัว${x.m?' '+mIcon(x.m):''} ${route()}`}
 function trailBox(S){const tr=S.trail||[];if(!tr.length&&!S.battle)return '';const on=showArrows();
   return `<div class="trailbox small"><div class="row" style="justify-content:space-between"><b>ความเคลื่อนไหวล่าสุด</b><label class="row small"><input type="checkbox" id="arrows" ${on?'checked':''}> แสดงลูกศรบนแผนที่</label></div>
@@ -476,7 +476,7 @@ function statusBox(S,act,mine){
     ${btn('merit',(has(S,act,'atone')?'บุญ +'+meritAmt(S,act)+' และลบบาป 1':'บุญ +'+meritAmt(S,act)+' หรือลบบาป 1'),true)}
     ${btn('buy','ซื้อการ์ดพลังหรือพาหนะ (รายการด้านล่าง)',true)}
    </div>${stuckNow(S,act)?`<div class="banner row small">ตอนนี้ไม่มีแอคชันที่ทำได้ (บุญไม่พอ/เดินไม่ได้) <button class="primary small" id="pass">ผ่านตา (ได้บุญ +1)</button></div>`:''}`}
-   ${!ui.mode?`<div class="row">${isGod(S,act,'narai')&&!p.f.avatar&&mountsOf(S,act).length?`<button id="avatar">อวตาร: ย้ายพาหนะ (ฟรี)</button>`:''}${isGod(S,act,'narai')&&!p.f.avatar&&warpSrcs(S,act).length>=2?`<button id="avswap">อวตาร: สลับกอง (ฟรี)</button>`:''}${warpLeft(S,act)&&warpSrcs(S,act).length?`<button id="warp">🌀 เคลื่อนย้ายมิติ (เหลือ ${warpLeft(S,act)})</button>`:''}${has(S,act,'swap')&&!p.f.swap&&warpSrcs(S,act).length>=2?`<button id="cswap">🔀 สลับตำแหน่ง (ฟรี)</button>`:''}</div>`:''}
+   ${!ui.mode?`<div class="row">${isGod(S,act,'narai')&&!p.f.avatar&&mountsOf(S,act).length?`<button id="avatar">อวตาร: ย้ายพาหนะ (ฟรี)</button>`:''}${isGod(S,act,'narai')&&!p.f.avatar&&warpSrcs(S,act).length>=2?`<button id="avswap">อวตาร: สลับกอง (ฟรี)</button>`:''}${warpLeft(S,act)&&warpSrcs(S,act).length?`<button id="warp">🌀 เคลื่อนย้ายมิติ (เหลือ ${warpLeft(S,act)})</button>`:''}${has(S,act,'swap')?(p.f.swap?`<button disabled>🔀 สลับตำแหน่ง (ใช้แล้วรอบนี้)</button>`:warpSrcs(S,act).length>=2?`<button id="cswap">🔀 สลับตำแหน่ง (ฟรี)</button>`:`<button disabled title="ต้องมีกองนอกเมืองอย่างน้อย 2 กอง">🔀 สลับตำแหน่ง (ต้องมีกองนอกเมือง 2 กอง)</button>`):''}</div>`:''}
   </div>`;
 }
 /* ย้ายที่นั่งให้คนที่เปลี่ยนเครื่อง: คนที่ยังอยู่ในห้องใส่รหัสของเครื่องใหม่ */
@@ -749,7 +749,7 @@ function playersBox(S,act){
      <div><button class="godlink" ${infoAttr('god:'+godOf(S,s))}><b>${esc(gname(S,s))}</b></button> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
        <div class="small muted">${s===act?'<b style="color:var(--ink)">กำลังเดิน</b> · ':''}แอคชัน ${p.used.length}/${actionLimit(S,s)}${doneAll?' · เดินครบแล้ว':''}</div></div>
      <div class="stats"><span title="คะแนนรวม">★ ${total(S,s)}</span><span title="บุญ">บุญ ${p.merit}</span><span title="บาป" style="color:${p.sin>=2?'var(--warn)':'inherit'}">บาป ${p.sin}/3</span></div>
-     <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span>${hidesCards(S,s)&&!viewers(S).includes(s)?'<span class="chip muted">การ์ดรบ: ซ่อน</span>':''}<span class="bcmini-wrap" aria-label="การ์ดรบ" ${hidesCards(S,s)&&!viewers(S).includes(s)?'hidden':''}>${hand(S,s).map(c=>{const used=p.uc.includes(c);return `<span class="bcmini ${used?'used':''}" data-tip="${esc(CARD[c].n)} · พลัง ${CARD[c].s} ฆ่า ${CARD[c].k}${used?' · ใช้ไปแล้ว':' · ยังอยู่ในมือ'}" tabindex="0"><b>${CARD[c].s}</b>/${CARD[c].k}</span>`}).join('')}<span class="small muted" style="margin-left:2px">${p.uc.length?`ใช้แล้ว ${p.uc.length} · ใช้ครบเมื่อไรได้คืนทั้งชุด`:'ครบมือ'}</span></span><span class="chip tab">คลัง ${reserve(S,s)}</span>
+     <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span>${hidesCards(S,s)&&!viewers(S).includes(s)?'<span class="chip muted">การ์ดรบ: ซ่อน</span>':''}<span class="bcmini-wrap" aria-label="การ์ดรบ" ${hidesCards(S,s)&&!viewers(S).includes(s)?'hidden':''}>${hand(S,s).map(c=>{const used=p.uc.includes(c);return `<span class="bcmini ${used?'used':''}" data-tip="${esc(CARD[c].n)} · พลัง ${CARD[c].s} ฆ่า ${CARD[c].k}${used?' · ใช้ไปแล้ว':' · ยังอยู่ในมือ'}" tabindex="0"><b>${CARD[c].s}</b>/${CARD[c].k}</span>`}).join('')}<span class="small muted" style="margin-left:2px">${p.uc.length?`ใช้แล้ว ${p.uc.length} · ใช้ครบเมื่อไรได้คืนทั้งชุด`:'ครบมือ'}</span></span><span class="chip tab">คลัง ${reserveHidden(S,s,viewers(S))?'?':reserve(S,s)}</span>
      ${mountsOf(S,s).map(k=>`<button class="chip info mount" ${infoAttr('mount:'+k)}><span class="mic">${MOUNTS[k].ic}</span>${MOUNTS[k].name}</button>`).join('')}${p.pw.map(id=>`<button class="chip info line-${PW[id].line}" ${infoAttr('pw:'+id)}>${PW[id].name}</button>`).join('')}</div></div>`}).join('')}</div>
      ${S.status==='play'?`<p class="small" style="margin:10px 0 0"><b>รอบหน้า</b> (ถ้าคะแนนเป็นแบบตอนนี้): ${nxt.map((s,i)=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}">${i+1}</span>${esc(gname(S,s))}</span>`).join(' ')}</p>`:''}
      ${act>=0&&GOD[godOf(S,act)]?`<p class="small muted" style="margin-top:6px">${esc(GOD[godOf(S,act)].ab)}: ${esc(GOD[godOf(S,act)].txt)}</p>`:''}</div>`;
