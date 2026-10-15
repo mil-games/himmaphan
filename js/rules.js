@@ -12,7 +12,7 @@ const GODS=[
  {k:'chan',name:'พระจันทร์',mount:'durong',ab:'จันทรคติ',txt:'กลางคืน ตั้งรับ +1 และกองที่ไม่ได้ขยับทั้งรอบ ตั้งรับ +1',weak:'กลางวันไม่มีโบนัส'},
  {k:'jupiter',name:'พระพฤหัสบดี',mount:'kwang',ab:'ครูเทวดา',txt:'ตอนยึดวัดหรือเขาพระสุเมรุอยู่ การ์ดพลังเลเวล 2–3 ถูกลง 1 บุญ',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'ganga',name:'พระแม่คงคา',mount:'makara',ab:'สายน้ำศักดิ์สิทธิ์',txt:'รบในช่องริมน้ำ +1 ทั้งบุกและรับ และเดินจากริมน้ำไปริมน้ำไหนก็ได้',weak:'รบที่อื่นปกติ'},
- {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'เดินทัพได้ 2 ช่อง ทั้งกลางวันและกลางคืน (ก้าวที่ 2 บุกไม่ได้ และเข้าวัดหรือเขาไม่ได้)',weak:'เกณฑ์ทัพได้น้อยลง 1 ตัว และกองนอกเมืองมีได้แค่ 4 ตัว'},
+ {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'เดินทัพได้ 2 ช่อง ทั้งกลางวันและกลางคืน (ก้าวที่ 2 บุกไม่ได้ และเข้าวัดหรือเขาไม่ได้)',weak:'กองนอกเมืองมีได้แค่ 4 ตัว'},
  {k:'thorani',name:'พระแม่ธรณี',mount:'hera',ab:'แผ่นดินค้ำจุน',txt:'ตั้งรับ +1 และ +1 ต่อกองของคุณที่อยู่ติดช่องนั้น (รวมสูงสุด +3)',weak:'บุกไม่มีโบนัส'},
  {k:'vessuwan',name:'ท้าวเวสสุวรรณ',mount:'asura',ab:'จอมอสูร',txt:'บุกชนะ ขโมยบุญฝ่ายแพ้ 1 และคนอื่นไม่เห็นการ์ดรบในมือคุณ',weak:'บาปเต็มเสียทหาร 3 ตัว (ปกติ 2)'},
  {k:'rahu',name:'พระราหู',mount:'kaisornnaka',ab:'อุปราคา',txt:'กลางคืน บุก +1 เพิ่ม (รวม +2) และคนอื่นไม่เห็นจำนวนทหารในกองนอกเมืองของคุณ',weak:'กลางวันไม่มีโบนัส'},
@@ -87,7 +87,7 @@ const POWERS=[
  P('merchant','maya',3,'พ่อค้ามายา','ทุกอย่างในร้านถูกลง 1 บุญ'),P('swap','maya',3,'สลับตำแหน่ง','รอบละครั้ง สลับตำแหน่งกอง 2 กองของคุณ (ฟรี)'),P('vpM','maya',3,'ตราประทับมายา','ได้ 1 คะแนนถาวรทันที'),
  P('monk','bun',1,'ธุดงค์','ทำบุญแล้วได้ทหาร 1 ตัวลงเมือง'),P('novice','bun',1,'สามเณร','มีทหารทั้งหมด 11 ตัว'),P('bowl','bun',1,'บิณฑบาต','เกณฑ์ทัพลงวัดที่ยึดอยู่ได้ (ไม่รวมวัดหลวง)'),P('lamp','bun',1,'โคมประทีป','ตั้งรับในวัด ฝ่ายบุกไม่ได้โบนัสกลางคืน'),
  P('bless','bun',2,'อำนวยพร','การ์ดรบเหลือ 1 ใบ ได้คืนทั้งชุด'),P('beast','bun',2,'บารมีสัตว์','พาหนะรบในถิ่น +2 (ปกติ +1)'),P('haven','bun',2,'เขตอภัยทาน','ศัตรูบุกวัดของคุณแล้วแพ้ ต้องถอย 2 ช่อง'),
- P('dharma','bun',3,'ธรรมจักร','พลังรบเสมอ คุณชนะ (บุกและรับ)'),P('deva','bun',3,'เทวดาคุ้มครอง','กองโดนฆ่าหมด ได้ทหารคืนลงเมืองเท่าที่ตาย สูงสุด 3 (รอบละครั้ง)'),P('karma','bun',2,'กรรมตามสนอง','ใครบุกชนะคุณ ได้บาปเพิ่ม 1'),P('rebirth','bun',3,'คืนชีพ','เสียทหารในศึก ได้คืน 1 ตัวลงเมือง')
+ P('dharma','bun',3,'กองทัพศรัทธา','ทหารทั้งหมด 12 ตัว แต่กองนอกเมืองจุลดลง 1'),P('deva','bun',3,'เทวดาคุ้มครอง','กองโดนฆ่าหมด ได้ทหารคืนลงเมืองเท่าที่ตาย สูงสุด 3 (รอบละครั้ง)'),P('karma','bun',2,'กรรมตามสนอง','ใครบุกชนะคุณ ได้บาปเพิ่ม 1'),P('rebirth','bun',3,'คืนชีพ','เสียทหารในศึก ได้คืน 1 ตัวลงเมือง')
 ];
 /* เรียงตามสายแล้วตามเลเวล ให้ร้านค้าแสดงเลเวลต่อกัน */
 POWERS.sort((a,b)=>LINE_ORDER.indexOf(a.line)-LINE_ORDER.indexOf(b.line)||a.lv-b.lv);
@@ -163,8 +163,8 @@ const ownsM=(S,s,k)=>!!(S.M[k]&&S.M[k].o===s);
 const meritAmt=(S,s)=>(has(S,s,'holy')?3:2)+(isGod(S,s,'ganesha')&&holyGround(S,s)?1:0)+(ownsM(S,s,'kinnaree')?(isGod(S,s,'saraswati')?2:1):0);
 function mountsOf(S,s){return MK.filter(k=>S.M[k]&&S.M[k].o===s)}
 function onBoard(S,s){let t=0;for(const c of S.B)if(c.o===s)t+=c.t;if(S.battle&&S.battle.a===s)t+=S.battle.n;if(S.retreat&&S.retreat.loser===s)t+=S.retreat.n;return t}
-const reserve=(S,s)=>(isGod(S,s,'reusi')?9:10)+(has(S,s,'novice')?1:0)-onBoard(S,s);
-const cap=(S,s,i)=>i===cityOf(s)?99:mountsAt(S,i,s).length>=2?4:(has(S,s,'fort')?6:5)-(isGod(S,s,'vayu')?1:0);
+const reserve=(S,s)=>(isGod(S,s,'reusi')?9:10)+(has(S,s,'novice')?1:0)+(has(S,s,'dharma')?2:0)-onBoard(S,s);
+const cap=(S,s,i)=>i===cityOf(s)?99:mountsAt(S,i,s).length>=2?4:(has(S,s,'fort')?6:5)-(isGod(S,s,'vayu')?1:0)-(has(S,s,'dharma')?1:0);
 function templesHeld(S,s){let n=0;for(let i=1;i<S.B.length;i++)if(ctype(S,i)==='temple'&&S.B[i].o===s&&S.B[i].t>0)n++;return n}
 function tempVP(S,s){return templesHeld(S,s)+(S.B[0].o===s&&S.B[0].t>0?2:0)}
 const total=(S,s)=>S.P[s].vp+tempVP(S,s);
@@ -221,7 +221,7 @@ function recruitTargets(S,s){
   if(has(S,s,'bowl')||isGod(S,s,'brahma'))for(let j=1;j<S.B.length;j++)if(terr(S,j)==='temple'&&S.B[j].o===s&&S.B[j].t>0&&!out.includes(j))out.push(j);
   return out.filter(j=>j===cityOf(s)||S.B[j].t<cap(S,s,j));
 }
-const recruitAmt=(S,s,cell)=>(isGod(S,s,'brahma')?3:isGod(S,s,'vayu')?1:2)+(has(S,s,'levy')?1:0)+(has(S,s,'merc')?1:0)+(cell!=null&&isGod(S,s,'ganesha')&&ownsM(S,s,'thakthor')&&S.M.thakthor.c===cell&&cell!==cityOf(s)?1:0);
+const recruitAmt=(S,s,cell)=>(isGod(S,s,'brahma')?3:2)+(has(S,s,'levy')?1:0)+(has(S,s,'merc')?1:0)+(cell!=null&&isGod(S,s,'ganesha')&&ownsM(S,s,'thakthor')&&S.M.thakthor.c===cell&&cell!==cityOf(s)?1:0);
 
 /* เกณฑ์ทัพต้องจ่ายบุญ ตัวละ 1 บุญ (ค่ายฝึก: จ่าย 1 บุญต่อครั้ง ไม่ว่ากี่ตัว) บุญไม่พอได้ทหารเท่าที่จ่ายไหว */
 const recruitPrice=(S,s,n)=>n<=0?0:has(S,s,'drill')?1:Math.max(1,n-(isGod(S,s,'brahma')?1:0)-(has(S,s,'merc')?1:0));
@@ -231,7 +231,7 @@ function recruitN(S,s,cell){if(cell==null)cell=cityOf(s);const room=cell===cityO
 const canRecruitAny=(S,s)=>reserve(S,s)>0&&recruitTargets(S,s).some(t=>recruitN(S,s,t)>0);
 function doRecruitRule(S,s,cell){const n=recruitN(S,s,cell);if(n<=0)return 0;const c=recruitPrice(S,s,n);
   S.P[s].merit-=c;placeTroops(S,s,cell,n);trail(S,{k:'rec',s,t:cell,n});markAction(S,s,'recruit');
-  log(S,`${gname(S,s)} เกณฑ์ทัพ ${n} ตัว ลง${cname(S,cell)} (จ่าย ${c} บุญ)`);return n}
+  log(S,hidesAll(S,s)?`${gname(S,s)} เกณฑ์ทัพ ลง${cname(S,cell)}`:`${gname(S,s)} เกณฑ์ทัพ ${n} ตัว ลง${cname(S,cell)} (จ่าย ${c} บุญ)`);return n}
 /* ธุดงค์: ทำบุญแล้วได้ทหาร 1 ตัวลงเมือง */
 function monkBonus(S,s){if(has(S,s,'monk')&&reserve(S,s)>0){placeTroops(S,s,cityOf(s),1);return ' · ธุดงค์ได้ทหาร 1 ตัว'}return ''}
 function reachable(S,s,src,carry,maxRange){
@@ -331,9 +331,9 @@ function resolveBattle(S,defCard){
   const bm=battleMods(S,A,D,nA,nD,mA,mD,cell,b.from);pA.push(...bm.a);pD.push(...bm.d);if(bm.note)notes.push(...bm.note);
   const sA=pA.reduce((t,x)=>t+x[1],0),sD=pD.reduce((t,x)=>t+x[1],0);
   /* เสมอ = ฝ่ายรับชนะ เว้นฝ่ายบุกมีธรรมจักร (และฝ่ายรับไม่มี) */
-  const tieA=sA===sD&&!has(S,D,'dharma')&&(has(S,A,'dharma')||has(S,A,'illusion'));
+  const tieA=sA===sD&&has(S,A,'illusion');
   const aWin=sA>sD||tieA;
-  if(tieA)notes.push(has(S,A,'illusion')?'ภาพลวงตา: เสมอแล้วชนะ':'ธรรมจักร: เสมอแล้วชนะ');
+  if(tieA)notes.push('ภาพลวงตา: เสมอแล้วชนะ');
   // damage each side deals
   const km=killMods(S,A,D,mA,mD,b.n,S.B[cell].t);
   const kA=[['การ์ด',cA.k],...km.a,...(aWin?km.aWin:[])],kD=[['การ์ด',cD.k],...km.d,...(aWin?[]:km.dWin)];
@@ -542,9 +542,13 @@ function doSwapRule(S,s,a,b,via){if(a===b||!swapSrcs(S,s).includes(a)||!swapSrcs
   markMv(S,s,a);markMv(S,s,b);if(via==='card')S.P[s].f.swap=true;else S.P[s].f.avatar=true;
   log(S,`${gname(S,s)} ${via==='card'?'สลับตำแหน่ง':'อวตาร สลับ'}กองที่${cname(S,a)}กับ${cname(S,b)}`);return true}
 /* ข้อมูลที่ซ่อน: จำนวนทหารที่คนอื่นเห็นเป็น "?" (ป่าลึก, เงาพราง, ราหูตอนกลางคืน) เปิดเมื่อกองนั้นอยู่ในศึก */
-function countHidden(S,cell,viewers){const c=S.B[cell];if(!c||c.t<=0||c.o<0||viewers.includes(c.o)||ctype(S,cell)==='city')return false;
+const hidesAll=(S,s)=>has(S,s,'shade')||(isGod(S,s,'rahu')&&S.moon==='wane');
+function countHidden(S,cell,viewers){const c=S.B[cell];if(!c||c.t<=0||c.o<0||viewers.includes(c.o))return false;
   if(S.battle&&(S.battle.to===cell||S.battle.from===cell))return false;
-  return terr(S,cell)==='deep'||has(S,c.o,'shade')||(isGod(S,c.o,'rahu')&&S.moon==='wane')}
+  /* เงาพราง/ราหูกลางคืน ซ่อนทุกกองรวมเมือง (ไม่งั้นบวกลบหาได้) · ป่าลึกซ่อนเฉพาะกองในป่าลึก */
+  return terr(S,cell)==='deep'||hidesAll(S,c.o)}
+/* ซ่อนจำนวนในคลังด้วย ถ้าผู้เล่นคนนั้นมีกองที่ซ่อนอยู่ (ไม่งั้นคำนวณย้อนได้) */
+function reserveHidden(S,s,viewers){if(viewers.includes(s))return false;return hidesAll(S,s)||S.B.some((c,j)=>c.o===s&&c.t>0&&terr(S,j)==='deep')}
 const hidesCards=(S,s)=>has(S,s,'rumor')||isGod(S,s,'vessuwan');
 function computeFollow(S,s,afterMove,bonusFrom,vfrom){
   const f={seat:s,vajra:false,assn:false,bonusFrom:bonusFrom??null,vfrom:vfrom??null};
@@ -693,7 +697,7 @@ const PW_DETAIL={
  bless:'ปกติการ์ดรบได้คืนเมื่อใช้ครบทุกใบ การ์ดนี้ทำให้เหลือในมือ 1 ใบก็ได้คืนทั้งชุด',
  beast:'พาหนะของคุณรบในถิ่นของมัน ได้ +2 แทน +1',
  haven:'ศัตรูบุกวัดหรือวัดหลวงที่คุณยึดแล้วแพ้ ทหารที่เหลือต้องถอยไปไกล 2 ช่อง (ถ้าไม่มีช่องให้ถอย 2 ช่อง ถอย 1 ช่อง)',
- dharma:'พลังรบเสมอกัน คุณเป็นฝ่ายชนะ ทั้งตอนบุกและตอนตั้งรับ (ถ้าทั้งสองฝ่ายมีการ์ดนี้ ฝ่ายรับชนะตามปกติ)',
+ dharma:'ทหารทั้งหมดของคุณเพิ่มจาก 10 เป็น 12 ตัว (ตัวที่เพิ่มอยู่ในคลัง) แต่กองนอกเมืองจุทหารได้ลดลง 1 (ปกติ 5 เหลือ 4 ถ้ามีป้อมค่ายก็ 6 เหลือ 5)',
  deva:'รอบละครั้ง ถ้ากองของคุณในศึกโดนฆ่าหมดทั้งกอง ได้ทหารจากคลังลงเมืองเท่าจำนวนที่ตาย สูงสุด 3 ตัว',
  plunder:'บุกแล้วชนะ ได้บุญ +2 ทันที (ไม่ต้องเหลือทหารก็ได้)',
  siege:'ตอนบุกวัด วัดหลวง หรือเขาพระสุเมรุ พลังรบ +1',
