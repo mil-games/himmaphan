@@ -165,7 +165,7 @@ function renderInner(){
   if(view.name==='lobby')return renderLobby();
   if(!G){app.innerHTML=`<p class="muted">กำลังโหลดเกม… <button class="ghost" id="back">กลับหน้ารวม</button></p>`;document.getElementById('back').onclick=showLobby;return}
   if(G.status==='lobby'||G.status==='draft')return renderSeating();
-  if(!isTut(GID)&&G.B&&G.B.length!==SECT*G.n+2){app.innerHTML=`<div class="panel stack"><h2>ห้องนี้ใช้แผนที่รุ่นเก่า</h2><p class="small">แผนที่ถูกขยายใหม่ (ผู้เล่นละ 8 ช่อง) ห้องที่เริ่มเล่นก่อนอัปเดตเปิดต่อไม่ได้ เปิดห้องใหม่ได้เลย${G.host===ME?' หรือลบห้องนี้ทิ้ง':''}</p><div class="row"><button class="primary" id="back">กลับหน้ารวม</button>${G.host===ME?'<button class="ghost" id="delold">ลบห้องนี้</button>':''}</div></div>`;
+  if(!isTut(GID)&&G.B&&G.B.length!==SECT*G.n+2){app.innerHTML=`<div class="panel stack"><h2>ห้องนี้ใช้แผนที่รุ่นเก่า</h2><p class="small">แผนที่ถูกปรับใหม่ (ผู้เล่นละ 6 ช่อง) ห้องที่เริ่มเล่นก่อนอัปเดตเปิดต่อไม่ได้ เปิดห้องใหม่ได้เลย${G.host===ME?' หรือลบห้องนี้ทิ้ง':''}</p><div class="row"><button class="primary" id="back">กลับหน้ารวม</button>${G.host===ME?'<button class="ghost" id="delold">ลบห้องนี้</button>':''}</div></div>`;
     document.getElementById('back').onclick=showLobby;const d=document.getElementById('delold');if(d)d.onclick=async()=>{try{await STORE.del(GID)}catch(e){}showLobby()};return}
   renderGame();
 }
@@ -240,7 +240,7 @@ function mapLayout(S){
   const span=Math.PI*2/n;
   // ตำแหน่งตามบล็อก k: [รัศมี, ระยะมุมในบล็อก]
   /* ตำแหน่งตามช่อง k ในบล็อก: [รัศมี, ระยะมุมในบล็อก] */
-  const K=[[1.00,0.50],[0.97,0.16],[0.97,0.84],[0.80,0.30],[0.80,0.70],[0.66,0.50],[0.50,0.14],[0.42,0.80]];
+  const K=[[1.00,0.50],[0.90,0.20],[0.90,0.80],[0.70,0.50],[0.50,0.16],[0.42,0.80]];
   const roy=hasRoyal(S);const pos=[{x:roy?cx-60:cx,y:cy}];
   for(let s=0;s<n;s++)for(let k=0;k<SECT;k++){
     const [r0,o]=K[k];const r=r0*(1+(rnd()-.5)*0.08);const a=-Math.PI/2+s*span+o*span+(rnd()-.5)*span*0.05;
@@ -330,7 +330,7 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
     const qx=mx-dy*bd,qy=my+dx*bd;const toC=i===0||j===0||isRoyal(S,i)||isRoyal(S,j);
     lines+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}Q${qx.toFixed(1)} ${qy.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}" fill="none" stroke="var(--line)" stroke-width="${toC?2:3}" stroke-linecap="round" ${toC?'stroke-dasharray="3 7"':''}/>`}
   // ทะเลสีทันดร: แถบน้ำวงในผ่านช่องริมน้ำทุกช่อง
-  const wpts=[];for(let s=0;s<S.n;s++){const k=mapOf(S).types.indexOf('water');if(k>=5)wpts.push(M.pos[1+SECT*s+k])}
+  const wpts=[];for(let s=0;s<S.n;s++){const k=mapOf(S).types.indexOf('water');if(k>=3)wpts.push(M.pos[1+SECT*s+k])}
   let river='';if(wpts.length>1){const cxm=M.pos[0].x,pts=wpts.map((p,i)=>p);
     const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
     let d=`M${mid(pts.at(-1),pts[0]).x.toFixed(1)} ${mid(pts.at(-1),pts[0]).y.toFixed(1)}`;
@@ -875,10 +875,10 @@ function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
 let TUT=null;
 const isTut=gid=>String(gid||'').startsWith('tut');
 const TSTEPS=[
- {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,6,9,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
+ {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,4,7,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
  {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: จ่ายบุญตัวละ 1 เพิ่มทหารในเมือง 2 ตัว<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
  {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ (จ่ายบุญตัวละ 1 บุญ) ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
- {k:'do',t:'ยึดวัดแรก',hl:[6],allow:['move'],b:`วัดอยู่ห่างเมือง 3 ก้าว คุณมีกองหน้า 2 ตัวรออยู่แล้วในป่าชั้นในที่ติดกับวัด กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[6].o===0&&S.B[6].t>0&&!S.follow},
+ {k:'do',t:'ยึดวัดแรก',hl:[4],allow:['move'],b:`วัดอยู่ห่างเมือง 2 ก้าว คุณมีกองหน้า 2 ตัวรออยู่แล้วในป่าที่ติดกับวัด กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[4].o===0&&S.B[4].t>0&&!S.follow},
  {k:'do',t:'ทำบุญ',allow:['merit'],b:`คุณได้ 1 คะแนนจากวัดแล้ว ดูดาว ★ ในแถบผู้เล่น ต่อไปกด <b>ทำบุญ</b> รับบุญ +2 บุญเอาไว้ซื้อการ์ดพลัง`,done:S=>S.round>1||S.P[0].used.includes('merit')},
  {k:'info',t:'จบรอบ · กลางวันและกลางคืน',b:`เมื่อทุกคนทำครบ 3 แอคชัน รอบจะจบ<br>• ทุกคนได้บุญ +1<br>• รอบ <b>กลางวัน</b> ได้บุญเพิ่ม +1 ต่อวัดที่ยึดอยู่<br>• จากนั้นสลับเป็น <b>กลางคืน</b>: ฝ่ายบุกได้พลังรบ +1 (ดูแถบเหนือแผนที่ ☀ กลางวัน / ☾ กลางคืน)<br>• ใครยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุไว้ได้จน<b>จบรอบกลางคืน</b> ได้ <b>ครองแดน</b> +1 คะแนนถาวร (ดูชื่อคนที่เข้าเงื่อนไขในแถบเหนือแผนที่)<br>• ใครถึงเป้าตอนจบกลางคืน = <b>ผู้ท้าชิง</b> ต้องรักษาคะแนนไว้ต่ออีก 1 วันถึงจะชนะ คนอื่นมีเวลาทั้งวันรุมแย่งคืน<br>• คนคะแนนน้อยสุดได้เล่นก่อนในรอบถัดไป ดูเลขลำดับหน้าชื่อในแถบผู้เล่น`},
  {k:'do',t:'บุก!',hl:[3],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์`,done:S=>!!(S.last&&S.last.A===0)},
@@ -891,7 +891,7 @@ const TSTEPS=[
 function tutState(){
   const S={v:1,created:Date.now(),host:ME,status:'lobby',solo:false,n:2,target:8,useL3:false,openCards:false,
     seats:[{uid:ME,god:'indra'},{uid:'bot',god:'varuna'}],log:[]};
-  setupGame(S);S.map='classic';S.seed=20261012;S.order=[0,1];S.pos=0;S.B[4]={o:0,t:2};S.B[3]={o:1,t:2};S.log=[];log(S,'บทเรียนเริ่ม · กลางวัน');
+  setupGame(S);S.map='classic';S.seed=20261012;S.order=[0,1];S.pos=0;S.B[2]={o:0,t:2};S.B[3]={o:1,t:2};S.log=[];log(S,'บทเรียนเริ่ม · กลางวัน');
   return S;
 }
 function startTutorial(){
