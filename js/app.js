@@ -49,7 +49,7 @@ function showLobby(){
   clearPops();
   try{document.title='ศึกเทพหิมพานต์'}catch(e){}
   TUT=null;
-  view={name:'lobby'};GID=null;G=null;ui={mode:null};
+  view={name:'lobby'};GID=null;G=null;ui={mode:null};chatStop();
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   watchLobby(rows=>{lobbyRows=rows.sort((a,b)=>(b.d.upd||b.d.created||0)-(a.d.upd||a.d.created||0));rows.forEach(r=>noteNames(r.d));render()});
   render();
@@ -70,7 +70,7 @@ function renderLobby(){
     <div class="row"><button class="${myTurn?'primary':''}" data-open="${esc(r.id)}">${d.status==='done'?'ดูผล':'เข้าห้อง'}</button>${d.host===ME?`<button class="ghost small" data-del="${esc(r.id)}">ลบ</button>`:`<button class="ghost small" data-hide="${esc(r.id)}" title="ซ่อนจากรายการในเครื่องนี้">ซ่อน</button>`}</div></div>`};
   app.innerHTML=`
   <div class="hero">
-    <div><h1>ศึกเทพหิมพานต์</h1>
+    <div><div class="herotitle">${EMBLEM}<h1>ศึกเทพหิมพานต์</h1></div>
       <p>เทพไทย 2–7 องค์ ชิงวัดและเขาพระสุเมรุ เกมเดินแบบผลัดตา ใครว่างก็เข้ามาเดินตาของตัวเอง ไม่ต้องออนไลน์พร้อมกัน</p>
       <p><button class="primary" id="learn">เรียนวิธีเล่น (ประมาณ 5 นาที)</button></p>
       ${modeNote()}
@@ -84,7 +84,8 @@ function renderLobby(){
         <label>จำนวนผู้เล่น<select id="nf-n">${[2,3,4,5,6,7].map(n=>`<option value="${n}"${n===2?' selected':''}>${n} คน</option>`).join('')}</select></label>
         <label>คะแนนที่ต้องได้<select id="nf-t"><option value="6">6 (เกมสั้น)</option><option value="8" selected>8</option><option value="10">10 (เกมยาว)</option></select></label>
         <label>แผนที่<select id="nf-map"><option value="random" selected>สุ่ม (${MAPS.length} แบบ)</option>${MAPS.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></label>
-        <label class="row"><input type="checkbox" id="nf-l3"> ใช้การ์ดเลเวล 3 ด้วย (36 ใบ)</label>
+        <fieldset class="linepick"><legend>สายการ์ดที่ใช้</legend><div class="row">${LINE_ORDER.map(l=>`<label class="row lchip line-${l}"><input type="checkbox" name="nf-line" value="${l}" ${defaultLines(2).includes(l)?'checked':''}> ${LINES[l]}</label>`).join('')}</div><p class="small muted" id="nf-supply"></p></fieldset>
+        <label class="row"><input type="checkbox" id="nf-l3" checked> ใช้การ์ดเลเวล 3 ด้วย</label>
         <label class="row"><input type="checkbox" id="nf-open"> เปิดการ์ด: ฝ่ายรับเห็นการ์ดฝ่ายบุกก่อนเลือก</label>
         <label class="row"><input type="checkbox" id="nf-solo"> ทดสอบคนเดียว (คุมทุกฝ่ายเอง)</label>
         <button class="primary" type="submit">เปิดห้อง</button>
@@ -101,6 +102,11 @@ function renderLobby(){
     if(code.length!==6){toast('รหัสห้องมี 6 ตัว');return}
     const d=await STORE.get(code).catch(()=>null);if(!d){toast('ไม่พบห้อง '+code);return}
     openGame(code)};
+  /* ตั้งค่าสายการ์ดตามจำนวนคน จนกว่าเจ้าของห้องจะเลือกเอง และบอกว่าการ์ดพอไหม */
+  {const nSel=document.getElementById('nf-n'),l3=document.getElementById('nf-l3'),boxes=[...document.querySelectorAll('[name=nf-line]')];let touchedL=false,touched3=false;
+   const upd=()=>{const n=+nSel.value;if(!touchedL)boxes.forEach(b=>b.checked=defaultLines(n).includes(b.value));if(!touched3)l3.checked=true;
+     const ls=boxes.filter(b=>b.checked).map(b=>b.value);const c=cardCount(ls,l3.checked);document.getElementById('nf-supply').innerHTML=supplyNote(n,c,ls.length)};
+   nSel.onchange=upd;boxes.forEach(b=>b.onchange=()=>{touchedL=true;if(!boxes.some(x=>x.checked))b.checked=true;upd()});l3.onchange=()=>{touched3=true;upd()};upd()}
   document.getElementById('newf').onsubmit=async e=>{e.preventDefault();
     const n=+document.getElementById('nf-n').value,target=+document.getElementById('nf-t').value,useL3=document.getElementById('nf-l3').checked,solo=document.getElementById('nf-solo').checked;
     const nm=cleanName(nick.value);setMyName(nm);
@@ -108,7 +114,8 @@ function renderLobby(){
     if(solo){const gs=GODS.map(g=>g.k).sort(()=>Math.random()-.5);seats.forEach((x,i)=>{x.uid=ME;x.god=gs[i];x.name=nm})}
     const openCards=document.getElementById('nf-open').checked;
     const mapPick=document.getElementById('nf-map').value;
-    const data={v:1,created:Date.now(),host:ME,status:'lobby',solo,n,target,useL3,openCards,mapPick,seats,log:[]};
+    const lines=[...document.querySelectorAll('[name=nf-line]:checked')].map(b=>b.value);
+    const data={v:1,created:Date.now(),host:ME,status:'lobby',solo,n,target,useL3,lines,openCards,mapPick,seats,log:[]};
     try{const id=await createGame(data);openGame(id)}catch(err){toast('เปิดห้องไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง')}
   };
   app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openGame(b.dataset.open));
@@ -146,14 +153,14 @@ function rulesRef(){return `<details class="panel" style="margin-top:20px"><summ
 /* ===================== RENDER: GAME ===================== */
 function openGame(id){
   clearPops();
-  GID=id;view={name:'game'};ui={mode:null};G=null;
+  GID=id;view={name:'game'};ui={mode:null};G=null;chatStart(id);
   try{history.replaceState(null,'','#g-'+id)}catch(e){}
   try{localStorage.setItem('hmp-last',id)}catch(e){}
   watchGame(id,S=>{
     if(!S){G=null;render();return}
-    const firstCb=!G;const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
+    const firstCb=!G;const prevS=G;const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
     if(prevTurn!==activeSeat(S))ui={mode:null};
-    noteNames(S);render();tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
+    noteNames(S);render();chatDraw();if(!firstCb)boardFx(prevS,S);tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
     if(S.status==='play'&&turnKey(S)!==prevKey)turnPopup(S,prevKey===null);
   });
   render();
@@ -173,7 +180,7 @@ function renderInner(){
   renderGame();
 }
 function topBar(S,extra){
-  return `<div class="top"><div class="row"><button class="ghost" id="back">← ห้องทั้งหมด</button><h1>ศึกเทพหิมพานต์</h1></div>
+  return `<div class="top"><div class="row"><button class="ghost" id="back">← ห้องทั้งหมด</button><h1>ศึกเทพหิมพานต์</h1><button class="ghost small" id="snd" aria-pressed="${sndOn()}" title="เปิด/ปิดเสียง">${sndOn()?'🔊 เสียง':'🔇 ปิดเสียง'}</button></div>
   <div class="meta"><span class="pill tab">${isTut(GID)?'บทเรียน':'ห้อง '+esc(GID)}</span>${extra||''}</div></div>`}
 /* แผนที่ของห้องนี้ ให้ทุกคนเห็นก่อนเลือกเทพ */
 function draftMapBox(S,isHost){
@@ -194,7 +201,7 @@ function renderSeating(){
   const seatCard=i=>{const x=S.seats[i];const pos=draft?S.draftOrder.indexOf(i):-1;const now=draft&&i===picker;
     return `<div class="seat" style="${now?'border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset':''}"><div class="row"><span class="dot" style="background:${SEATC(i)}"></span><b>${esc(who(i))}</b></div>
       ${draft?`<div class="small muted">ลำดับเลือกที่ ${pos+1}</div>`:''}
-      <div>${x.god?`<button class="godlink" ${infoAttr('god:'+x.god)}><b>${GOD[x.god].name}</b></button>`:`<span class="muted">${draft?(now?'กำลังเลือก…':'รอเลือก'):''}</span>`}</div></div>`};
+      <div>${x.god?`<button class="godlink" ${infoAttr('god:'+x.god)}>${godPic(x.god,'av')}<b>${GOD[x.god].name}</b></button>`:`<span class="muted">${draft?(now?'กำลังเลือก…':'รอเลือก'):''}</span>`}</div></div>`};
   const order=draft?S.draftOrder:S.seats.map((_,i)=>i);
   let body='';
   if(!draft){
@@ -202,6 +209,7 @@ function renderSeating(){
       <p class="small">รหัสห้อง <span class="code">${esc(GID)}</span> ส่งลิงก์ให้เพื่อน ทุกคนเข้านั่งให้ครบ ${S.n} ที่ แล้วเจ้าของห้องกดเริ่มเลือกเทพ ระบบจะเปิดแผนที่ให้ทุกคนเห็น (${S.mapPick&&MAPBY[S.mapPick]?esc(MAPBY[S.mapPick].name):'สุ่ม'}) และสุ่มว่าใครได้เลือกก่อน</p>
       <div class="share"><code id="slink">${esc(linkFor(GID))}</code><button id="copy">คัดลอกลิงก์</button></div>
       <div class="seats">${order.map(seatCard).join('')}</div>
+      ${linesBox(S,isHost)}
       ${seated?`<p><button class="ghost" id="leave">ลุกจากที่นั่ง</button></p>`:full?'<p class="muted">ห้องเต็มแล้ว</p>':`<div class="row"><label class="form" style="flex:1 1 220px"><span class="small">ชื่อในเกมของคุณ</span><input id="nick2" maxlength="20" placeholder="เช่น มิล" value="${esc(myName())}"></label><button class="primary" id="sit" style="align-self:flex-end">เข้านั่ง</button></div>`}
       </div>
       <div class="row">${isHost&&S.solo?`<button class="primary" id="startsolo">เริ่มเกม (สุ่มเทพให้)</button><button class="ghost" id="del">ลบห้องนี้</button>`:isHost?`<button class="primary" id="startdraft" ${full?'':'disabled'}>เริ่มเลือกเทพ</button><span class="small muted">${full?'ครบแล้ว':'รอให้ครบทุกที่นั่ง'}</span><button class="ghost" id="del">ลบห้องนี้</button>`:'<span class="muted">รอเจ้าของห้องกดเริ่มเลือกเทพ</span>'}</div>`;
@@ -211,7 +219,7 @@ function renderSeating(){
       <div class="seats">${order.map(seatCard).join('')}</div></div>
       ${draftMapBox(S,isHost)}
       <div class="panel"><h3>เทพ</h3><div class="gods" style="margin-top:10px">${GODS.map(g=>{const t=taken.has(g.k);const owner=S.seats.findIndex(x=>x.god===g.k);
-        return `<button class="god ${t?'taken':''}" data-god="${g.k}" ${t||!myPick?'disabled':''}><b>${g.name}</b>${g.arch?`<span class="archtag">${ARCH[g.arch].ic} ${ARCH[g.arch].n}</span>`:''}${t?` · ${esc(who(owner))}`:''}<div class="small"><b>${g.ab}</b>: ${g.txt}</div><div class="small muted">${g.weak} · พาหนะ ${MOUNTS[g.mount].ic} ${MOUNTS[g.mount].name}</div></button>`}).join('')}</div></div>
+        return `<button class="god ${t?'taken':''} ${!t&&myPick?'canpick':''}" data-god="${g.k}" aria-label="ดูการ์ด${g.name}${t?' (ถูกเลือกแล้ว)':''}"><span class="godart">${godPic(g.k,'banner')}<span class="godname"><b>${g.name}</b>${g.arch?`<span class="archtag">${ARCH[g.arch].ic} ${ARCH[g.arch].n}</span>`:''}</span>${t?`<span class="godtaken">${esc(who(owner))}</span>`:''}</span><div class="small"><b>${g.ab}</b>: ${g.txt}</div><div class="small muted">จุดอ่อน: ${g.weak} · พาหนะ ${MOUNTS[g.mount].ic} ${MOUNTS[g.mount].name}</div></button>`}).join('')}</div></div>
       ${isHost?`<div class="row"><button class="ghost" id="del">ลบห้องนี้</button></div>`:''}`;
   }
   app.innerHTML=topBar(S,`<span class="pill">${S.n} คน · เป้า ${S.target}</span>`)+`<div class="stack">${body}<div id="confirm"></div></div>`;
@@ -225,11 +233,23 @@ function renderSeating(){
   if($('startdraft'))$('startdraft').onclick=()=>mutate(GID,T=>{if(T.status!=='lobby'||T.host!==ME||!T.seats.every(x=>x.uid))return false;
     T.seats.forEach(x=>x.god=null);T.map=pickMap(T);T.seed=Math.floor(Math.random()*1e9);T.draftOrder=[...Array(T.n).keys()].sort(()=>Math.random()-.5);T.draftPos=0;T.status='draft'});
   if($('remap'))$('remap').onclick=()=>mutate(GID,T=>{if(T.status!=='draft'||T.host!==ME||T.draftPos>0)return false;const cur=T.map;let m=cur;if(!T.mapPick||T.mapPick==='random'){const others=MAPS.filter(x=>x.id!==cur);m=others[Math.floor(Math.random()*others.length)].id}T.map=m;T.seed=Math.floor(Math.random()*1e9)});
-  app.querySelectorAll('[data-god]').forEach(b=>b.onclick=e=>{e.stopPropagation();const k=b.dataset.god;
+  app.querySelectorAll('[data-god]').forEach(b=>b.onclick=e=>{e.stopPropagation();openGodPick(b.dataset.god,b)});
+  app.querySelectorAll('[data-line]').forEach(b=>b.onclick=()=>mutate(GID,T=>{if(T.status!=='lobby'||T.host!==ME)return false;const cur=activeLines(T);const l=b.dataset.line;
+    const nx=cur.includes(l)?cur.filter(x=>x!==l):[...cur,l];if(nx.length<1){toast('ต้องเหลืออย่างน้อย 1 สาย');return false}T.lines=LINE_ORDER.filter(x=>nx.includes(x))}));
+  app.querySelectorAll('[data-l3]').forEach(b=>b.onclick=()=>mutate(GID,T=>{if(T.status!=='lobby'||T.host!==ME)return false;T.useL3=!T.useL3}));
+  wireSeatingDel();
+}
+function linesBox(S,isHost){const act=activeLines(S);const c=cardCount(act,S.useL3);
+  return `<div class="linepick"><div class="small"><b>สายการ์ดที่ใช้</b>${isHost?' (กดเพื่อเปิด/ปิด ก่อนเริ่มเกม)':''}</div>
+    <div class="row">${LINE_ORDER.map(l=>isHost?`<button class="lchip line-${l} ${act.includes(l)?'on':''}" data-line="${l}" aria-pressed="${act.includes(l)}">${act.includes(l)?'✓ ':''}${LINES[l]}</button>`:act.includes(l)?`<span class="lchip line-${l} on">${LINES[l]}</span>`:'').join('')}
+    ${isHost?`<button class="lchip ${S.useL3?'on':''}" data-l3="1" aria-pressed="${!!S.useL3}">${S.useL3?'✓ ':''}เลเวล 3</button>`:S.useL3?'<span class="lchip on">มีเลเวล 3</span>':'<span class="lchip">ไม่มีเลเวล 3</span>'}</div>
+    <p class="small muted">${supplyNote(S.n,c,act.length)}</p></div>`}
+function pickGod(k){
     mutate(GID,T=>{if(T.status!=='draft')return false;const s=T.draftOrder[T.draftPos];if(!iControl(T,s))return false;if(T.seats.some(x=>x.god===k))return false;
       T.seats[s].god=k;T.draftPos++;
       if(T.draftPos>=T.n){const picks=T.draftOrder.map(i=>T.seats[i].god);const order=[...T.draftOrder].reverse();setupGame(T);T.order=order;T.pos=0;
-        log(T,`เลือกเทพเสร็จ: ${picks.map(g=>GOD[g].name).join(' → ')} · ${GOD[T.seats[order[0]].god].name}ได้เดินก่อน`)}})});
+        log(T,`เลือกเทพเสร็จ: ${picks.map(g=>GOD[g].name).join(' → ')} · ${GOD[T.seats[order[0]].god].name}ได้เดินก่อน`)}})}
+function wireSeatingDel(){const $=id=>document.getElementById(id);
   if($('del'))$('del').onclick=()=>{$('confirm').innerHTML=`<div class="banner warn row">ลบห้องนี้ถาวร? <button id="del2">ลบ</button><button class="ghost" id="del3">ยกเลิก</button></div>`;
     $('del3').onclick=()=>render();
     $('del2').onclick=async()=>{try{await STORE.del(GID)}catch(e){toast('ลบไม่สำเร็จ')}showLobby()}};
@@ -329,6 +349,21 @@ function trailText(S,x){const g=gname(S,x.s);const route=()=>x.p&&x.p.length>2?x
 function trailBox(S){const tr=S.trail||[];if(!tr.length&&!S.battle)return '';const on=showArrows();
   return `<div class="trailbox small"><div class="row" style="justify-content:space-between"><b>ความเคลื่อนไหวล่าสุด</b><label class="row small"><input type="checkbox" id="arrows" ${on?'checked':''}> แสดงลูกศรบนแผนที่</label></div>
     <ol>${tr.map((x,i)=>`<li><span class="ordno sm" style="background:${SEATC(x.s)}">${x.k==='atk'?'⚔':x.k==='rec'?'+':x.k==='vaj'?'⚡':i+1}</span>${esc(trailText(S,x))}${x.r!==S.round?` <span class="muted">(รอบ ${x.r})</span>`:''}</li>`).join('')}</ol></div>`}
+/* ลายเส้นจิตรกรรมฝาผนังจางๆ ในช่อง บอกชนิดพื้นที่ (วาดในกรอบ -1..1 แล้วย่อตามขนาดช่อง) */
+const GLYPH={
+ temple:'M-.55 .5 L.55 .5 M-.48 .5 L-.48 .05 M.48 .5 L.48 .05 M-.7 .1 L0 -.35 L.7 .1 M-.52 -.12 L0 -.55 L.52 -.12 M0 -.55 L0 -.8',
+ royal:'M-.55 .5 L.55 .5 M-.48 .5 L-.48 .05 M.48 .5 L.48 .05 M-.7 .1 L0 -.35 L.7 .1 M-.52 -.12 L0 -.55 L.52 -.12 M-.34 -.34 L0 -.7 L.34 -.34 M0 -.7 L0 -.92',
+ sumeru:'M-.85 .55 L-.4 -.15 L-.15 .2 L.1 -.6 L.45 .05 L.6 -.15 L.9 .55 Z M.1 -.6 L.02 -.35 L.18 -.38',
+ forest:'M-.45 .55 L-.45 .2 M-.45 .2 m-.28 0 a.28 .32 0 1 1 .56 0 a.28 .32 0 1 1 -.56 0 M.35 .55 L.35 .1 M.35 .1 m-.32 0 a.32 .38 0 1 1 .64 0 a.32 .38 0 1 1 -.64 0',
+ deep:'M-.6 .55 L-.35 -.1 L-.1 .55 Z M-.2 .55 L.1 -.35 L.4 .55 Z M.2 .55 L.5 -.05 L.78 .55 Z',
+ water:'M-.75 -.05 q.19 -.18 .375 0 t.375 0 t.375 0 t.375 0 M-.75 .3 q.19 -.18 .375 0 t.375 0 t.375 0 t.375 0',
+ plain:'M-.6 .45 l.1 -.35 M-.5 .45 l0 -.42 M-.4 .45 l-.1 -.35 M.25 .45 l.1 -.35 M.35 .45 l0 -.42 M.45 .45 l-.1 -.35',
+ city:'M-.5 .55 L.5 .55 M-.4 .55 L-.4 .1 L.4 .1 L.4 .55 M-.28 .1 L-.28 -.15 L.28 -.15 L.28 .1 M-.16 -.15 L-.16 -.4 L.16 -.4 L.16 -.15 M0 -.4 L0 -.8'};
+function glyph(t,x,y,r){const d=GLYPH[t];if(!d)return '';const k=r*0.62;
+  return `<path class="glyph" d="${d}" transform="translate(${x} ${y+r*0.05}) scale(${k})" fill="${t==='sumeru'?'#9A6A1222':'none'}" stroke="#6B4E26" stroke-opacity=".32" stroke-width="${(1.6/k).toFixed(3)}" stroke-linecap="round" stroke-linejoin="round"/>`}
+/* ตราเกม: เขาพระสุเมรุกลางวงแหวนจักรวาล ล้อมด้วยเมืองของเทพ */
+const EMBLEM=(()=>{const n=7,R=40;let dots='';for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;dots+=`<circle cx="${(50+R*Math.cos(a)).toFixed(1)}" cy="${(50+R*Math.sin(a)).toFixed(1)}" r="5" fill="var(--s${i})" stroke="#DDB259" stroke-width="1.2"/>`}
+  return `<svg class="emblem" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#DDB259" stroke-width="1"/><circle cx="50" cy="50" r="40" fill="none" stroke="#DDB259" stroke-width=".6" stroke-dasharray="2 3"/><circle cx="50" cy="50" r="27" fill="#24393C" stroke="#8FC3C6" stroke-width="1"/><path d="M33 62 L42 44 L47 52 L52 34 L60 50 L64 45 L71 62 Z" fill="#DDB259"/><path d="M52 34 L50.5 41 L54 40" fill="none" stroke="#1E0F0C" stroke-width="1"/>${dots}</svg>`})();
 function mapSVG(S,clickable,selected,hl){hl=hl||[];
   const M=mapLayout(S),n=L(S);
   let lines='';
@@ -356,6 +391,7 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
     cells+=`<g class="${cls}" data-cell="${i}" role="${clickable.includes(i)?'button':'img'}" tabindex="${clickable.includes(i)?0:-1}" aria-label="${esc(cname(S,i))} ${c.t>0?'ทหาร '+(hid?'?':c.t):''}">
       ${hl.includes(i)?`<circle class="hlring" cx="${p.x}" cy="${p.y}" r="${rr+9}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="5 5"/>`:''}
       <circle class="ring" cx="${p.x}" cy="${p.y}" r="${rr}" fill="${fill}" stroke="${oc}" stroke-width="${c.t>0||t==='city'?3.5:1.5}"/>
+      ${c.t>0||tt==='city'?'':glyph(tt,p.x,p.y,rr)}
       <text x="${p.x}" y="${p.y-rr*0.3}" text-anchor="middle" font-size="${fs}" fill="var(--muted)" font-family="Anuphan,sans-serif">${esc(lab)}</text>
       ${c.t>0?`<text x="${p.x}" y="${p.y+rr*0.4}" text-anchor="middle" font-size="${Math.max(17,rr*0.66)}" font-weight="700" fill="${SEATC(c.o)}" font-family="Anuphan,sans-serif">${hid?'?':c.t}</text>`:''}
       ${ms.map((k,j)=>{const mx=p.x+rr*0.8-j*22,my=p.y-rr*0.82;return `<g class="mtok"><circle cx="${mx}" cy="${my}" r="14" fill="var(--surface)" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/><text x="${mx}" y="${my+6}" text-anchor="middle" font-size="16">${MOUNTS[k].ic}</text><title>${MOUNTS[k].name} ของ${GOD[godOf(S,S.M[k].o)].name}</title></g>`}).join('')}
@@ -375,6 +411,119 @@ function turnWhat(S,a){
   const p=S.P[a];return {me:`ถึงตาคุณแล้ว · แอคชันที่ ${p.used.length+1} จาก ${actionLimit(S,a)}`,other:`กำลังเดิน · แอคชันที่ ${p.used.length+1} จาก ${actionLimit(S,a)}`};
 }
 let turnTimer=null;
+/* ===================== เอฟเฟกต์และเสียง ===================== */
+const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sndOn=()=>{try{return localStorage.getItem('hmp-snd')!=='0'}catch(e){return true}};
+let AC=null;document.addEventListener('pointerdown',()=>{if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}else if(AC.state==='suspended')AC.resume()},{capture:true});
+/* เสียงสังเคราะห์ ไม่ต้องโหลดไฟล์: tone(ความถี่, เวลาเริ่ม, ยาว, ชนิดคลื่น, ความดัง) */
+function sfx(kind){if(!sndOn()||!AC)return;const t0=AC.currentTime;
+  const tone=(f,at,dur,type,vol,f2)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0+at);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+at+dur);
+    g.gain.setValueAtTime(0.0001,t0+at);g.gain.exponentialRampToValueAtTime(vol||0.2,t0+at+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t0+at+dur);o.connect(g).connect(AC.destination);o.start(t0+at);o.stop(t0+at+dur+0.05)};
+  const noise=(at,dur,vol)=>{const n=AC.sampleRate*dur,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=900;src.buffer=b;g.gain.value=vol||0.3;src.connect(f).connect(g).connect(AC.destination);src.start(t0+at)};
+  if(kind==='turn'){tone(880,0,0.5,'sine',0.18);tone(1320,0.12,0.6,'sine',0.12)}            // ระฆังเล็ก: ถึงตาคุณ
+  else if(kind==='step'){tone(160,0,0.12,'triangle',0.15,110)}                                // ฝีเท้า: มีคนเดินทัพ
+  else if(kind==='battle'){noise(0,0.25,0.35);tone(110,0,0.4,'square',0.08,70);tone(220,0.18,0.35,'sawtooth',0.05,150)} // กลองศึก
+  else if(kind==='gong'){tone(196,0,1.8,'sine',0.22,190);tone(392,0,1.2,'sine',0.08);tone(293,0.02,1.4,'triangle',0.05)} // ฆ้อง: เปลี่ยนรอบ
+  else if(kind==='chat'){tone(660,0,0.12,'sine',0.12);tone(990,0.08,0.16,'sine',0.09)}
+  else if(kind==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,i*0.12,0.5,'triangle',0.14))}}
+/* หลังสถานะเปลี่ยน: ตัวเลขที่เปลี่ยนเด้ง และหมากวิ่งตามทางของการเดินล่าสุด */
+function boardFx(prev,S){if(!prev||!prev.B||!S.B||prev.B.length!==S.B.length)return;
+  const svg=document.querySelector('.mapbox svg');if(!svg)return;
+  for(let i=0;i<S.B.length;i++){const a=prev.B[i],b=S.B[i];if((a.t!==b.t||a.o!==b.o)&&!countHidden(S,i,viewers(S))){const g=svg.querySelector(`.cell[data-cell="${i}"]`);if(g)g.classList.add('cellpop')}}
+  const t=S.trail&&S.trail[0],t0=prev.trail&&prev.trail[0];
+  if(!t||(t0&&t0.q===t.q))return;
+  if(t.k==='atk')sfx('battle');else if(t.k==='move'||t.k==='ret')sfx('step');
+  const path=t.p||(t.k==='ret'?[t.f,t.t]:null);if(reduceMotion()||!path||path.length<2)return;
+  const M=mapLayout(S);const pts=path.map(i=>M.pos[i]).filter(Boolean);if(pts.length<2)return;
+  const ns='http://www.w3.org/2000/svg';const tok=document.createElementNS(ns,'g');tok.setAttribute('class','walker');
+  tok.innerHTML=`<circle r="${(M.r*0.5).toFixed(1)}" fill="${SEATC(t.s)}" stroke="#F7E9C8" stroke-width="3"/><text y="6" text-anchor="middle" font-size="16" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">${t.k==='atk'?'⚔':''}</text>`;
+  svg.appendChild(tok);const seg=420,total=seg*(pts.length-1);const st=performance.now();
+  const step=now=>{const k=Math.max(0,Math.min(1,(now-st)/total));const f=k*(pts.length-1);const i=Math.min(pts.length-2,Math.floor(f)),u=f-i;const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+    const x=pts[i].x+(pts[i+1].x-pts[i].x)*e,y=pts[i].y+(pts[i+1].y-pts[i].y)*e;tok.setAttribute('transform',`translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    if(k<1)requestAnimationFrame(step);else{tok.classList.add('done');setTimeout(()=>tok.remove(),400)}};
+  requestAnimationFrame(step)}
+/* ===================== แชทในห้อง ===================== */
+const CHAT={gid:null,msgs:[],open:false,unread:0,unsub:null,ready:false,err:null,draft:''};
+const QUICK=['😂','👍','😱','🙏','😡','GG','รอแป๊บ','ตาคุณแล้ว!'];
+function chatStop(){if(CHAT.unsub){try{CHAT.unsub()}catch(e){}}Object.assign(CHAT,{gid:null,msgs:[],unread:0,unsub:null,ready:false,err:null});chatDraw()}
+function chatStart(gid){chatStop();if(isTut(gid)||!STORE||!STORE.watchChat)return;CHAT.gid=gid;
+  try{CHAT.open=localStorage.getItem('hmp-chat-open')==='1'&&innerWidth>900}catch(e){}
+  CHAT.unsub=STORE.watchChat(gid,(list,err)=>{if(CHAT.gid!==gid)return;
+    if(!list){CHAT.err=err==='permission-denied'?'rules':'net';chatDraw();return}CHAT.err=null;
+    const seen=new Set(CHAT.msgs.map(m=>m.id));const fresh=CHAT.ready?list.filter(m=>!seen.has(m.id)&&m.uid!==ME):[];
+    CHAT.msgs=list;
+    if(fresh.length){if(!CHAT.open)CHAT.unread+=fresh.length;sfx('chat')}
+    CHAT.ready=true;chatDraw(true)})}
+function chatSeat(){if(!G)return -1;const a=G.status==='play'?activeSeat(G):-1;if(a>=0&&iControl(G,a))return a;const m=mySeats(G);return m.length?m[0]:-1}
+function chatWho(m){const S=G;const god=S&&m.seat>=0&&S.seats[m.seat]&&S.seats[m.seat].god;return (god?GOD[god].name+' · ':'')+(m.uid===ME?'คุณ':(m.name||'ผู้เล่น'))}
+async function chatSend(text){text=String(text||'').trim().slice(0,200);if(!text||!CHAT.gid||!G)return;
+  if(!mySeats(G).length){toast('ต้องนั่งในห้องนี้ก่อนจึงจะแชทได้');return}
+  const seat=chatSeat();const me=seat>=0?G.seats[seat]:null;
+  const r=await STORE.sendChat(CHAT.gid,{name:(me&&me.name)||names[ME]||'ผู้เล่น',seat,text});
+  if(r==='denied'){CHAT.err='rules';chatDraw()}else if(!r)toast('ส่งข้อความไม่สำเร็จ ลองใหม่อีกครั้ง')}
+function chatDraw(scroll){let el=document.getElementById('chat');
+  if(!CHAT.gid||view.name!=='game'||!G){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='chat';document.body.appendChild(el)}
+  const inp=el.querySelector('#chatin');if(inp){CHAT.draft=inp.value}
+  const focused=inp&&document.activeElement===inp;const list=el.querySelector('.chatlist');const atBottom=!list||list.scrollHeight-list.scrollTop-list.clientHeight<40;
+  const t=m=>{try{return new Date(m.at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}catch(e){return ''}};
+  const body=CHAT.err==='rules'?`<p class="small chatnote">แชทยังใช้ไม่ได้: เจ้าของเว็บต้องอัปเดตกฎความปลอดภัย (Rules) ของ Firestore ก่อน</p>`
+    :!CHAT.msgs.length?`<p class="small muted chatnote">ยังไม่มีข้อความ ทักทายเพื่อนในห้องได้เลย</p>`
+    :CHAT.msgs.map(m=>`<div class="cmsg ${m.uid===ME?'me':''}"><div class="cwho"><span class="dot" style="background:${m.seat>=0?SEATC(m.seat):'var(--muted)'}"></span>${esc(chatWho(m))}<span class="ctime">${t(m)}</span></div><div class="ctext">${esc(m.text)}</div></div>`).join('');
+  el.className=CHAT.open?'open':'';
+  el.innerHTML=CHAT.open?`<div class="chatpanel" role="dialog" aria-label="แชทในห้อง">
+      <div class="chathead"><b>แชทในห้อง</b><button class="ghost small" id="chatclose" aria-label="ปิดแชท">ย่อ</button></div>
+      <div class="chatlist" aria-live="polite">${body}</div>
+      <div class="chatquick">${QUICK.map(q=>`<button class="ghost small" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
+      <form class="chatform" id="chatform"><input id="chatin" maxlength="200" autocomplete="off" placeholder="พิมพ์ข้อความ…" value="${esc(CHAT.draft)}"><button class="primary small" type="submit">ส่ง</button></form></div>`
+    :`<button class="chatfab" id="chatopen" aria-label="เปิดแชท${CHAT.unread?' มีข้อความใหม่ '+CHAT.unread:''}">💬 แชท${CHAT.unread?`<span class="cbadge">${CHAT.unread>9?'9+':CHAT.unread}</span>`:''}</button>`;
+  const setOpen=v=>{CHAT.open=v;if(v)CHAT.unread=0;try{localStorage.setItem('hmp-chat-open',v?'1':'0')}catch(e){}chatDraw(true);if(v){const i=document.getElementById('chatin');if(i&&innerWidth>700)i.focus()}};
+  const o=el.querySelector('#chatopen');if(o)o.onclick=()=>setOpen(true);
+  const c=el.querySelector('#chatclose');if(c)c.onclick=()=>setOpen(false);
+  el.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>chatSend(b.dataset.q));
+  const f=el.querySelector('#chatform');if(f)f.onsubmit=e=>{e.preventDefault();const i=el.querySelector('#chatin');const v=i.value;i.value='';CHAT.draft='';chatSend(v);i.focus()};
+  const l=el.querySelector('.chatlist');if(l&&(scroll&&atBottom||scroll==='force'||!list))l.scrollTop=l.scrollHeight;
+  if(focused){const i=el.querySelector('#chatin');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}}
+/* คำพูดประจำองค์ บนการ์ดเทพ */
+const GOD_FLAVOR={indra:'สายฟ้าแห่งดาวดึงส์ จะฟาดลงทุกที่ที่ข้าชี้',shiva:'จังหวะระบำของข้า คือจุดจบของโลกเก่า',agni:'ทุกสิ่งที่ขวางทาง จะกลายเป็นเถ้าธุลี',
+  skanda:'กองทัพเทวดา จงตามข้ามา!',yama:'ทุกชีวิตต้องมาถึงประตูของข้า ไม่ช้าก็เร็ว',brahma:'สิ่งใดที่สูญไป ข้าจะสร้างขึ้นใหม่',
+  varuna:'ฝนแรกของฤดู คือพรที่ข้ามอบให้',jupiter:'ปัญญาคือศาสตราที่คมที่สุด',ganesha:'อุปสรรคใดก็ขวางผู้มีศรัทธาไม่ได้',
+  saraswati:'เสียงพิณของข้า ปลุกปัญญาให้ตื่นขึ้น',narai:'ทุกการเคลื่อนไหว อยู่ในแผนของข้าแล้ว',vayu:'ตามข้าทันไหมล่ะ?',
+  rahu:'เมื่อข้ากลืนจันทร์ ความมืดจะเป็นของข้า',vessuwan:'ยักษ์ทั้งปวง จงก้มหัวต่อราชาแห่งทิศเหนือ',reusi:'ตบะที่บำเพ็ญมานับพันปี เจ้าต้านไม่ไหวหรอก',
+  thorani:'ผืนดินนี้ จะไม่มีวันถูกพรากไป',uma:'อ่อนโยนต่อผู้ภักดี ไร้ปรานีต่อผู้รุกราน',ganga:'สายน้ำไหลไปที่ใด ชีวิตย่อมงอกงามที่นั่น',
+  chan:'คืนนี้ แสงจันทร์จะคุ้มครองเจ้า',surya:'ตราบที่ตะวันยังส่องแสง ข้าไม่มีวันพ่าย'};
+/* จุดโฟกัสของภาพแต่ละองค์ (ตำแหน่งหน้า) ใช้ตอนครอปเป็นแบนเนอร์และวงกลม ปรับเมื่อได้รูปจริง */
+const GOD_FOCUS={surya:[.5,.165],chan:[.52,.24],uma:[.53,.21],thorani:[.5,.275],reusi:[.5,.165],vessuwan:[.49,.26],rahu:[.5,.27],vayu:[.4,.24],narai:[.49,.23],saraswati:[.5,.24],ganesha:[.5,.345],jupiter:[.46,.225],varuna:[.4,.19],brahma:[.49,.285],yama:[.375,.26],skanda:[.54,.25],agni:[.45,.345],shiva:[.55,.25],ganga:[.51,.245],indra:[.51,.33]}; /* [x,y] ตำแหน่งกลางหน้า เป็นสัดส่วนของภาพ (ภาพมาตรฐาน 832×1216) */
+const IMG_R=1216/832;
+function focusStyle(k,cls){const f=GOD_FOCUS[k];if(!f||cls==='full'&&false)return '';const [fx,fy]=f;
+  if(cls==='av'||cls==='chip'){const z=2.6;return `style="inset:auto;width:${z*100}%;height:auto;max-width:none;left:${(50-fx*z*100).toFixed(1)}%;top:${(50-fy*IMG_R*z*100).toFixed(1)}%"`}
+  const box=cls==='banner'?0.75:cls==='full'?1.4:4/3;const at=cls==='banner'?0.42:0.3;const P=Math.max(0,Math.min(1,(fy*IMG_R-at*box)/(IMG_R-box)));
+  return `style="object-position:${(fx*100).toFixed(0)}% ${(P*100).toFixed(0)}%"`}
+/* การ์ดเทพแบบเต็มใบ: ภาพเต็มการ์ด ข้อความวางทับ */
+function godCard(k){const g=GOD[k];if(!g)return '';const A=ARCH[g.arch]||{ic:'',n:''};const m=MOUNTS[g.mount];
+  return `<article class="gcard arch-${g.arch}" aria-label="การ์ด${esc(g.name)}">
+    ${godPic(k,'full')}
+    <div class="gc-badge" title="${esc(A.n)}"><span class="gc-ic">${A.ic}</span><span class="gc-bn">${esc(A.n.replace('สาย',''))}</span></div>
+    <button class="gc-mount" ${infoAttr('mount:'+g.mount)} aria-label="พาหนะ ${esc(m.name)}"><span>${m.ic}</span></button>
+    <div class="gc-low">
+      ${GOD_FLAVOR[k]?`<p class="gc-flavor">“${esc(GOD_FLAVOR[k])}”</p>`:''}
+      <div class="gc-text"><p><span class="gc-key">${esc(g.ab)}</span> ${esc(g.txt)}</p><p class="gc-weak">จุดอ่อน: ${esc(g.weak)}</p></div>
+      <div class="gc-name"><b>${esc(g.name)}</b><span>${A.ic} ${esc(A.n)} · ${m.ic} ${esc(m.name)}</span></div>
+    </div></article>`}
+function openGodPick(k,from){const pop=document.getElementById('pop');if(!pop||!G)return;
+  const S=G;const taken=S.seats.findIndex(x=>x.god===k);const can=S.status==='draft'&&iControl(S,draftPicker(S))&&taken<0;
+  infoReturn=from||null;
+  pop.innerHTML=`<div class="popcard cardpop" role="document">${godCard(k)}
+    <div class="row gc-acts">${taken>=0?`<span class="small muted">ถูกเลือกแล้วโดย ${esc(S.seats[taken].uid===ME?'คุณ':(S.seats[taken].name||'ผู้เล่น'))}</span>`:can?'':'<span class="small muted">ยังไม่ถึงตาคุณเลือก</span>'}
+      <span style="flex:1"></span>${can?`<button class="primary" id="gcpick">เลือก${esc(GOD[k].name)}</button>`:''}<button class="${can?'ghost':'primary'}" id="popclose">ปิด</button></div></div>`;
+  pop.hidden=false;const pb=document.getElementById('gcpick');if(pb){pb.onclick=e=>{e.stopPropagation();closeInfo();pickGod(k)};pb.focus()}else document.getElementById('popclose').focus()}
+/* รูปเทพ: วางไฟล์ไว้ที่ img/gods/<รหัสเทพ>.webp ถ้าไม่มีไฟล์ จะแสดงอักษรย่อบนพื้นสีตามสายแทน */
+/* การ์ดพอไหม: คนหนึ่งซื้อได้ราวรอบละไม่เกิน 1 ใบ เกมทั่วไปจบราว 10–14 รอบ */
+function supplyNote(n,c,nl){const per=c/n;const tone=per<10?'warn':per<13?'':'ok';
+  const msg=per<10?'การ์ดน่าจะหมดก่อนจบเกม ลองเปิดการ์ดเลเวล 3 หรือเพิ่มสาย':per<13?'พอสำหรับเกมทั่วไป แต่ถ้าเกมยาว การ์ดดีๆ จะเริ่มหมดช่วงท้าย':'การ์ดพอทั้งเกม';
+  return `${nl} สาย รวม ${c} ใบ ≈ ${per.toFixed(1)} ใบต่อคน · <span class="sup-${tone}">${msg}</span>`}
+function godPic(k,cls){const g=GOD[k];if(!g)return '';const g0=g.name.replace(/^(พระแม่|พระ|ท้าว)/,'');const ini=(g0.match(/[ก-ฮฤ]/)||[g0[0]])[0];
+  return `<span class="portrait ${cls||''} arch-${g.arch||'war'}" aria-hidden="true"><span class="pini">${ini}</span><img src="img/gods/${k}.webp" alt="" loading="lazy" decoding="async" ${focusStyle(k,cls)} onerror="this.remove()"></span>`}
 function turnPopup(S,first){
   const a=activeSeat(S);if(a<0)return;const mine=iControl(S,a);
   if(first&&!mine)return;
@@ -391,6 +540,7 @@ function turnPopup(S,first){
     const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),350)};
     d.onclick=close;const b=document.getElementById('tpgo');if(b)b.onclick=e=>{e.stopPropagation();close()};
     setTimeout(close,mine?6000:2600);
+    if(mine)sfx('turn');
     if(mine&&navigator.vibrate){try{navigator.vibrate(120)}catch(e){}}
   };
   show();
@@ -431,6 +581,7 @@ function renderGame(){
   try{document.title=(mine&&S.status==='play'?'🔔 ถึงตาคุณ · ':'')+'ศึกเทพหิมพานต์'}catch(e){}
   wireGame(S,act);wireTut();wireId();
   {const ob=document.getElementById('openboard');if(ob)ob.onclick=()=>openBoard(G)}
+  {const sb=document.getElementById('snd');if(sb)sb.onclick=()=>{try{localStorage.setItem('hmp-snd',sndOn()?'0':'1')}catch(e){}render();if(sndOn())sfx('turn')}}
   {const a=document.getElementById('arrows');if(a)a.onchange=()=>{try{localStorage.setItem('hmp-arrows',a.checked?'1':'0')}catch(e){}render()}}
   {const $=id=>document.getElementById(id);
    if($('delres'))$('delres').onclick=async()=>{if(!confirmTwice($('delres')))return;try{await STORE.del(GID)}catch(e){toast('ลบไม่สำเร็จ')}showLobby()};
@@ -678,7 +829,7 @@ function chalAlert(S,snap){
 }
 function chalBar(S){const ch=chalOf(S);if(!ch.length)return '';const night=S.moon==='wane';
   return `<div class="chalbar" style="flex:1 1 100%">⚔ <b>ผู้ท้าชิง</b>: ${chalNames(S,ch)} · ${night?'<b>จบกลางคืนนี้ ถ้ายังถึง '+S.target+' คะแนน = ชนะ</b>':'ต้องรักษา '+S.target+' คะแนนผ่านกลางวันนี้และกลางคืนหน้า'} <span class="muted">(ตอนนี้ ${ch.map(s=>esc(gname(S,s))+' '+total(S,s)).join(', ')})</span></div>`}
-function skyShow(S){
+function skyShow(S){sfx('gong');
   const day=S.moon==='wax';const old=document.getElementById('sky');if(old)old.remove();
   const d=document.createElement('div');d.id='sky';d.className='sky withboard '+(day?'day':'night');d.setAttribute('role','dialog');d.setAttribute('aria-label','สรุปคะแนนจบรอบ');
   const snap=S.snap&&S.snap.r===S.round-1?S.snap:null;
@@ -746,7 +897,7 @@ function playersBox(S,act){
   return `<div class="panel"><h3 style="margin-bottom:4px">ลำดับเล่นรอบนี้</h3><p class="small muted" style="margin:0 0 8px">ทุกต้นรอบเรียงใหม่ คะแนนน้อยสุดเล่นก่อน</p><div class="players">${S.order.map((s,idx)=>{const p=S.P[s];
     const doneAll=S.status==='play'&&!hasActions(S,s);
     return `<div class="pl ${s===act?'turn':''}" style="${doneAll?'opacity:.7':''}"><span class="ordno" style="background:${SEATC(s)}" aria-label="ลำดับที่ ${idx+1}">${idx+1}</span>
-     <div><button class="godlink" ${infoAttr('god:'+godOf(S,s))}><b>${esc(gname(S,s))}</b></button> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
+     <div><button class="godlink" ${infoAttr('god:'+godOf(S,s))}>${godOf(S,s)?godPic(godOf(S,s),'av'):''}<b>${esc(gname(S,s))}</b></button> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
        <div class="small muted">${s===act?'<b style="color:var(--ink)">กำลังเดิน</b> · ':''}แอคชัน ${p.used.length}/${actionLimit(S,s)}${doneAll?' · เดินครบแล้ว':''}</div></div>
      <div class="stats"><span title="คะแนนรวม">★ ${total(S,s)}</span><span title="บุญ">บุญ ${p.merit}</span><span title="บาป" style="color:${p.sin>=2?'var(--warn)':'inherit'}">บาป ${p.sin}/3</span></div>
      <div class="chips"><span class="chip tab">ถาวร ${p.vp} · วัด ${tempVP(S,s)}</span>${hidesCards(S,s)&&!viewers(S).includes(s)?'<span class="chip muted">การ์ดรบ: ซ่อน</span>':''}<span class="bcmini-wrap" aria-label="การ์ดรบ" ${hidesCards(S,s)&&!viewers(S).includes(s)?'hidden':''}>${hand(S,s).map(c=>{const used=p.uc.includes(c);return `<span class="bcmini ${used?'used':''}" data-tip="${esc(CARD[c].n)} · พลัง ${CARD[c].s} ฆ่า ${CARD[c].k}${used?' · ใช้ไปแล้ว':' · ยังอยู่ในมือ'}" tabindex="0"><b>${CARD[c].s}</b>/${CARD[c].k}</span>`}).join('')}<span class="small muted" style="margin-left:2px">${p.uc.length?`ใช้แล้ว ${p.uc.length} · ใช้ครบเมื่อไรได้คืนทั้งชุด`:'ครบมือ'}</span></span><span class="chip tab">คลัง ${reserveHidden(S,s,viewers(S))?'?':reserve(S,s)}</span>
@@ -762,7 +913,7 @@ function shopBox(S,s){
     return `<button class="pw line-${line} ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-buy="${p.id}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span>${p.name}</span><span class="cost tab"><span>Lv.${p.lv}</span><span>${priceOf(S,s,{pw:p.id})} บุญ</span></span></span><span class="tx">${esc(p.txt)}${lab[st]?'<br><i>'+lab[st]+'</i>':''}</span></button>`}).join('')).join('')}</div>`;
   return `<details class="panel" ${ui.shop?'open':''} id="shopd"><summary>ขอพร: การ์ดพลังและพาหนะ (บุญคุณมี ${S.P[s].merit})</summary>
    <div class="stack" style="margin-top:10px">${canBuy?'':'<p class="small muted">รอบนี้ใช้แอคชันขอพรไปแล้ว</p>'}
-   <div class="shop">${col('rit')}${col('kum')}${col('bun')}${col('maya')}</div>
+   <div class="shop pwshop c${activeLines(S).length}">${activeLines(S).map(col).join('')}</div>
    <details id="mshop" ${ui.mshop?'open':''}><summary>พาหนะ (${MK.length} ตัว · ของว่าง ${MK.filter(k=>!S.M[k]).length} ตัว)</summary><div class="shop" style="margin-top:8px">${MK.map(k=>{const st=mountState(S,s,k);const m=MOUNTS[k];const own=OWNER_GOD[k]===godOf(S,s);
      return `<button class="pw mnt ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-mount="${k}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span><span class="mic">${m.ic}</span>${m.name}</span><span class="cost tab"><span>${priceOf(S,s,{mount:k})} บุญ</span></span></span><span class="tx">${m.txt} · ถิ่น: ${HOME[k]} +1${own&&m.bonus?' · <b>ของคุณได้โบนัส</b>: '+m.bonus.split(': ')[1]:''}${lab[st]?'<br><i>'+(st==='taken'?'เป็นของ'+esc(gname(S,S.M[k].o)):lab[st])+'</i>':''}</span></button>`}).join('')}</div></details></div></details>`;
 }
@@ -1000,12 +1151,13 @@ function infoHTML(spec){const [kind,id]=spec.split(':');const own=ownerOf(kind,i
       <p class="small muted">พาหนะอยู่กับกองทหาร กองละ 1 ตัว (ในเมืองพักไว้ได้หลายตัว) ไม่นับเป็นทหาร และไม่ตาย ถ้ากองหมด พาหนะกลับเมือง</p>${owner}`}
   if(kind==='map'){const m=MAPBY[id];if(!m)return '';return `<p class="small muted">แผนที่</p><h2>🗺 ${esc(m.name)}</h2><p>${esc(m.desc)}</p><p class="small muted">ทุกแผนที่สมมาตร ทุกที่นั่งเดินถึงวัดและเขาพระสุเมรุได้ไกลเท่ากัน มี ${MAPS.length} แบบ สุ่มใหม่ทุกห้อง</p>`}
   if(kind==='god'){const g=GOD[id];if(!g)return '';
-    return `<p class="small muted">เทพ${g.arch?' · '+ARCH[g.arch].ic+' '+ARCH[g.arch].n+' ('+ARCH[g.arch].d+')':''} · พาหนะประจำองค์ ${MOUNTS[g.mount].name}</p><h2>${esc(g.name)}</h2><p><b>${esc(g.ab)}</b>: ${esc(g.txt)}</p><p class="small">จุดอ่อน / แนวเล่น: ${esc(g.weak)}</p>${owner}`}
+    if(!window.__infoPlain)return `<!--card-->${godCard(id)}${owner}`;
+    return `${godPic(id,'hero')}<p class="small muted">เทพ${g.arch?' · '+ARCH[g.arch].ic+' '+ARCH[g.arch].n+' ('+ARCH[g.arch].d+')':''} · พาหนะประจำองค์ ${MOUNTS[g.mount].name}</p><h2>${esc(g.name)}</h2><p><b>${esc(g.ab)}</b>: ${esc(g.txt)}</p><p class="small">จุดอ่อน: ${esc(g.weak)}</p>${owner}`}
   return ''}
 let infoReturn=null;
 function openInfo(spec,from){const pop=document.getElementById('pop');const h=infoHTML(spec);if(!pop||!h)return;
   infoReturn=from||null;
-  pop.innerHTML=`<div class="popcard" role="document">${h}<div class="row" style="justify-content:flex-end"><button class="primary" id="popclose">ปิด</button></div></div>`;
+  pop.innerHTML=`<div class="popcard ${h.startsWith('<!--card-->')?'cardpop':''}" role="document">${h}<div class="row" style="justify-content:flex-end"><button class="primary" id="popclose">ปิด</button></div></div>`;
   pop.hidden=false;document.getElementById('popclose').focus()}
 function closeInfo(){const pop=document.getElementById('pop');if(!pop||pop.hidden)return;pop.hidden=true;pop.innerHTML='';if(infoReturn&&document.contains(infoReturn))infoReturn.focus();infoReturn=null}
 document.addEventListener('click',e=>{
