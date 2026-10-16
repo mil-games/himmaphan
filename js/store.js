@@ -8,7 +8,7 @@ const uidsOf = S => [...new Set([S.host, ...(S.seats || []).map(x => x.uid)].fil
 const clone = o => JSON.parse(JSON.stringify(o));
 
 function localStore() {
-  const games = {};
+  const games = {}; const chats = {};
   const subs = new Map(); let sid = 0;
   const fire = () => subs.forEach(f => f());
   let me = null;
@@ -25,7 +25,9 @@ function localStore() {
     },
     watchGame(id, cb) { const k = ++sid; const f = () => cb(games[id] ? clone(games[id]) : null); subs.set(k, f); f(); return () => subs.delete(k); },
     watchMine(cb) { const k = ++sid; const f = () => cb(Object.entries(games).map(([id, d]) => ({ id, d: clone(d) }))); subs.set(k, f); f(); return () => subs.delete(k); },
-    async del(id) { delete games[id]; fire(); }
+    async del(id) { delete games[id]; delete chats[id]; fire(); },
+    watchChat(id, cb) { const k = ++sid; const f = () => cb(clone(chats[id] || [])); subs.set(k, f); f(); return () => subs.delete(k); },
+    async sendChat(id, m) { (chats[id] = chats[id] || []).push(Object.assign({ id: 'm' + (++sid), at: Date.now(), uid: me }, m)); if (chats[id].length > 60) chats[id].shift(); fire(); return true; }
   };
 }
 
@@ -99,7 +101,20 @@ async function firebaseStore() {
       const q = F.query(F.collection(db, 'games'), F.where('uids', 'array-contains', me), F.limit(30));
       return F.onSnapshot(q, qs => cb(qs.docs.map(d => ({ id: d.id, d: d.data() }))), () => cb([]));
     },
-    async del(id) { await F.deleteDoc(ref(id)); }
+    async del(id) {
+      // ลบข้อความแชทของห้องก่อน แล้วค่อยลบห้อง
+      try { const qs = await F.getDocs(F.collection(db, 'games', id, 'chat')); await Promise.all(qs.docs.map(d => F.deleteDoc(d.ref))); } catch (e) {}
+      await F.deleteDoc(ref(id));
+    },
+    /* แชทในห้อง: เก็บแยกเป็น games/{รหัส}/chat ไม่ไปแตะสถานะเกม */
+    watchChat(id, cb) {
+      const q = F.query(F.collection(db, 'games', id, 'chat'), F.orderBy('at', 'desc'), F.limit(60));
+      return F.onSnapshot(q, qs => cb(qs.docs.map(d => Object.assign({ id: d.id }, d.data())).reverse()), e => cb(null, e && e.code));
+    },
+    async sendChat(id, m) {
+      try { await F.addDoc(F.collection(db, 'games', id, 'chat'), Object.assign({ uid: me, at: Date.now() }, m)); return true; }
+      catch (e) { console.error('ส่งแชทไม่สำเร็จ', e); return e && e.code === 'permission-denied' ? 'denied' : false; }
+    }
   };
 }
 
