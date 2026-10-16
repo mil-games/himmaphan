@@ -460,3 +460,21 @@ span.lchip{cursor:default}
 .shop.pwshop.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.shop.pwshop.c2{grid-template-columns:repeat(2,minmax(0,1fr))}.shop.pwshop.c1{grid-template-columns:1fr}
 @media (max-width:980px){.shop.pwshop.c3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:620px){.shop.pwshop.c3,.shop.pwshop.c2{grid-template-columns:1fr}}
+/* ===== ภาพพาหนะ ===== */
+.mav{position:relative;display:inline-block;width:1.5em;height:1.5em;border-radius:50%;overflow:hidden;vertical-align:middle;border:1.5px solid var(--gold);background:#2A140C}
+.mav img{position:absolute;height:auto;max-width:none}
+.gc-mount .mav{width:100%;height:100%;border:0}
+.gc-mount{overflow:hidden}
+.mic.big .mav{width:2.2em;height:2.2em}
+.mcard{--pa:#8C6A35}
+.cardpop>p.small{background:rgba(20,8,5,.78);border-radius:8px;padding:6px 10px}
+/* ===== ร้านขอพร: แท็บ ===== */
+.shoptabs{display:flex;gap:6px;flex-wrap:wrap}
+.shoptab{flex:1 1 160px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:600}
+.shoptab.on{background:var(--goldtint);border-color:var(--gold);color:var(--ink)}
+.shop.mshop{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.shop.mshop .mic .mav{width:2.4em;height:2.4em;margin-right:4px}
+.eyereveal{display:flex;align-items:center;gap:12px;justify-content:space-between;border:2px solid var(--gold);background:var(--goldtint);border-radius:10px;padding:8px 12px;margin:6px 0}
+.eyereveal>div:first-child{flex:1;min-width:0}
+.eyereveal .bcard.big{flex:none;width:120px;background:var(--surface);color:var(--ink);border:2px solid var(--gold)}
+.eyereveal .bcard .cn{font-size:1rem}
