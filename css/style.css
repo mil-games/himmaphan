@@ -487,3 +487,7 @@ span.lchip{cursor:default}
 .actbtn .aic .gi{width:40px;height:40px;vertical-align:middle}
 .actbtn:disabled .aic{opacity:.4;filter:grayscale(.6)}
 .terrleg .gi{width:1.5em;height:1.5em}
+.shoptab{display:flex;align-items:center;justify-content:center;gap:8px}
+.shoptab .gi.tabic{width:28px;height:28px}
+.shoptab .tabic .mav{width:28px;height:28px}
+.youtag{color:var(--gold);font-weight:700}
