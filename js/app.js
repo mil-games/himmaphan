@@ -186,7 +186,7 @@ function topBar(S,extra){
 function draftMapBox(S,isHost){
   if(!S.map)return '';const P=previewState(S);const M=mapOf(P);const c=terrCount(P);
   const order=['temple','forest','deep','plain','water'];
-  const homes=t=>MK.filter(k=>MOUNTS[k].home===t).map(k=>MOUNTS[k].ic).join('');
+  const homes=t=>MK.filter(k=>MOUNTS[k].home===t).map(k=>mPic(k)).join('');
   return `<div class="panel stack"><div class="row" style="justify-content:space-between"><h2>แผนที่: ${esc(M.name)}</h2>${isHost&&S.draftPos===0&&(!S.mapPick||S.mapPick==='random')?`<button class="ghost small" id="remap">สุ่มแผนที่ใหม่</button>`:''}</div>
     <p class="small">${esc(M.desc)} · วงสีคือเมืองของแต่ละที่นั่ง ดูก่อนเลือกเทพได้เลย</p>
     <div class="row small">${order.filter(t=>c[t]).map(t=>`<span class="chip">${TNAME[t]} ${c[t]} ช่อง ${homes(t)}</span>`).join('')}<span class="chip">วัดหลวง ${c.royal||0} ${homes('royal')}</span><span class="chip">เขาพระสุเมรุ 1 ${homes('sumeru')}</span></div>
@@ -219,7 +219,7 @@ function renderSeating(){
       <div class="seats">${order.map(seatCard).join('')}</div></div>
       ${draftMapBox(S,isHost)}
       <div class="panel"><h3>เทพ</h3><div class="gods" style="margin-top:10px">${GODS.map(g=>{const t=taken.has(g.k);const owner=S.seats.findIndex(x=>x.god===g.k);
-        return `<button class="god ${t?'taken':''} ${!t&&myPick?'canpick':''}" data-god="${g.k}" aria-label="ดูการ์ด${g.name}${t?' (ถูกเลือกแล้ว)':''}"><span class="godart">${godPic(g.k,'banner')}<span class="godname"><b>${g.name}</b>${g.arch?`<span class="archtag">${ARCH[g.arch].ic} ${ARCH[g.arch].n}</span>`:''}</span>${t?`<span class="godtaken">${esc(who(owner))}</span>`:''}</span><div class="small"><b>${g.ab}</b>: ${g.txt}</div><div class="small muted">จุดอ่อน: ${g.weak} · พาหนะ ${MOUNTS[g.mount].ic} ${MOUNTS[g.mount].name}</div></button>`}).join('')}</div></div>
+        return `<button class="god ${t?'taken':''} ${!t&&myPick?'canpick':''}" data-god="${g.k}" aria-label="ดูการ์ด${g.name}${t?' (ถูกเลือกแล้ว)':''}"><span class="godart">${godPic(g.k,'banner')}<span class="godname"><b>${g.name}</b>${g.arch?`<span class="archtag">${archIc(g.arch)} ${ARCH[g.arch].n}</span>`:''}</span>${t?`<span class="godtaken">${esc(who(owner))}</span>`:''}</span><div class="small"><b>${g.ab}</b>: ${g.txt}</div><div class="small muted">จุดอ่อน: ${g.weak} · พาหนะ ${MOUNTS[g.mount].ic} ${MOUNTS[g.mount].name}</div></button>`}).join('')}</div></div>
       ${isHost?`<div class="row"><button class="ghost" id="del">ลบห้องนี้</button></div>`:''}`;
   }
   app.innerHTML=topBar(S,`<span class="pill">${S.n} คน · เป้า ${S.target}</span>`)+`<div class="stack">${body}<div id="confirm"></div></div>`;
@@ -337,15 +337,19 @@ function arrowsSVG(S,M){
   return out;
 }
 /* หน้าที่ของแต่ละพื้นที่ */
+/* ไอคอนภาพ: img/icons/<ชื่อ>.webp ถ้ายังไม่มีไฟล์ จะแสดงอีโมจิเดิมแทน */
+const ICON_EMO={'arch-war':'⚔','arch-bun':'🙏','arch-maya':'🌀','arch-guard':'🛡','t-forest':'🌳','t-plain':'🌾','t-deep':'🌲','t-water':'💧','t-temple':'🛕','a-recruit':'🪖','a-move':'👣','a-merit':'🪷','a-buy':'✨'};
+function ico(name,cls){const e=ICON_EMO[name]||'';if(typeof ICON_HAVE!=='undefined'&&!ICON_HAVE.has(name))return e;return `<img class="gi ${cls||''}" src="img/icons/${name}.webp" alt="" aria-hidden="true" onerror="this.replaceWith(document.createTextNode('${e}'))">`}
+const archIc=a=>ico('arch-'+a);
 const TERR_ROLE=[['forest','🌳','ป่า','ตั้งรับ +1'],['plain','🌾','ทุ่ง','บุกออกจากทุ่ง +1'],['deep','🌲','ป่าลึก','เดินไปป่าลึกไหนก็ได้ · คนอื่นไม่เห็นจำนวน'],['water','💧','ริมน้ำ','จบรอบได้การ์ดรบคืน 1 ใบ'],['temple','🛕','วัด','+1 คะแนน · กลางวันได้บุญ']];
-function terrLegend(){return `<div class="terrleg small">${TERR_ROLE.map(([k,ic,n,d])=>`<span><span class="tsw t-${k}"></span>${ic} <b>${n}</b> ${d}</span>`).join('')}</div>`}
+function terrLegend(){return `<div class="terrleg small">${TERR_ROLE.map(([k,ic,n,d])=>`<span><span class="tsw t-${k}"></span>${ico('t-'+k)} <b>${n}</b> ${d}</span>`).join('')}</div>`}
 function trailText(S,x){const g=gname(S,x.s);const route=()=>x.p&&x.p.length>2?x.p.map(i=>cname(S,i)).join(' → '):`${cname(S,x.f)} → ${cname(S,x.t)}`;
   if(x.k==='rec')return `${g} เกณฑ์ทัพ +${hidesAll(S,x.s)&&!viewers(S).includes(x.s)?'?':x.n} ที่${cname(S,x.t)}`;
   if(x.k==='vaj')return `${g} ฟาดวชิราวุธที่${cname(S,x.t)}`;
   if(x.k==='ret')return `${g} ถอย ${x.n} ตัว ${cname(S,x.f)} → ${cname(S,x.t)}`;
-  if(x.k==='atk')return `${g} บุก ${x.n} ตัว${x.m?' '+mIcon(x.m):''} ${route()}${x.w==null?' · รอฝ่ายรับ':x.w?' · ชนะ':' · แพ้'}`;
+  if(x.k==='atk')return `${g} บุก ${x.n} ตัว${x.m?' พร้อม'+MOUNTS[x.m].name:''} ${route()}${x.w==null?' · รอฝ่ายรับ':x.w?' · ชนะ':' · แพ้'}`;
   const hn=!viewers(S).includes(x.s)&&(countHidden(S,x.t,viewers(S))||hidesAll(S,x.s)||terr(S,x.t)==='deep');
-  return `${g} เดิน ${hn?'?':x.n} ตัว${x.m?' '+mIcon(x.m):''} ${route()}`}
+  return `${g} เดิน ${hn?'?':x.n} ตัว${x.m?' พร้อม'+MOUNTS[x.m].name:''} ${route()}`}
 function trailBox(S){const tr=S.trail||[];if(!tr.length&&!S.battle)return '';const on=showArrows();
   return `<div class="trailbox small"><div class="row" style="justify-content:space-between"><b>ความเคลื่อนไหวล่าสุด</b><label class="row small"><input type="checkbox" id="arrows" ${on?'checked':''}> แสดงลูกศรบนแผนที่</label></div>
     <ol>${tr.map((x,i)=>`<li><span class="ordno sm" style="background:${SEATC(x.s)}">${x.k==='atk'?'⚔':x.k==='rec'?'+':x.k==='vaj'?'⚡':i+1}</span>${esc(trailText(S,x))}${x.r!==S.round?` <span class="muted">(รอบ ${x.r})</span>`:''}</li>`).join('')}</ol></div>`}
@@ -493,13 +497,14 @@ const GOD_FLAVOR={indra:'สายฟ้าแห่งดาวดึงส์ 
   thorani:'ผืนดินนี้ จะไม่มีวันถูกพรากไป',uma:'อ่อนโยนต่อผู้ภักดี ไร้ปรานีต่อผู้รุกราน',ganga:'สายน้ำไหลไปที่ใด ชีวิตย่อมงอกงามที่นั่น',
   chan:'คืนนี้ แสงจันทร์จะคุ้มครองเจ้า',surya:'ตราบที่ตะวันยังส่องแสง ข้าไม่มีวันพ่าย'};
 /* จุดโฟกัสของภาพแต่ละองค์ (ตำแหน่งหน้า) ใช้ตอนครอปเป็นแบนเนอร์และวงกลม ปรับเมื่อได้รูปจริง */
-const GOD_FOCUS={surya:[.5,.165],chan:[.52,.24],uma:[.53,.21],thorani:[.565,.26],reusi:[.5,.165],vessuwan:[.49,.29],rahu:[.5,.27],vayu:[.40,.27],narai:[.49,.23],saraswati:[.5,.24],ganesha:[.5,.345],jupiter:[.46,.225],varuna:[.4,.19],brahma:[.49,.285],yama:[.375,.26],skanda:[.54,.25],agni:[.45,.345],shiva:[.55,.25],ganga:[.50,.20],indra:[.51,.33]}; /* [x,y] ตำแหน่งกลางหน้า เป็นสัดส่วนของภาพ (ภาพมาตรฐาน 832×1216) */
+const GOD_FOCUS={surya:[.5,.165],chan:[.52,.24],uma:[.53,.21],thorani:[.47,.215],reusi:[.5,.165],vessuwan:[.49,.29],rahu:[.5,.27],vayu:[.40,.27],narai:[.49,.23],saraswati:[.5,.24],ganesha:[.5,.345],jupiter:[.46,.225],varuna:[.4,.19],brahma:[.49,.285],yama:[.375,.26],skanda:[.54,.25],agni:[.45,.345],shiva:[.55,.25],ganga:[.50,.20],indra:[.51,.33]}; /* [x,y] ตำแหน่งกลางหน้า เป็นสัดส่วนของภาพ (ภาพมาตรฐาน 832×1216) */
 const IMG_R=1216/832;
 function focusStyle(k,cls){const f=GOD_FOCUS[k];if(!f||cls==='full'&&false)return '';const [fx,fy]=f;
   if(cls==='av'||cls==='chip'){const z=2.3;return `style="inset:auto;width:${z*100}%;height:auto;max-width:none;left:${(50-fx*z*100).toFixed(1)}%;top:${(50-fy*IMG_R*z*100).toFixed(1)}%"`}
   const box=cls==='banner'?0.75:cls==='full'?1.4:4/3;const at=cls==='banner'?0.42:0.3;const P=Math.max(0,Math.min(1,(fy*IMG_R-at*box)/(IMG_R-box)));
   return `style="object-position:${(fx*100).toFixed(0)}% ${(P*100).toFixed(0)}%"`}
 /* ภาพพาหนะ: ใส่ชื่อใน MOUNT_ART เมื่อมีไฟล์ img/mounts/<รหัส>.webp แล้ว ยังไม่มีภาพใช้อีโมจิแทน */
+const ICON_HAVE=new Set(['arch-war','arch-bun','arch-maya','arch-guard','t-forest','t-deep','t-temple','a-recruit','a-move','a-merit','a-buy','t-plain','t-water']);
 const MOUNT_ART=new Set(['erawan','garuda','hong','nonthi','buffalo','rhino','naga','rajasi','khotchasi','kilen','durong','kinnaree','makara','hera','hatsadee','kraisorn','asura','kwang','kaisornnaka','thakthor']);
 const MOUNT_FOCUS={thakthor:[0.46,0.17],kaisornnaka:[0.33,0.24],kwang:[0.57,0.25],asura:[0.47,0.24],kraisorn:[0.52,0.14],hatsadee:[0.55,0.22],hera:[0.8,0.55],makara:[0.7,0.33],kinnaree:[0.61,0.21],durong:[0.62,0.28],kilen:[0.66,0.31],khotchasi:[0.5,0.36],rajasi:[0.52,0.35],naga:[0.53,0.25],rhino:[0.5,0.46],buffalo:[0.48,0.27],nonthi:[0.58,0.44],hong:[0.53,0.29],garuda:[0.5,0.34],erawan:[0.5,0.32]}; /* [x,y] ตำแหน่งกลางหัวสัตว์ เป็นสัดส่วนของภาพ */
 function mPic(k){const m=MOUNTS[k];if(!m)return '';if(!MOUNT_ART.has(k))return m.ic;const [fx,fy]=MOUNT_FOCUS[k]||[.5,.3];const z=2.1;
@@ -516,12 +521,12 @@ function mountCard(k){const m=MOUNTS[k];const g=GOD[OWNER_GOD[k]];
 function godCard(k){const g=GOD[k];if(!g)return '';const A=ARCH[g.arch]||{ic:'',n:''};const m=MOUNTS[g.mount];
   return `<article class="gcard arch-${g.arch}" aria-label="การ์ด${esc(g.name)}">
     ${godPic(k,'full')}
-    <div class="gc-badge" title="${esc(A.n)}"><span class="gc-ic">${A.ic}</span><span class="gc-bn">${esc(A.n.replace('สาย',''))}</span></div>
+    <div class="gc-badge" title="${esc(A.n)}"><span class="gc-ic">${archIc(g.arch)}</span><span class="gc-bn">${esc(A.n.replace('สาย',''))}</span></div>
     <button class="gc-mount" ${infoAttr('mount:'+g.mount)} aria-label="พาหนะ ${esc(m.name)}"><span>${mPic(g.mount)}</span></button>
     <div class="gc-low">
       ${GOD_FLAVOR[k]?`<p class="gc-flavor">“${esc(GOD_FLAVOR[k])}”</p>`:''}
       <div class="gc-text"><p><span class="gc-key">${esc(g.ab)}</span> ${esc(g.txt)}</p><p class="gc-weak">จุดอ่อน: ${esc(g.weak)}</p></div>
-      <div class="gc-name"><b>${esc(g.name)}</b><span>${A.ic} ${esc(A.n)} · ${m.ic} ${esc(m.name)}</span></div>
+      <div class="gc-name"><b>${esc(g.name)}</b><span>${archIc(g.arch)} ${esc(A.n)} · ${mPic(g.mount)} ${esc(m.name)}</span></div>
     </div></article>`}
 function openGodPick(k,from){const pop=document.getElementById('pop');if(!pop||!G)return;
   const S=G;const taken=S.seats.findIndex(x=>x.god===k);const can=S.status==='draft'&&iControl(S,draftPicker(S))&&taken<0;
@@ -631,7 +636,7 @@ function statusBox(S,act,mine){
   const p=S.P[act];
   const moveable=S.B.some((c,i)=>c.o===act&&c.t>0&&Object.keys(reachAny(S,act,i)).length);
   const canRecruit=canRecruitAny(S,act);const rN=recruitN(S,act,cityOf(act));
-  const btn=(a,sub,ok)=>`<button data-act="${a}" ${actionOK(S,act,a)&&ok&&tutAllow(a)?'':'disabled'}><b>${ACT[a]}</b><span>${sub}</span></button>`;
+  const btn=(a,sub,ok)=>`<button data-act="${a}" class="actbtn" ${actionOK(S,act,a)&&ok&&tutAllow(a)?'':'disabled'}><span class="aic">${ico('a-'+a)}</span><b>${ACT[a]}</b><span>${sub}</span></button>`;
   return `<div class="panel stack"><div class="row">${who}</div>
    <div class="small muted tab">แอคชันที่ใช้แล้ว ${p.used.length}/${actionLimit(S,act)}${p.used.length?' · '+p.used.map(a=>ACT[a]).join(', '):''}</div>
    ${ui.mode?modeBox(S,act):`<div class="actions">
@@ -1172,7 +1177,7 @@ function infoHTML(spec){const [kind,id]=spec.split(':');const own=ownerOf(kind,i
   if(kind==='map'){const m=MAPBY[id];if(!m)return '';return `<p class="small muted">แผนที่</p><h2>🗺 ${esc(m.name)}</h2><p>${esc(m.desc)}</p><p class="small muted">ทุกแผนที่สมมาตร ทุกที่นั่งเดินถึงวัดและเขาพระสุเมรุได้ไกลเท่ากัน มี ${MAPS.length} แบบ สุ่มใหม่ทุกห้อง</p>`}
   if(kind==='god'){const g=GOD[id];if(!g)return '';
     if(!window.__infoPlain)return `<!--card-->${godCard(id)}${owner}`;
-    return `${godPic(id,'hero')}<p class="small muted">เทพ${g.arch?' · '+ARCH[g.arch].ic+' '+ARCH[g.arch].n+' ('+ARCH[g.arch].d+')':''} · พาหนะประจำองค์ ${MOUNTS[g.mount].name}</p><h2>${esc(g.name)}</h2><p><b>${esc(g.ab)}</b>: ${esc(g.txt)}</p><p class="small">จุดอ่อน: ${esc(g.weak)}</p>${owner}`}
+    return `${godPic(id,'hero')}<p class="small muted">เทพ${g.arch?' · '+archIc(g.arch)+' '+ARCH[g.arch].n+' ('+ARCH[g.arch].d+')':''} · พาหนะประจำองค์ ${MOUNTS[g.mount].name}</p><h2>${esc(g.name)}</h2><p><b>${esc(g.ab)}</b>: ${esc(g.txt)}</p><p class="small">จุดอ่อน: ${esc(g.weak)}</p>${owner}`}
   return ''}
 let infoReturn=null;
 function openInfo(spec,from){const pop=document.getElementById('pop');const h=infoHTML(spec);if(!pop||!h)return;
