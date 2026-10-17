@@ -160,7 +160,7 @@ function openGame(id){
     if(!S){G=null;render();return}
     const firstCb=!G;const prevS=G;const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
     if(prevTurn!==activeSeat(S))ui={mode:null};
-    noteNames(S);render();chatDraw();if(!firstCb)boardFx(prevS,S);tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
+    noteNames(S);render();if(CHAT.err&&CHAT.gid===GID&&mySeats(S).length&&!CHAT.retried){const op=CHAT.open;chatStart(GID);CHAT.open=op;CHAT.retried=true}chatDraw();if(!firstCb)boardFx(prevS,S);tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
     if(S.status==='play'&&turnKey(S)!==prevKey)turnPopup(S,prevKey===null);
   });
   render();
@@ -449,11 +449,11 @@ function boardFx(prev,S){if(!prev||!prev.B||!S.B||prev.B.length!==S.B.length)ret
 /* ===================== แชทในห้อง ===================== */
 const CHAT={gid:null,msgs:[],open:false,unread:0,unsub:null,ready:false,err:null,draft:''};
 const QUICK=['😂','👍','😱','🙏','😡','GG','รอแป๊บ','ตาคุณแล้ว!'];
-function chatStop(){if(CHAT.unsub){try{CHAT.unsub()}catch(e){}}Object.assign(CHAT,{gid:null,msgs:[],unread:0,unsub:null,ready:false,err:null});chatDraw()}
+function chatStop(){if(CHAT.unsub){try{CHAT.unsub()}catch(e){}}Object.assign(CHAT,{gid:null,msgs:[],unread:0,unsub:null,ready:false,err:null,retried:false});chatDraw()}
 function chatStart(gid){chatStop();if(isTut(gid)||!STORE||!STORE.watchChat)return;CHAT.gid=gid;
   try{CHAT.open=localStorage.getItem('hmp-chat-open')==='1'&&innerWidth>900}catch(e){}
   CHAT.unsub=STORE.watchChat(gid,(list,err)=>{if(CHAT.gid!==gid)return;
-    if(!list){CHAT.err=err==='permission-denied'?'rules':'net';chatDraw();return}CHAT.err=null;
+    if(!list){CHAT.err=err==='permission-denied'?'rules':'net';CHAT.code=err||'';console.warn('chat error',err);chatDraw();return}CHAT.err=null;
     const seen=new Set(CHAT.msgs.map(m=>m.id));const fresh=CHAT.ready?list.filter(m=>!seen.has(m.id)&&m.uid!==ME):[];
     CHAT.msgs=list;
     if(fresh.length){if(!CHAT.open)CHAT.unread+=fresh.length;sfx('chat')}
@@ -471,7 +471,8 @@ function chatDraw(scroll){let el=document.getElementById('chat');
   const inp=el.querySelector('#chatin');if(inp){CHAT.draft=inp.value}
   const focused=inp&&document.activeElement===inp;const list=el.querySelector('.chatlist');const atBottom=!list||list.scrollHeight-list.scrollTop-list.clientHeight<40;
   const t=m=>{try{return new Date(m.at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}catch(e){return ''}};
-  const body=CHAT.err==='rules'?`<p class="small chatnote">แชทยังใช้ไม่ได้: เจ้าของเว็บต้องอัปเดตกฎความปลอดภัย (Rules) ของ Firestore ก่อน</p>`
+  const body=CHAT.err==='rules'?(!mySeats(G).length?`<p class="small chatnote">ต้องนั่งในห้องนี้ก่อนจึงจะเห็นและส่งแชทได้</p>`:`<p class="small chatnote">แชทโหลดไม่ได้ (ไม่มีสิทธิ์อ่าน) <button class="ghost small" id="chatretry">ลองใหม่</button><br><span class="muted">ถ้ายังไม่ได้ ให้รีเฟรชหน้า (Ctrl+F5) · รหัส: ${esc(CHAT.code||'')}</span></p>`)
+    :CHAT.err==='net'?`<p class="small chatnote">เชื่อมต่อแชทไม่ได้ <button class="ghost small" id="chatretry">ลองใหม่</button><br><span class="muted">รหัส: ${esc(CHAT.code||'')}</span></p>`
     :!CHAT.msgs.length?`<p class="small muted chatnote">ยังไม่มีข้อความ ทักทายเพื่อนในห้องได้เลย</p>`
     :CHAT.msgs.map(m=>`<div class="cmsg ${m.uid===ME?'me':''}"><div class="cwho"><span class="dot" style="background:${m.seat>=0?SEATC(m.seat):'var(--muted)'}"></span>${esc(chatWho(m))}<span class="ctime">${t(m)}</span></div><div class="ctext">${esc(m.text)}</div></div>`).join('');
   el.className=CHAT.open?'open':'';
@@ -483,6 +484,7 @@ function chatDraw(scroll){let el=document.getElementById('chat');
     :`<button class="chatfab" id="chatopen" aria-label="เปิดแชท${CHAT.unread?' มีข้อความใหม่ '+CHAT.unread:''}">💬 แชท${CHAT.unread?`<span class="cbadge">${CHAT.unread>9?'9+':CHAT.unread}</span>`:''}</button>`;
   const setOpen=v=>{CHAT.open=v;if(v)CHAT.unread=0;try{localStorage.setItem('hmp-chat-open',v?'1':'0')}catch(e){}chatDraw(true);if(v){const i=document.getElementById('chatin');if(i&&innerWidth>700)i.focus()}};
   const o=el.querySelector('#chatopen');if(o)o.onclick=()=>setOpen(true);
+  const rt=el.querySelector('#chatretry');if(rt)rt.onclick=()=>{const g=CHAT.gid,op=CHAT.open;chatStart(g);CHAT.open=op;chatDraw(true)};
   const c=el.querySelector('#chatclose');if(c)c.onclick=()=>setOpen(false);
   el.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>chatSend(b.dataset.q));
   const f=el.querySelector('#chatform');if(f)f.onsubmit=e=>{e.preventDefault();const i=el.querySelector('#chatin');const v=i.value;i.value='';CHAT.draft='';chatSend(v);i.focus()};
