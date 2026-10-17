@@ -478,3 +478,12 @@ span.lchip{cursor:default}
 .eyereveal>div:first-child{flex:1;min-width:0}
 .eyereveal .bcard.big{flex:none;width:120px;background:var(--surface);color:var(--ink);border:2px solid var(--gold)}
 .eyereveal .bcard .cn{font-size:1rem}
+/* ===== ไอคอนภาพ ===== */
+.gi{width:1.25em;height:1.25em;object-fit:contain;vertical-align:-.25em;display:inline-block}
+.gc-ic .gi{width:30px;height:30px;vertical-align:middle}
+.gc-name .gi,.gc-name .mav{width:1.3em;height:1.3em}
+.actions button.actbtn{position:relative;padding-right:56px;min-height:64px}
+.actbtn .aic{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:1.6rem;line-height:1;opacity:.95}
+.actbtn .aic .gi{width:40px;height:40px;vertical-align:middle}
+.actbtn:disabled .aic{opacity:.4;filter:grayscale(.6)}
+.terrleg .gi{width:1.5em;height:1.5em}
