@@ -491,3 +491,12 @@ span.lchip{cursor:default}
 .shoptab .gi.tabic{width:28px;height:28px}
 .shoptab .tabic .mav{width:28px;height:28px}
 .youtag{color:var(--gold);font-weight:700}
+.gclock{display:inline-block;margin-left:8px;font-size:.85rem;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid currentColor;opacity:.85;font-variant-numeric:tabular-nums}
+#mus{margin-left:4px}
+/* ===== แผงปรับเสียง ===== */
+#volpanel{position:absolute;z-index:45;width:270px;background:var(--surface);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;box-shadow:0 10px 28px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px}
+.volhead{display:flex;justify-content:space-between;align-items:center}
+.volrow{display:grid;grid-template-columns:86px 1fr 40px;align-items:center;gap:8px;font-size:.9rem}
+.volrow input{width:100%;accent-color:var(--gold);padding:0;border:0;background:none}
+.volrow b{font-size:.8rem;text-align:right;font-variant-numeric:tabular-nums}
+#volpanel p{margin:0}
