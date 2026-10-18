@@ -837,7 +837,7 @@ function modeBox(S,act){
     const src=ui.src,dst=ui.dst,c=S.B[src];const strike=ui.dest[dst]==='strike';const battle=ui.dest[dst]==='battle'||strike;
     const maxN=c.t;
     const room=battle?99:(cap(S,act,dst)-(S.B[dst].o===act?S.B[dst].t:0));
-    const nMax=Math.min(maxN,room,battle?(has(S,act,'fort')?6:5):99);
+    const nMax=Math.min(maxN,room,battle?cap(S,act,dst):99);
     if(ui.n==null||ui.n>nMax)ui.n=nMax;
     if(nMax<1)return `<div class="banner row">${esc(cname(S,dst))}มีทหารเต็มแล้ว เลือกช่องอื่น ${cancel}</div>`;
     const co=carryOpts(S,act,src,dst,ui.n,!!ui.bonus);
@@ -1109,6 +1109,7 @@ function doMove(){
     if(kind==='battle'||kind==='strike'){
       if(card==null||!availCards(T,s).includes(card))return fail('ยังไม่ได้เลือกการ์ดรบ');
       if(kind==='strike')T.P[s].f.strike=true;
+      if(n>(TK.length>=2?4:cap(T,s,dst)))return fail('กองที่บุกมีทหารเกินที่กองนอกเมืองจุได้');
       const path=movePath(T,s,src,dst,TK,bonus?1:0);
       removeTroops(T,src,n);for(const k of TK)T.M[k].c=-1;
       T.battle={a:s,d:T.B[dst].o,to:dst,from:src,path:kind==='strike'?[src,dst]:path,raid:kind==='strike',n,mount:takeM,mount2:take2,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
