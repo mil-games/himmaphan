@@ -4,7 +4,17 @@ let STORE=null,ME=null,LOCAL=true;
 const localGames={};let localSubs=[];
 function fireLocal(){localSubs.forEach(f=>f())}
 async function createGame(data){return STORE.create(data)}
-async function mutate(gid,fn){
+/* จับเวลา: เวลาเกมรวม และเวลาที่แต่ละคนใช้ในตาตัวเอง (นับจากถึงตาจนกดเดิน สูงสุดตาละ 10 นาที กันกรณีเปิดค้างไว้) */
+const TURN_CAP=10*60*1000;
+function timeTrack(T,before){const now=Date.now();
+  if(T.status==='play'&&!T.startedAt){T.startedAt=now;T.turnAt=now}
+  if(T.status==='done'&&!T.endedAt)T.endedAt=now;
+  if(!T.P||!T.startedAt)return;
+  const after=T.status==='play'?activeSeat(T):-1;
+  if(before>=0&&T.P[before]){const d=Math.min(TURN_CAP,Math.max(0,now-(T.turnAt||now)));T.P[before].tt=(T.P[before].tt||0)+d}
+  T.turnAt=now;void after}
+async function mutate(gid,fn0){
+  const fn=T=>{const before=T.status==='play'?activeSeat(T):-1;const r=fn0(T);if(r===false)return r;try{timeTrack(T,before)}catch(e){}return r};
   if(isTut(gid)){const S=clone(localGames[gid]);let res;try{res=fn(S)}catch(e){console.error(e);toast('เกิดข้อผิดพลาด: '+(e&&e.message||e));render();return false}if(res===false){render();return false}try{checkSavable(S)}catch(e){console.error(e);toast('ข้อมูลผิดรูปแบบ: '+e.message)}localGames[gid]=S;fireLocal();return true}
   let r;
   try{r=await STORE.mutate(gid,fn)}catch(e){console.error(e);r={ok:false,why:'error',detail:String(e&&e.message||e).slice(0,80)}}
@@ -49,7 +59,7 @@ function showLobby(){
   clearPops();
   try{document.title='ศึกเทพหิมพานต์'}catch(e){}
   TUT=null;
-  view={name:'lobby'};GID=null;G=null;ui={mode:null};chatStop();
+  view={name:'lobby'};GID=null;G=null;ui={mode:null};chatStop();bgmSync();
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   watchLobby(rows=>{lobbyRows=rows.sort((a,b)=>(b.d.upd||b.d.created||0)-(a.d.upd||a.d.created||0));rows.forEach(r=>noteNames(r.d));render()});
   render();
@@ -160,7 +170,7 @@ function openGame(id){
     if(!S){G=null;render();return}
     const firstCb=!G;const prevS=G;const prevTurn=G?activeSeat(G):null;const prevKey=G&&G.status==='play'?turnKey(G):null;G=S;
     if(prevTurn!==activeSeat(S))ui={mode:null};
-    noteNames(S);render();if(CHAT.err&&CHAT.gid===GID&&mySeats(S).length&&!CHAT.retried){const op=CHAT.open;chatStart(GID);CHAT.open=op;CHAT.retried=true}chatDraw();if(!firstCb)boardFx(prevS,S);tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
+    noteNames(S);render();bgmSync();if(CHAT.err&&CHAT.gid===GID&&mySeats(S).length&&!CHAT.retried){const op=CHAT.open;chatStart(GID);CHAT.open=op;CHAT.retried=true}chatDraw();if(!firstCb)boardFx(prevS,S);tutTick(S);battleShow(S,firstCb);checkPhase(S);endShow(S);
     if(S.status==='play'&&turnKey(S)!==prevKey)turnPopup(S,prevKey===null);
   });
   render();
@@ -180,7 +190,7 @@ function renderInner(){
   renderGame();
 }
 function topBar(S,extra){
-  return `<div class="top"><div class="row"><button class="ghost" id="back">← ห้องทั้งหมด</button><h1>ศึกเทพหิมพานต์</h1><button class="ghost small" id="snd" aria-pressed="${sndOn()}" title="เปิด/ปิดเสียง">${sndOn()?'🔊 เสียง':'🔇 ปิดเสียง'}</button></div>
+  return `<div class="top"><div class="row"><button class="ghost" id="back">← ห้องทั้งหมด</button><h1>ศึกเทพหิมพานต์</h1><button class="ghost small" id="snd" aria-haspopup="dialog" title="ปรับเสียง">${sndOn()||musOn()?'🔊':'🔇'} เสียง</button></div>
   <div class="meta"><span class="pill tab">${isTut(GID)?'บทเรียน':'ห้อง '+esc(GID)}</span>${extra||''}</div></div>`}
 /* แผนที่ของห้องนี้ ให้ทุกคนเห็นก่อนเลือกเทพ */
 function draftMapBox(S,isHost){
@@ -417,26 +427,76 @@ function turnWhat(S,a){
 let turnTimer=null;
 /* ===================== เอฟเฟกต์และเสียง ===================== */
 const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-const sndOn=()=>{try{return localStorage.getItem('hmp-snd')!=='0'}catch(e){return true}};
+/* ระดับเสียง 0–100 เก็บในเครื่อง · เอฟเฟกต์เริ่มที่ 70 · เพลงเริ่มที่ 0 (ปิด) */
+const volGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:Math.max(0,Math.min(100,+v||0))}catch(e){return d}};
+const sfxVol=()=>{try{if(localStorage.getItem('hmp-snd')==='0'&&localStorage.getItem('hmp-sfxv')==null)return 0}catch(e){}return volGet('hmp-sfxv',70)};
+const musVol=()=>{try{if(localStorage.getItem('hmp-musv')==null&&localStorage.getItem('hmp-mus')==='1')return 50}catch(e){}return volGet('hmp-musv',0)};
+const sndOn=()=>sfxVol()>0;
+let MASTER=null;const sfxOut=()=>{if(!MASTER){MASTER=AC.createGain();MASTER.connect(AC.destination)}MASTER.gain.value=sfxVol()/70;return MASTER};
 let AC=null;document.addEventListener('pointerdown',()=>{if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}else if(AC.state==='suspended')AC.resume()},{capture:true});
 /* เสียงสังเคราะห์ ไม่ต้องโหลดไฟล์: tone(ความถี่, เวลาเริ่ม, ยาว, ชนิดคลื่น, ความดัง) */
 function sfx(kind){if(!sndOn()||!AC)return;const t0=AC.currentTime;
   const tone=(f,at,dur,type,vol,f2)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0+at);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+at+dur);
-    g.gain.setValueAtTime(0.0001,t0+at);g.gain.exponentialRampToValueAtTime(vol||0.2,t0+at+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t0+at+dur);o.connect(g).connect(AC.destination);o.start(t0+at);o.stop(t0+at+dur+0.05)};
-  const noise=(at,dur,vol)=>{const n=AC.sampleRate*dur,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=900;src.buffer=b;g.gain.value=vol||0.3;src.connect(f).connect(g).connect(AC.destination);src.start(t0+at)};
+    g.gain.setValueAtTime(0.0001,t0+at);g.gain.exponentialRampToValueAtTime(vol||0.2,t0+at+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t0+at+dur);o.connect(g).connect(sfxOut());o.start(t0+at);o.stop(t0+at+dur+0.05)};
+  const noise2=(at,dur,vol,freq,type)=>{const n=Math.floor(AC.sampleRate*dur),b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++){const e=i/n;d[i]=(Math.random()*2-1)*Math.sin(Math.PI*e)}const src=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();f.type=type||'bandpass';f.frequency.value=freq||2000;f.Q.value=0.7;src.buffer=b;g.gain.value=vol||0.1;src.connect(f).connect(g).connect(sfxOut());src.start(t0+at)};
+  const noise=(at,dur,vol)=>{const n=AC.sampleRate*dur,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=900;src.buffer=b;g.gain.value=vol||0.3;src.connect(f).connect(g).connect(sfxOut());src.start(t0+at)};
   if(kind==='turn'){tone(880,0,0.5,'sine',0.18);tone(1320,0.12,0.6,'sine',0.12)}            // ระฆังเล็ก: ถึงตาคุณ
   else if(kind==='step'){tone(160,0,0.12,'triangle',0.15,110)}                                // ฝีเท้า: มีคนเดินทัพ
   else if(kind==='battle'){noise(0,0.25,0.35);tone(110,0,0.4,'square',0.08,70);tone(220,0.18,0.35,'sawtooth',0.05,150)} // กลองศึก
   else if(kind==='gong'){tone(196,0,1.8,'sine',0.22,190);tone(392,0,1.2,'sine',0.08);tone(293,0.02,1.4,'triangle',0.05)} // ฆ้อง: เปลี่ยนรอบ
+  else if(kind==='grass'){noise2(0,0.22,0.10,2500,'bandpass');noise2(0.08,0.18,0.07,3200,'bandpass')}   // หญ้าไหว: เดินทัพ
+  else if(kind==='coin'){tone(1568,0,0.09,'triangle',0.10);tone(2093,0.07,0.22,'triangle',0.09);tone(2637,0.15,0.18,'sine',0.05)} // เหรียญ: ซื้อของ
+  else if(kind==='page'){noise2(0,0.14,0.07,1800,'highpass')}                                  // พลิกกระดาษ: เปิดร้าน/สลับแท็บ/เปิดการ์ด
+  else if(kind==='click'){tone(520,0,0.05,'sine',0.05,420)}                                     // คลิกเบาๆ
+  else if(kind==='merit'){tone(988,0,0.9,'sine',0.09);tone(1480,0.05,0.8,'sine',0.04)}           // กระดิ่งวัด: ทำบุญ
+  else if(kind==='march'){[0,0.14,0.28].forEach(t=>tone(130,t,0.1,'triangle',0.12,90))}           // กลองเดินแถว: เกณฑ์ทัพ
   else if(kind==='chat'){tone(660,0,0.12,'sine',0.12);tone(990,0.08,0.16,'sine',0.09)}
   else if(kind==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,i*0.12,0.5,'triangle',0.14))}}
+/* เพลงประกอบ: วางไฟล์ audio/bgm.mp3 (วนเล่น เบาๆ) · เสียงเทพ: audio/voice/<รหัสเทพ>.mp3 ถ้าไม่มีไฟล์ก็เงียบ */
+const musOn=()=>musVol()>0;const musLevel=()=>0.36*musVol()/100;
+/* เพลงกลางวัน/กลางคืน: แต่ละช่วงแบ่งเป็นหลายไฟล์ได้ (GitHub รับไฟล์ละไม่เกิน 25 MB) เล่นต่อกันเป็นลำดับ
+   สลับช่วงแล้วกลับมาจะเล่นต่อจากจุดเดิม และจำตำแหน่งไว้ในเครื่อง รีเฟรชหน้าก็ยังเล่นต่อ */
+const MUSIC={day:['audio/day_00.mp3','audio/day_01.mp3','audio/day_02.mp3','audio/day_03.mp3','audio/day_04.mp3','audio/day_05.mp3','audio/day_06.mp3'],night:['audio/night_00.mp3','audio/night_01.mp3','audio/night_02.mp3','audio/night_03.mp3','audio/night_04.mp3','audio/night_05.mp3','audio/night_06.mp3','audio/night_07.mp3','audio/night_08.mp3']};
+const BG={day:null,night:null,cur:null,pos:{day:{i:0,t:0},night:{i:0,t:0}},fade:null};
+try{const sv=JSON.parse(localStorage.getItem('hmp-mpos')||'null');if(sv&&sv.day&&sv.night)BG.pos=sv}catch(e){}
+function bgSave(){try{for(const k of ['day','night']){const a=BG[k];if(a)BG.pos[k].t=a.currentTime||0}localStorage.setItem('hmp-mpos',JSON.stringify(BG.pos))}catch(e){}}
+setInterval(()=>{if(BG.cur&&BG[BG.cur]&&!BG[BG.cur].paused)bgSave()},5000);
+function bgEl(k){if(BG[k])return BG[k];const list=MUSIC[k];const p=BG.pos[k];if(p.i>=list.length)p.i=0;
+  const a=new Audio(list[p.i]);a.preload='auto';a.volume=0;a.dataset.k=k;
+  a.addEventListener('loadedmetadata',()=>{try{if(p.t&&p.t<a.duration-1)a.currentTime=p.t}catch(e){}},{once:true});
+  a.onended=()=>{p.i=(p.i+1)%list.length;p.t=0;BG[k]=null;if(BG.cur===k){const n=bgEl(k);n.volume=musLevel();n.play().catch(()=>{})}bgSave()};
+  a.onerror=()=>{if(!BG.warned){BG.warned=1;toast('ยังไม่มีไฟล์เพลง (โฟลเดอร์ audio)')}};
+  BG[k]=a;return a}
+function bgFade(a,to,ms,done){const from=a.volume,st=performance.now();const step=now=>{const k=Math.min(1,(now-st)/ms);a.volume=Math.max(0,Math.min(1,from+(to-from)*k));if(k<1)requestAnimationFrame(step);else if(done)done()};requestAnimationFrame(step)}
+function bgmSync(){const want=musOn()&&view.name==='game'&&G&&G.status==='play'?(G.moon==='wane'?'night':'day'):null;
+  if(want===BG.cur&&(!want||(BG[want]&&!BG[want].paused)))return;
+  const old=BG.cur&&BG[BG.cur];if(old){const o=old;bgSave();bgFade(o,0,1200,()=>o.pause())}
+  BG.cur=want;if(!want)return;
+  const a=bgEl(want);a.play().then(()=>bgFade(a,musLevel(),1500)).catch(()=>{})}
+document.addEventListener('pointerdown',()=>{if(musOn())bgmSync()},{capture:true});
+/* แผงปรับเสียง: เอฟเฟกต์ และ เพลง */
+function volPanel(anchor){let el=document.getElementById('volpanel');if(el){el.remove();return}
+  el=document.createElement('div');el.id='volpanel';el.setAttribute('role','dialog');el.setAttribute('aria-label','ปรับเสียง');
+  const row=(id,label,v)=>`<label class="volrow" for="${id}"><span>${label}</span><input type="range" id="${id}" min="0" max="100" step="5" value="${v}"><b id="${id}-v">${v?v+'%':'ปิด'}</b></label>`;
+  el.innerHTML=`<div class="volhead"><b>ปรับเสียง</b><button class="ghost small" id="volx" aria-label="ปิด">✕</button></div>${row('v-sfx','🔔 เอฟเฟกต์',sfxVol())}${row('v-mus','🎵 เพลง',musVol())}<p class="small muted">ลากไปซ้ายสุด = ปิด · ค่าจำไว้ในเครื่องนี้</p>`;
+  document.body.appendChild(el);const r=anchor.getBoundingClientRect();el.style.top=(r.bottom+window.scrollY+6)+'px';el.style.left=Math.max(8,Math.min(window.innerWidth-280,r.left))+'px';
+  const set=(k,v)=>{try{localStorage.setItem(k,String(v))}catch(e){}};
+  const sf=el.querySelector('#v-sfx'),mu=el.querySelector('#v-mus');
+  sf.oninput=()=>{set('hmp-sfxv',sf.value);el.querySelector('#v-sfx-v').textContent=+sf.value?sf.value+'%':'ปิด'};sf.onchange=()=>sfx('coin');
+  mu.oninput=()=>{set('hmp-musv',mu.value);el.querySelector('#v-mus-v').textContent=+mu.value?mu.value+'%':'ปิด';const a=BG.cur&&BG[BG.cur];if(a)a.volume=musLevel();bgmSync()};
+  mu.onchange=()=>{const b=document.getElementById('snd');if(b)b.firstChild&&(b.innerHTML=(sndOn()||musOn()?'🔊':'🔇')+' เสียง')};
+  el.querySelector('#volx').onclick=()=>el.remove();
+  setTimeout(()=>{const off=e=>{if(!el.contains(e.target)&&e.target!==anchor){el.remove();document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)},0)}
+function voice(god){if(!sndOn()||!god)return;try{const a=new Audio('audio/voice/'+god+'.mp3');a.volume=Math.min(1,sfxVol()/100);a.onerror=()=>{};a.play().catch(()=>{})}catch(e){}}
+/* คลิกปุ่มทั่วไป: เสียงคลิกเบาๆ (ปุ่มที่มีเสียงเฉพาะจะเล่นเสียงของมันเอง) */
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled||b.dataset.shoptab||b.closest('#chat'))return;sfx('click')},{capture:true});
 /* หลังสถานะเปลี่ยน: ตัวเลขที่เปลี่ยนเด้ง และหมากวิ่งตามทางของการเดินล่าสุด */
 function boardFx(prev,S){if(!prev||!prev.B||!S.B||prev.B.length!==S.B.length)return;
   const svg=document.querySelector('.mapbox svg');if(!svg)return;
   for(let i=0;i<S.B.length;i++){const a=prev.B[i],b=S.B[i];if((a.t!==b.t||a.o!==b.o)&&!countHidden(S,i,viewers(S))){const g=svg.querySelector(`.cell[data-cell="${i}"]`);if(g)g.classList.add('cellpop')}}
   const t=S.trail&&S.trail[0],t0=prev.trail&&prev.trail[0];
   if(!t||(t0&&t0.q===t.q))return;
-  if(t.k==='atk')sfx('battle');else if(t.k==='move'||t.k==='ret')sfx('step');
+  if(t.k==='atk'){const def=prev.B[t.t]?prev.B[t.t].o:-1;const me=mySeats(S);if(S.solo||me.includes(t.s)||me.includes(def))sfx('battle')}else if(t.k==='move'||t.k==='ret')sfx('grass');else if(t.k==='rec')sfx('march');
   const path=t.p||(t.k==='ret'?[t.f,t.t]:null);if(reduceMotion()||!path||path.length<2)return;
   const M=mapLayout(S);const pts=path.map(i=>M.pos[i]).filter(Boolean);if(pts.length<2)return;
   const ns='http://www.w3.org/2000/svg';const tok=document.createElementNS(ns,'g');tok.setAttribute('class','walker');
@@ -530,13 +590,13 @@ function godCard(k){const g=GOD[k];if(!g)return '';const A=ARCH[g.arch]||{ic:'',
       <div class="gc-text"><p><span class="gc-key">${esc(g.ab)}</span> ${esc(g.txt)}</p><p class="gc-weak">จุดอ่อน: ${esc(g.weak)}</p></div>
       <div class="gc-name"><b>${esc(g.name)}</b><span>${archIc(g.arch)} ${esc(A.n)} · ${mPic(g.mount)} ${esc(m.name)}</span></div>
     </div></article>`}
-function openGodPick(k,from){const pop=document.getElementById('pop');if(!pop||!G)return;
+function openGodPick(k,from){const pop=document.getElementById('pop');if(!pop||!G)return;sfx('page');
   const S=G;const taken=S.seats.findIndex(x=>x.god===k);const can=S.status==='draft'&&iControl(S,draftPicker(S))&&taken<0;
   infoReturn=from||null;
   pop.innerHTML=`<div class="popcard cardpop" role="document">${godCard(k)}
     <div class="row gc-acts">${taken>=0?`<span class="small muted">ถูกเลือกแล้วโดย ${esc(S.seats[taken].uid===ME?'คุณ':(S.seats[taken].name||'ผู้เล่น'))}</span>`:can?'':'<span class="small muted">ยังไม่ถึงตาคุณเลือก</span>'}
       <span style="flex:1"></span>${can?`<button class="primary" id="gcpick">เลือก${esc(GOD[k].name)}</button>`:''}<button class="${can?'ghost':'primary'}" id="popclose">ปิด</button></div></div>`;
-  pop.hidden=false;const pb=document.getElementById('gcpick');if(pb){pb.onclick=e=>{e.stopPropagation();closeInfo();pickGod(k)};pb.focus()}else document.getElementById('popclose').focus()}
+  pop.hidden=false;const pb=document.getElementById('gcpick');if(pb){pb.onclick=e=>{e.stopPropagation();closeInfo();voice(k);pickGod(k)};pb.focus()}else document.getElementById('popclose').focus()}
 /* รูปเทพ: วางไฟล์ไว้ที่ img/gods/<รหัสเทพ>.webp ถ้าไม่มีไฟล์ จะแสดงอักษรย่อบนพื้นสีตามสายแทน */
 /* การ์ดพอไหม: คนหนึ่งซื้อได้ราวรอบละไม่เกิน 1 ใบ เกมทั่วไปจบราว 10–14 รอบ */
 function supplyNote(n,c,nl){const per=c/n;const tone=per<10?'warn':per<13?'':'ok';
@@ -561,7 +621,7 @@ function turnPopup(S,first){
     const close=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>d.remove(),350)};
     d.onclick=close;const b=document.getElementById('tpgo');if(b)b.onclick=e=>{e.stopPropagation();close()};
     setTimeout(close,mine?6000:2600);
-    if(mine)sfx('turn');
+    if(mine){sfx('turn');const ga=godOf(S,activeSeat(S));if(ga)setTimeout(()=>voice(ga),500)}
     if(mine&&navigator.vibrate){try{navigator.vibrate(120)}catch(e){}}
   };
   show();
@@ -602,7 +662,7 @@ function renderGame(){
   try{document.title=(mine&&S.status==='play'?'🔔 ถึงตาคุณ · ':'')+'ศึกเทพหิมพานต์'}catch(e){}
   wireGame(S,act);wireTut();wireId();
   {const ob=document.getElementById('openboard');if(ob)ob.onclick=()=>openBoard(G)}
-  {const sb=document.getElementById('snd');if(sb)sb.onclick=()=>{try{localStorage.setItem('hmp-snd',sndOn()?'0':'1')}catch(e){}render();if(sndOn())sfx('turn')}}
+  {const sb=document.getElementById('snd');if(sb)sb.onclick=e=>{e.stopPropagation();volPanel(sb)}}
   {const a=document.getElementById('arrows');if(a)a.onchange=()=>{try{localStorage.setItem('hmp-arrows',a.checked?'1':'0')}catch(e){}render()}}
   {const $=id=>document.getElementById(id);
    if($('delres'))$('delres').onclick=async()=>{if(!confirmTwice($('delres')))return;try{await STORE.del(GID)}catch(e){toast('ลบไม่สำเร็จ')}showLobby()};
@@ -674,11 +734,11 @@ function resultBox(S){
   return `<div class="panel result stack">
     <div class="restop"><div class="trophy" aria-hidden="true">${iPlayed&&!iWon?'🎖️':'🏆'}</div>
       <div><h2>${iPlayed?(iWon?'คุณชนะ!':'จบเกมแล้ว · '+esc(gname(S,S.winner))+'ชนะ'):esc(gname(S,S.winner))+' ชนะ!'}</h2>
-      <p class="small muted">${esc(gname(S,S.winner))} (${esc(pname(S.seats[S.winner].uid,'ผู้เล่น'))}) ได้ ${total(S,S.winner)} คะแนน · จบในรอบที่ ${S.round} · เป้า ${S.target}</p></div></div>
+      <p class="small muted">${esc(gname(S,S.winner))} (${esc(pname(S.seats[S.winner].uid,'ผู้เล่น'))}) ได้ ${total(S,S.winner)} คะแนน · จบในรอบที่ ${S.round} · เป้า ${S.target}${gameDur(S)!=null?` · ใช้เวลาทั้งเกม <b>${fmtDur(gameDur(S))}</b>`:''}</p></div></div>
     <ol class="rank">${rk.map((s,i)=>{const p=S.P[s];return `<li class="${s===S.winner?'win':''} ${mine.includes(s)?'me':''}">
       <span class="rno">${medal[i]||i+1}</span><span class="dot" style="background:${SEATC(s)}"></span>
       <span class="rname"><b>${esc(gname(S,s))}</b> <span class="small muted">${esc(pname(S.seats[s].uid,'ผู้เล่น'))}</span>
-        <span class="small muted rsub">ถาวร ${p.vp} · วัด ${tempVP(S,s)} · บุญ ${p.merit} · บาป ${p.sin} · พร ${p.pw.length} ใบ ${mountsOf(S,s).map(mIcon).join('')}</span></span>
+        <span class="small muted rsub">ถาวร ${p.vp} · วัด ${tempVP(S,s)} · บุญ ${p.merit} · บาป ${p.sin} · พร ${p.pw.length} ใบ${p.tt?` · ⏱ เล่นในตาตัวเอง ${fmtDur(p.tt)}`:''}</span></span>
       <span class="rscore tab">★ ${total(S,s)}</span></li>`}).join('')}</ol>
     <div class="row"><button class="primary" id="back2">กลับหน้ารวม</button>${S.host===ME&&!isTut(GID)?`<button class="ghost" id="delres">ลบห้องนี้</button>`:''}<span class="small muted">กระดานสุดท้ายอยู่ด้านบน เลื่อนดูได้</span></div></div>`;
 }
@@ -903,12 +963,16 @@ function openBoard(S){const old=document.getElementById('sky');if(old)old.remove
   d.innerHTML=`${boardHTML(S,null)}<button class="primary skyclose" id="skyclose">ปิด</button>`;document.body.appendChild(d);
   const close=()=>{d.classList.add('out');setTimeout(()=>d.remove(),300)};document.getElementById('skyclose').onclick=close;d.onclick=e=>{if(e.target===d)close()};
   d.querySelectorAll('.brow').forEach(r=>{r.style.transform=`translateY(${(+r.dataset.to)*62}px)`;const b=r.querySelector('.bpos');if(b)b.textContent=b.dataset.final})}
+const fmtDur=ms=>{const m=Math.floor(ms/60000);if(m<1)return 'ไม่ถึง 1 นาที';const h=Math.floor(m/60);return h?`${h} ชม. ${m%60} นาที`:`${m} นาที`};
+const gameDur=S=>S.startedAt?((S.endedAt||Date.now())-S.startedAt):null;
+function clockHTML(S){const d=gameDur(S);return d==null?'':`<span class="gclock" title="เวลาตั้งแต่เริ่มเกม">⏱ <span id="gclock">${fmtDur(d)}</span></span>`}
+setInterval(()=>{const el=document.getElementById('gclock');if(el&&G&&G.startedAt)el.textContent=fmtDur(gameDur(G))},20000);
 function phaseBox(S){
   if(S.status!=='play')return '';
   const day=S.moon==='wax';
   const left=[...Array(S.n).keys()].filter(s=>hasActions(S,s)).length;
   return `<div class="phase ${day?'day':'night'}" role="status">${day?SUN:MOON}
-    <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b>
+    <div style="min-width:0;flex:1 1 220px"><b class="phtitle">${day?'กลางวัน':'กลางคืน'} · รอบ ${S.round}</b> ${clockHTML(S)}
       <div class="small">${day?'ตอนจบรอบนี้ ได้บุญ +1 ต่อวัดที่ยึดอยู่ · ยังไม่ตัดสินผู้ชนะ':'ฝ่ายบุกได้พลังรบ +1 ทุกการรบ · '+(chalOf(S).length?'<b>จบรอบนี้ ผู้ท้าชิงที่ยังถึง '+S.target+' คะแนน = ชนะ</b>':'จบรอบนี้ใครถึง '+S.target+' คะแนน จะเป็นผู้ท้าชิง')}</div></div>
     <div class="small phnext">รอบหน้า: <b>${day?'กลางคืน':'กลางวัน'}</b><br>ยังต้องเดินอีก ${left} คนในรอบนี้<br><button class="ghost small" id="openboard">📊 ตารางคะแนน</button></div>
     ${chalBar(S)}<div class="small" style="flex:1 1 100%;border-top:1px dashed var(--line);padding-top:6px"><b>ครองแดน</b> (ยึดวัด 2 แห่งขึ้นไป หรือเขาพระสุเมรุ จน<b>จบรอบกลางคืน</b> ได้ +1 ถาวร${S.moon==='wax'?' · รอบนี้กลางวัน ยังไม่นับ':' · <b>นับตอนจบรอบนี้</b>'}) · ตอนนี้เข้าเงื่อนไข: ${(()=>{const l=[...Array(S.n).keys()].filter(s=>rulesLand(S,s));return l.length?l.map(s=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}"></span>${esc(gname(S,s))} <span class="muted">(${esc(landWhy(S,s))})</span></span>`).join(' '):'ยังไม่มีใคร'})()}</div></div>`;
@@ -948,8 +1012,8 @@ function wireGame(S,act){
   const $=id=>document.getElementById(id);
   const b2=$('back2');if(b2)b2.onclick=showLobby;
   const re=()=>render();
-  const sd=$('shopd');if(sd)sd.ontoggle=()=>{SHOP.open=sd.open};
-  app.querySelectorAll('[data-shoptab]').forEach(b=>b.onclick=()=>{SHOP.tab=b.dataset.shoptab;SHOP.open=true;re()});
+  const sd=$('shopd');if(sd)sd.ontoggle=()=>{if(SHOP.open!==sd.open)sfx('page');SHOP.open=sd.open};
+  app.querySelectorAll('[data-shoptab]').forEach(b=>b.onclick=()=>{SHOP.tab=b.dataset.shoptab;SHOP.open=true;sfx('page');re()});
   if($('cancel'))$('cancel').onclick=()=>{ui={mode:null,shop:ui.shop};re()};
   app.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.act;
@@ -1015,14 +1079,14 @@ function doMerit(kind){const s=activeSeat(G);ui={mode:null};
     else if(kind==='sin'&&p.sin>0){p.sin--;log(T,`${gname(T,s)} ทำบุญลบบาป 1`)}
     else{p.merit+=g;log(T,`${gname(T,s)} ทำบุญ +${g}`)}
     const mb=monkBonus(T,s);if(mb)log(T,`${gname(T,s)}${mb.replace(' · ',' ')}`);
-    markAction(T,s,'merit');advance(T)})}
+    markAction(T,s,'merit');advance(T)}).then(ok=>{if(ok)sfx('merit')})}
 function doBuy(item){const s=activeSeat(G);ui={mode:null};
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'buy'))return false;const p=T.P[s];
     if(item.pw){if(powerState(T,s,item.pw)!=='ok')return false;const c=priceOf(T,s,item);p.merit-=c;p.pw.push(item.pw);
       if(['vpR','vpK','vpB','vpM'].includes(item.pw))p.vp+=1;log(T,`${gname(T,s)} ขอพรได้${PW[item.pw].name} (−${c} บุญ)`)}
     else{if(mountState(T,s,item.mount)!=='ok')return false;const c=priceOf(T,s,item);p.merit-=c;
       T.M[item.mount]={o:s,c:cityOf(s)};log(T,`${gname(T,s)} ได้${MOUNTS[item.mount].name}มาเป็นพาหนะ (−${c} บุญ)`)}
-    markAction(T,s,'buy');advance(T)})}
+    markAction(T,s,'buy');advance(T)}).then(ok=>{if(ok)sfx('coin')})}
 function doMove(){
   const s=activeSeat(G);const {src,dst,n,card,bonus}=ui;const carry=ui.carry;const carry2=ui.carry2||null;
   if(src==null||dst==null||ui.mode!=='move-cfg'){ui={mode:null};render();return}
@@ -1183,7 +1247,7 @@ function infoHTML(spec){const [kind,id]=spec.split(':');const own=ownerOf(kind,i
     return `${godPic(id,'hero')}<p class="small muted">เทพ${g.arch?' · '+archIc(g.arch)+' '+ARCH[g.arch].n+' ('+ARCH[g.arch].d+')':''} · พาหนะประจำองค์ ${MOUNTS[g.mount].name}</p><h2>${esc(g.name)}</h2><p><b>${esc(g.ab)}</b>: ${esc(g.txt)}</p><p class="small">จุดอ่อน: ${esc(g.weak)}</p>${owner}`}
   return ''}
 let infoReturn=null;
-function openInfo(spec,from){const pop=document.getElementById('pop');const h=infoHTML(spec);if(!pop||!h)return;
+function openInfo(spec,from){const pop=document.getElementById('pop');sfx('page');const h=infoHTML(spec);if(!pop||!h)return;
   infoReturn=from||null;
   pop.innerHTML=`<div class="popcard ${h.startsWith('<!--card-->')?'cardpop':''}" role="document">${h}<div class="row" style="justify-content:flex-end"><button class="primary" id="popclose">ปิด</button></div></div>`;
   pop.hidden=false;document.getElementById('popclose').focus()}
