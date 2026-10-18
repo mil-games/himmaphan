@@ -430,7 +430,7 @@ const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: r
 /* ระดับเสียง 0–100 เก็บในเครื่อง · เอฟเฟกต์เริ่มที่ 70 · เพลงเริ่มที่ 0 (ปิด) */
 const volGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:Math.max(0,Math.min(100,+v||0))}catch(e){return d}};
 const sfxVol=()=>{try{if(localStorage.getItem('hmp-snd')==='0'&&localStorage.getItem('hmp-sfxv')==null)return 0}catch(e){}return volGet('hmp-sfxv',70)};
-const musVol=()=>{try{if(localStorage.getItem('hmp-musv')==null&&localStorage.getItem('hmp-mus')==='1')return 50}catch(e){}return volGet('hmp-musv',0)};
+const musVol=()=>volGet('hmp-musv2',70);
 const sndOn=()=>sfxVol()>0;
 let MASTER=null;const sfxOut=()=>{if(!MASTER){MASTER=AC.createGain();MASTER.connect(AC.destination)}MASTER.gain.value=sfxVol()/70;return MASTER};
 let AC=null;document.addEventListener('pointerdown',()=>{if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}else if(AC.state==='suspended')AC.resume()},{capture:true});
@@ -483,7 +483,7 @@ function volPanel(anchor){let el=document.getElementById('volpanel');if(el){el.r
   const set=(k,v)=>{try{localStorage.setItem(k,String(v))}catch(e){}};
   const sf=el.querySelector('#v-sfx'),mu=el.querySelector('#v-mus');
   sf.oninput=()=>{set('hmp-sfxv',sf.value);el.querySelector('#v-sfx-v').textContent=+sf.value?sf.value+'%':'ปิด'};sf.onchange=()=>sfx('coin');
-  mu.oninput=()=>{set('hmp-musv',mu.value);el.querySelector('#v-mus-v').textContent=+mu.value?mu.value+'%':'ปิด';const a=BG.cur&&BG[BG.cur];if(a)a.volume=musLevel();bgmSync()};
+  mu.oninput=()=>{set('hmp-musv2',mu.value);el.querySelector('#v-mus-v').textContent=+mu.value?mu.value+'%':'ปิด';const a=BG.cur&&BG[BG.cur];if(a)a.volume=musLevel();bgmSync()};
   mu.onchange=()=>{const b=document.getElementById('snd');if(b)b.firstChild&&(b.innerHTML=(sndOn()||musOn()?'🔊':'🔇')+' เสียง')};
   el.querySelector('#volx').onclick=()=>el.remove();
   setTimeout(()=>{const off=e=>{if(!el.contains(e.target)&&e.target!==anchor){el.remove();document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)},0)}
@@ -963,10 +963,10 @@ function openBoard(S){const old=document.getElementById('sky');if(old)old.remove
   d.innerHTML=`${boardHTML(S,null)}<button class="primary skyclose" id="skyclose">ปิด</button>`;document.body.appendChild(d);
   const close=()=>{d.classList.add('out');setTimeout(()=>d.remove(),300)};document.getElementById('skyclose').onclick=close;d.onclick=e=>{if(e.target===d)close()};
   d.querySelectorAll('.brow').forEach(r=>{r.style.transform=`translateY(${(+r.dataset.to)*62}px)`;const b=r.querySelector('.bpos');if(b)b.textContent=b.dataset.final})}
-const fmtDur=ms=>{const m=Math.floor(ms/60000);if(m<1)return 'ไม่ถึง 1 นาที';const h=Math.floor(m/60);return h?`${h} ชม. ${m%60} นาที`:`${m} นาที`};
+const fmtDur=ms=>{const t=Math.max(0,Math.floor(ms/1000)),h=Math.floor(t/3600),m=Math.floor(t%3600/60),sec=t%60,p=n=>String(n).padStart(2,'0');return h?`${h}:${p(m)}:${p(sec)}`:`${m}:${p(sec)}`};
 const gameDur=S=>S.startedAt?((S.endedAt||Date.now())-S.startedAt):null;
 function clockHTML(S){const d=gameDur(S);return d==null?'':`<span class="gclock" title="เวลาตั้งแต่เริ่มเกม">⏱ <span id="gclock">${fmtDur(d)}</span></span>`}
-setInterval(()=>{const el=document.getElementById('gclock');if(el&&G&&G.startedAt)el.textContent=fmtDur(gameDur(G))},20000);
+setInterval(()=>{const el=document.getElementById('gclock');if(el&&G&&G.startedAt)el.textContent=fmtDur(gameDur(G))},1000);
 function phaseBox(S){
   if(S.status!=='play')return '';
   const day=S.moon==='wax';
