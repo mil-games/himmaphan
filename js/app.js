@@ -378,20 +378,60 @@ function glyph(t,x,y,r){const d=GLYPH[t];if(!d)return '';const k=r*0.62;
 /* ตราเกม: เขาพระสุเมรุกลางวงแหวนจักรวาล ล้อมด้วยเมืองของเทพ */
 const EMBLEM=(()=>{const n=7,R=40;let dots='';for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;dots+=`<circle cx="${(50+R*Math.cos(a)).toFixed(1)}" cy="${(50+R*Math.sin(a)).toFixed(1)}" r="5" fill="var(--s${i})" stroke="#DDB259" stroke-width="1.2"/>`}
   return `<svg class="emblem" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#DDB259" stroke-width="1"/><circle cx="50" cy="50" r="40" fill="none" stroke="#DDB259" stroke-width=".6" stroke-dasharray="2 3"/><circle cx="50" cy="50" r="27" fill="#24393C" stroke="#8FC3C6" stroke-width="1"/><path d="M33 62 L42 44 L47 52 L52 34 L60 50 L64 45 L71 62 Z" fill="#DDB259"/><path d="M52 34 L50.5 41 L54 40" fill="none" stroke="#1E0F0C" stroke-width="1"/>${dots}</svg>`})();
+/* แผนที่แบบภาพ: ช่องหกเหลี่ยมใส่ภาพพื้นที่ บนพื้นดินผืนเดียว · ปิดได้ด้วย localStorage hmp-tiles=0 */
+const TILES=(()=>{try{return localStorage.getItem('hmp-tiles')!=='0'}catch(e){return true}})();
+const hexPts=(x,y,r)=>[...Array(6).keys()].map(k=>{const a=Math.PI/180*(60*k-30);return (x+r*Math.cos(a)).toFixed(1)+','+(y+r*Math.sin(a)).toFixed(1)}).join(' ');
+function tileCell(S,i,p,rr,t,tt,c,oc,lab,fs,hid){
+  const img=tt==='city'?'city':i===0?'sumeru':isRoyal(S,i)?'royal':tt==='temple'?'temple':tt;
+  const R0=rr*1.12,own=c.t>0&&c.o>=0,cityC=t==='city';const hp=hexPts(p.x,p.y,R0);const id='hx'+i;
+  const lt=lab+(i===0?' · 2 คะแนน':'');const lw=lt.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g,'').length*fs*0.56;
+  const bw=own||cityC?5:2.5;const sc=own?SEATC(c.o):cityC?SEATC(citySeat(i)):'#F3E3BE';
+  return `<clipPath id="${id}"><polygon points="${hp}"/></clipPath>
+    <polygon points="${hexPts(p.x,p.y+3,R0)}" fill="#000" opacity=".35"/>
+    <image href="img/tiles/${img}.webp" x="${p.x-R0}" y="${p.y-R0}" width="${R0*2}" height="${R0*2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>
+    <polygon class="ring" points="${hp}" fill="${own?SEATC(c.o):'none'}" fill-opacity="${own?.12:0}" stroke="${sc}" stroke-width="${bw}" stroke-linejoin="round"/>
+    <g class="tlab"><rect x="${p.x-lw/2-8}" y="${p.y-R0-2}" width="${lw+16}" height="${fs+8}" rx="${(fs+8)/2}" fill="#1E0F0C" fill-opacity=".82" stroke="${cityC?sc:'#C9A04A'}" stroke-width="1.2"/>
+    <text x="${p.x}" y="${p.y-R0+fs+0.5}" text-anchor="middle" font-size="${fs}" fill="#F7EBCF" font-family="Anuphan,sans-serif">${esc(lab)}${i===0?' · 2 คะแนน':''}</text></g>
+    ${c.t>0?`<circle cx="${p.x}" cy="${p.y+rr*0.18}" r="${Math.max(15,rr*0.42)}" fill="${SEATC(c.o)}" stroke="#F7EBCF" stroke-width="3"/><text x="${p.x}" y="${p.y+rr*0.18+Math.max(15,rr*0.42)*0.38}" text-anchor="middle" font-size="${Math.max(17,rr*0.52)}" font-weight="700" fill="#fff" font-family="Anuphan,sans-serif">${hid?'?':c.t}</text>`:''}`}
+/* แม่น้ำแบบภาพ: ลากผ่านช่องริมน้ำทุกช่อง คดเคี้ยวและกว้างแคบต่างกันตาม seed ของห้อง เนื้อน้ำเป็นภาพที่ไหลช้าๆ */
+function riverSVG(S,M,pts){const rnd=mrng(((S.seed||1)*7919)^0x51ed27);const n=pts.length,cx=M.pos[0].x,cy=M.pos[0].y;
+  /* จุดควบคุม: จุดริมน้ำ + จุดกลางระหว่างกันที่ส่ายเข้าออกจากศูนย์กลาง */
+  const ctl=[];for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n];ctl.push({x:a.x,y:a.y});
+    {const ra=Math.hypot(a.x-cx,a.y-cy),rb=Math.hypot(b.x-cx,b.y-cy);let a1=Math.atan2(a.y-cy,a.x-cx),a2=Math.atan2(b.y-cy,b.x-cx);if(a2-a1>Math.PI)a2-=2*Math.PI;if(a1-a2>Math.PI)a2+=2*Math.PI;
+      const sx=(M.pos[1].x-cx)?1:1;void sx;const ell=(Math.abs(a.y-cy)+Math.abs(b.y-cy)+1)/(Math.abs(a.x-cx)+Math.abs(b.x-cx)+1);
+      for(const f of [0.35,0.68]){const ang=a1+(a2-a1)*f;let rr0=ra+(rb-ra)*f+(rnd()-0.5)*M.r*0.9;rr0=Math.max(rr0,M.r*2.9);ctl.push({x:cx+Math.cos(ang)*rr0,y:cy+Math.sin(ang)*rr0})}}}
+  /* โค้ง Catmull-Rom ปิดวง สุ่มตัวอย่างละเอียด */
+  const N=ctl.length,smp=[];for(let i=0;i<N;i++){const p0=ctl[(i-1+N)%N],p1=ctl[i],p2=ctl[(i+1)%N],p3=ctl[(i+2)%N];
+    for(let t=0;t<1;t+=1/12){const t2=t*t,t3=t2*t;smp.push({x:.5*(2*p1.x+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),y:.5*(2*p1.y+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3)})}}
+  /* ความกว้างเปลี่ยนไปตามทาง */
+  const K=smp.length,ph=rnd()*6.28,ph2=rnd()*6.28,base=M.r*0.5;
+  const wAt=i=>base*(1+0.32*Math.sin(i/K*Math.PI*2*3+ph)+0.18*Math.sin(i/K*Math.PI*2*7+ph2));
+  const ribbon=extra=>{const L=[],Rr=[];for(let i=0;i<K;i++){const a=smp[(i-1+K)%K],b=smp[(i+1)%K];let tx=b.x-a.x,ty=b.y-a.y;const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;const w=wAt(i)+extra;
+      L.push([smp[i].x-ty*w,smp[i].y+tx*w]);Rr.push([smp[i].x+ty*w,smp[i].y-tx*w])}
+    let d='';const f=q=>q[0].toFixed(1)+' '+q[1].toFixed(1);for(let i=0;i<K;i++){const j=(i+1)%K;d+=`M${f(L[i])}L${f(L[j])}L${f(Rr[j])}L${f(Rr[i])}Z`}return d};
+  const cl=smp.map(q=>q.x.toFixed(1)+' '+q.y.toFixed(1));
+  const flow=reduceMotion()?'':`<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="180 180" dur="40s" repeatCount="indefinite"/>`;
+  return `<defs><pattern id="triv" patternUnits="userSpaceOnUse" width="180" height="180"><image href="img/tiles/river.webp" width="180" height="180"/>${flow}</pattern></defs>
+    <path d="${ribbon(M.r*0.32)}" fill="#4E6B2A" stroke="#4E6B2A" stroke-width="1" opacity=".5"/>
+    <path d="${ribbon(M.r*0.17)}" fill="#D8C08A" stroke="#D8C08A" stroke-width="1"/>
+    <path d="${ribbon(0)}" fill="url(#triv)" stroke="url(#triv)" stroke-width="1.5"/>`}
 function mapSVG(S,clickable,selected,hl){hl=hl||[];
   const M=mapLayout(S),n=L(S);
   let lines='';
   for(let i=0;i<S.B.length;i++)for(const j of adj(S,i)){if(j<i)continue;const a=M.pos[i],b=M.pos[j];
     const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,bd=M.bend[i+'-'+j]||0;
     const qx=mx-dy*bd,qy=my+dx*bd;const toC=i===0||j===0||isRoyal(S,i)||isRoyal(S,j);
-    lines+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}Q${qx.toFixed(1)} ${qy.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}" fill="none" stroke="var(--line)" stroke-width="${toC?2:3}" stroke-linecap="round" ${toC?'stroke-dasharray="3 7"':''}/>`}
+    const dd=`M${a.x.toFixed(1)} ${a.y.toFixed(1)}Q${qx.toFixed(1)} ${qy.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+    lines+=TILES?`<path d="${dd}" fill="none" stroke="#5B3B1E" stroke-width="${toC?7:9}" stroke-linecap="round" opacity=".55"/><path d="${dd}" fill="none" stroke="#D9B98A" stroke-width="${toC?3:5}" stroke-linecap="round" ${toC?'stroke-dasharray="6 6"':''} opacity=".95"/>`
+      :`<path d="${dd}" fill="none" stroke="var(--line)" stroke-width="${toC?2:3}" stroke-linecap="round" ${toC?'stroke-dasharray="3 7"':''}/>`}
   // ทะเลสีทันดร: แถบน้ำวงในผ่านช่องริมน้ำทุกช่อง
   const wpts=[];for(let s=0;s<S.n;s++){const k=mapOf(S).types.indexOf('water');if(k>=3)wpts.push(M.pos[1+SECT*s+k])}
   let river='';if(wpts.length>1){const cxm=M.pos[0].x,pts=wpts.map((p,i)=>p);
     const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
     let d=`M${mid(pts.at(-1),pts[0]).x.toFixed(1)} ${mid(pts.at(-1),pts[0]).y.toFixed(1)}`;
     for(let i=0;i<pts.length;i++){const m=mid(pts[i],pts[(i+1)%pts.length]);d+=`Q${pts[i].x.toFixed(1)} ${pts[i].y.toFixed(1)} ${m.x.toFixed(1)} ${m.y.toFixed(1)}`}
-    river=`<path d="${d}Z" fill="none" stroke="var(--water)" stroke-width="${(M.r*1.5).toFixed(0)}" stroke-linejoin="round" opacity=".9"/><path d="${d}Z" fill="none" stroke="var(--waterline)" stroke-width="1.5" stroke-dasharray="2 10" opacity=".8"/>`}
+    river=TILES?`<path d="${d}Z" fill="none" stroke="#2E7F96" stroke-width="${(M.r*1.2).toFixed(0)}" stroke-linejoin="round" opacity=".55"/><path d="${d}Z" fill="none" stroke="#5FB7C8" stroke-width="${(M.r*0.8).toFixed(0)}" stroke-linejoin="round" opacity=".85"/>`:`<path d="${d}Z" fill="none" stroke="var(--water)" stroke-width="${(M.r*1.5).toFixed(0)}" stroke-linejoin="round" opacity=".9"/><path d="${d}Z" fill="none" stroke="var(--waterline)" stroke-width="1.5" stroke-dasharray="2 10" opacity=".8"/>`}
+  if(TILES&&wpts.length>1)river=riverSVG(S,M,wpts);
   lines=river+lines;
   let cells='';
   for(let i=0;i<S.B.length;i++){
@@ -404,15 +444,16 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
     const fs=Math.max(12,Math.min(15,rr*0.36));const hid=countHidden(S,i,viewers(S));
     cells+=`<g class="${cls}" data-cell="${i}" role="${clickable.includes(i)?'button':'img'}" tabindex="${clickable.includes(i)?0:-1}" aria-label="${esc(cname(S,i))} ${c.t>0?'ทหาร '+(hid?'?':c.t):''}">
       ${hl.includes(i)?`<circle class="hlring" cx="${p.x}" cy="${p.y}" r="${rr+9}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="5 5"/>`:''}
-      <circle class="ring" cx="${p.x}" cy="${p.y}" r="${rr}" fill="${fill}" stroke="${oc}" stroke-width="${c.t>0||t==='city'?3.5:1.5}"/>
+      ${TILES?tileCell(S,i,p,rr,t,tt,c,oc,lab,fs,hid):`<circle class="ring" cx="${p.x}" cy="${p.y}" r="${rr}" fill="${fill}" stroke="${oc}" stroke-width="${c.t>0||t==='city'?3.5:1.5}"/>
       ${c.t>0||tt==='city'?'':glyph(tt,p.x,p.y,rr)}
       <text x="${p.x}" y="${p.y-rr*0.3}" text-anchor="middle" font-size="${fs}" fill="var(--muted)" font-family="Anuphan,sans-serif">${esc(lab)}</text>
-      ${c.t>0?`<text x="${p.x}" y="${p.y+rr*0.4}" text-anchor="middle" font-size="${Math.max(17,rr*0.66)}" font-weight="700" fill="${SEATC(c.o)}" font-family="Anuphan,sans-serif">${hid?'?':c.t}</text>`:''}
+      ${c.t>0?`<text x="${p.x}" y="${p.y+rr*0.4}" text-anchor="middle" font-size="${Math.max(17,rr*0.66)}" font-weight="700" fill="${SEATC(c.o)}" font-family="Anuphan,sans-serif">${hid?'?':c.t}</text>`:''}`}
       ${ms.map((k,j)=>{const mx=p.x+rr*0.8-j*22,my=p.y-rr*0.82;return `<g class="mtok"><circle cx="${mx}" cy="${my}" r="14" fill="var(--surface)" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/>${MOUNT_ART.has(k)?(()=>{const [fx,fy]=MOUNT_FOCUS[k]||[.5,.3];const R2=12.5,W=R2*2*2.1,H=W*IMG_R;return `<clipPath id="mc-${k}"><circle cx="${mx}" cy="${my}" r="${R2}"/></clipPath><image href="img/mounts/${k}.webp" x="${(mx-fx*W).toFixed(1)}" y="${(my-fy*H).toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" clip-path="url(#mc-${k})" preserveAspectRatio="none"/><circle cx="${mx}" cy="${my}" r="14" fill="none" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/>`})():`<text x="${mx}" y="${my+6}" text-anchor="middle" font-size="16">${MOUNTS[k].ic}</text>`}<title>${MOUNTS[k].name} ของ${GOD[godOf(S,S.M[k].o)].name}</title></g>`}).join('')}
-      ${i===0?`<text x="${p.x}" y="${p.y+rr*0.55}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Anuphan,sans-serif">2 คะแนน</text>`:''}
+      ${i===0&&!TILES?`<text x="${p.x}" y="${p.y+rr*0.55}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Anuphan,sans-serif">2 คะแนน</text>`:''}
     </g>`;
   }
-  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่">${lines}${cells}${showArrows()?arrowsSVG(S,M):''}</svg>`;
+  const defs=TILES?`<defs><pattern id="tgr" patternUnits="userSpaceOnUse" width="260" height="260"><image href="img/tiles/ground.webp" width="260" height="260"/></pattern><radialGradient id="tvig" cx="50%" cy="50%" r="65%"><stop offset="70%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#1A0D08" stop-opacity=".55"/></radialGradient></defs><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tgr)"/><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tvig)"/>`:'';
+  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่" class="${TILES?'tiled':''}">${defs}${lines}${cells}${showArrows()?arrowsSVG(S,M):''}</svg>`;
 }
 
 const mapInfoAttr=S=>`data-info="map:${esc(mapOf(S).id)}" data-tip="${esc(mapOf(S).desc)}" aria-haspopup="dialog"`;
