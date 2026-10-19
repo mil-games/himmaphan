@@ -185,7 +185,7 @@ function renderInner(){
   if(view.name==='lobby')return renderLobby();
   if(!G){app.innerHTML=`<p class="muted">กำลังโหลดเกม… <button class="ghost" id="back">กลับหน้ารวม</button></p>`;document.getElementById('back').onclick=showLobby;return}
   if(G.status==='lobby'||G.status==='draft')return renderSeating();
-  if(!isTut(GID)&&G.B&&G.B.length!==SECT*G.n+2){app.innerHTML=`<div class="panel stack"><h2>ห้องนี้ใช้แผนที่รุ่นเก่า</h2><p class="small">แผนที่ถูกปรับใหม่ (ผู้เล่นละ 6 ช่อง) ห้องที่เริ่มเล่นก่อนอัปเดตเปิดต่อไม่ได้ เปิดห้องใหม่ได้เลย${G.host===ME?' หรือลบห้องนี้ทิ้ง':''}</p><div class="row"><button class="primary" id="back">กลับหน้ารวม</button>${G.host===ME?'<button class="ghost" id="delold">ลบห้องนี้</button>':''}</div></div>`;
+  if(!isTut(GID)&&G.B&&G.B.length!==SECT*G.n+2){app.innerHTML=`<div class="panel stack"><h2>ห้องนี้ใช้แผนที่รุ่นเก่า</h2><p class="small">แผนที่ถูกปรับใหม่ (ผู้เล่นละ 7 ช่อง เขาพระสุเมรุไกลขึ้น) ห้องที่เริ่มเล่นก่อนอัปเดตเปิดต่อไม่ได้ เปิดห้องใหม่ได้เลย${G.host===ME?' หรือลบห้องนี้ทิ้ง':''}</p><div class="row"><button class="primary" id="back">กลับหน้ารวม</button>${G.host===ME?'<button class="ghost" id="delold">ลบห้องนี้</button>':''}</div></div>`;
     document.getElementById('back').onclick=showLobby;const d=document.getElementById('delold');if(d)d.onclick=async()=>{try{await STORE.del(GID)}catch(e){}showLobby()};return}
   renderGame();
 }
@@ -273,7 +273,7 @@ function mapLayout(S){
   const span=Math.PI*2/n;
   // ตำแหน่งตามบล็อก k: [รัศมี, ระยะมุมในบล็อก]
   /* ตำแหน่งตามช่อง k ในบล็อก: [รัศมี, ระยะมุมในบล็อก] */
-  const K=[[1.00,0.50],[0.90,0.20],[0.90,0.80],[0.70,0.50],[0.50,0.16],[0.42,0.80]];
+  const K=[[1.00,0.50],[0.92,0.18],[0.92,0.82],[0.74,0.50],[0.58,0.14],[0.54,0.80],[0.34,0.60]];
   const roy=hasRoyal(S);const pos=[{x:roy?cx-60:cx,y:cy}];
   for(let s=0;s<n;s++)for(let k=0;k<SECT;k++){
     const [r0,o]=K[k];const r=r0*(1+(rnd()-.5)*0.08);const a=-Math.PI/2+s*span+o*span+(rnd()-.5)*span*0.05;
@@ -877,14 +877,14 @@ function modeBox(S,act){
   if(ui.mode==='move-cfg'){
     const src=ui.src,dst=ui.dst,c=S.B[src];const strike=ui.dest[dst]==='strike';const battle=ui.dest[dst]==='battle'||strike;
     const maxN=c.t;
-    const room=battle?99:(cap(S,act,dst)-(S.B[dst].o===act?S.B[dst].t:0));
-    const nMax=Math.min(maxN,room,battle?cap(S,act,dst):99);
+    const own=battle?0:(S.B[dst].o===act?S.B[dst].t:0);const eraHere=mountsAt(S,src,act).includes('erawan')?['erawan']:null;
+    const nMax=Math.min(maxN,cap(S,act,dst,eraHere)-own);
     if(ui.n==null||ui.n>nMax)ui.n=nMax;
     if(nMax<1)return `<div class="banner row">${esc(cname(S,dst))}มีทหารเต็มแล้ว เลือกช่องอื่น ${cancel}</div>`;
     const co=carryOpts(S,act,src,dst,ui.n,!!ui.bonus);
     if(ui.carry==null||!co.ok.includes(ui.carry))ui.carry=co.def;
     const c2=carry2Opts(S,act,src,dst,ui.carry);if(ui.carry2&&!c2.includes(ui.carry2))ui.carry2='';
-    const lim4=twoMountCap(S,act,dst,battle,ui.carry,ui.carry2);if(lim4!=null&&ui.n>lim4)ui.n=Math.max(1,lim4);
+    const lim4=dst===cityOf(act)?null:cap(S,act,dst,mList([ui.carry,ui.carry2]))-own;if(lim4!=null&&ui.n>lim4)ui.n=Math.max(1,lim4);
     const mlist=mountsAt(S,src,act);
     const carryUI=mlist.length?`<div class="stack" style="gap:4px"><div class="small"><b>พาพาหนะไปด้วยไหม</b> (กองหนึ่งพาได้ ${mLimit(S,act)} ตัว)</div><div class="row">${[''].concat(mlist).map(k=>{const ok=co.ok.includes(k);
       return `<label class="mopt ${ui.carry===k?'on':''} ${ok?'':'off'}"><input type="radio" name="carry" value="${k}" ${ui.carry===k?'checked':''} ${ok?'':'disabled'}>${k?`<span class="mic">${mPic(k)}</span>${esc(MOUNTS[k].name)}`:'ไม่พา'}</label>`}).join('')}</div>${co.note?`<div class="small muted">${esc(co.note)}</div>`:''}
@@ -922,7 +922,7 @@ function carryOpts(S,s,src,dst,n,bonus){
 }
 function atkBonusText(S,s,m,cell,n,from){const D=S.B[cell].o;const mD=D>=0?mountsAt(S,cell,D):[];
   const bm=battleMods(S,s,D,n,S.B[cell].t,m,mD,cell,from);let t=fmtMods(bm.a);
-  if(has(S,s,'vanguard')&&n>S.B[cell].t)t+=' · ทัพหน้า: ศัตรูเสีย 1 ก่อนรบ';if(isGod(S,s,'skanda')&&n>S.B[cell].t)t+=' · ขุนพลเทวดา: ฆ่า +1';
+  if(has(S,s,'vanguard')&&n<S.B[cell].t)t+=' · ทัพหน้า: ฆ่า +1';if(has(S,s,'pursuit'))t+=' · ไล่ล่า: ชนะแล้วศัตรูถอย 2 ช่อง';if(isGod(S,s,'skanda')&&n>S.B[cell].t)t+=' · ขุนพลเทวดา: ฆ่า +1';
   if(hm(m,'rajasi'))t+=' · ราชสีห์: ชนะแล้วฆ่า +1';if(hm(m,'makara'))t+=' · มกร: รับความเสียหาย −1';return t}
 const SUN=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="10" fill="var(--gold)"/>${[0,45,90,135,180,225,270,315].map(d=>`<line x1="24" y1="5" x2="24" y2="11" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" transform="rotate(${d} 24 24)"/>`).join('')}</svg>`;
 const MOON=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><path d="M30 7a17 17 0 1 0 11 29A14 14 0 0 1 30 7z" fill="var(--nightline)"/><circle cx="12" cy="12" r="1.6" fill="var(--nightline)"/><circle cx="40" cy="18" r="1.2" fill="var(--nightline)"/><circle cx="36" cy="42" r="1.4" fill="var(--nightline)"/></svg>`;
@@ -1143,14 +1143,13 @@ function doMove(){
     const m=takeM||mountAt(T,src,s);
     const dest=reachable(T,s,src,TK,bonus?1:0);const kind=dest[dst];if(!kind)return fail('ไปช่องนั้นไม่ถึง');
     if(TK.length&&kind!=='battle'&&kind!=='strike'&&dst!==cityOf(s)&&mountsAt(T,dst,s).length+TK.length>mLimit(T,s))return fail('ปลายทางมีพาหนะเต็มแล้ว');
-    {const l4=twoMountCap(T,s,dst,kind==='battle'||kind==='strike',takeM,take2);if(l4!=null&&n>l4)return fail('กองที่มีพาหนะ 2 ตัว มีทหารได้ไม่เกิน 4')}
     if(!bonus)markAction(T,s,'move');
     const wasVajra=T.follow&&T.follow.vajra;
     T.follow=null;
     if(kind==='battle'||kind==='strike'){
       if(card==null||!availCards(T,s).includes(card))return fail('ยังไม่ได้เลือกการ์ดรบ');
       if(kind==='strike')T.P[s].f.strike=true;
-      if(n>(TK.length>=2?4:cap(T,s,dst)))return fail('กองที่บุกมีทหารเกินที่กองนอกเมืองจุได้');
+      if(n>cap(T,s,dst,TK))return fail('กองที่บุกมีทหารเกินที่กองนอกเมืองจุได้');
       const path=movePath(T,s,src,dst,TK,bonus?1:0);
       removeTroops(T,src,n);for(const k of TK)T.M[k].c=-1;
       T.battle={a:s,d:T.B[dst].o,to:dst,from:src,path:kind==='strike'?[src,dst]:path,raid:kind==='strike',n,mount:takeM,mount2:take2,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
@@ -1159,7 +1158,7 @@ function doMove(){
       if(!c.t)sendMountsHome(T,src,s);
       return;
     }
-    if(T.B[dst].o===s&&T.B[dst].t+n>cap(T,s,dst))return fail('ช่องปลายทางทหารเต็ม');
+    if(dst!==cityOf(s)&&(T.B[dst].o===s?T.B[dst].t:0)+n>cap(T,s,dst,TK))return fail('ช่องปลายทางทหารเต็ม');
     const mpath=movePath(T,s,src,dst,TK,bonus?1:0);
     for(const k of TK)T.M[k].c=-1;removeTroops(T,src,n);placeTroops(T,s,dst,n);for(const k of TK)T.M[k].c=dst;
     trail(T,{k:'move',s,f:src,t:dst,n,m:takeM||null,p:terr(T,src)==='deep'&&terr(T,dst)==='deep'&&mpath.length===2?[src,dst]:mpath});markMv(T,s,dst);
@@ -1190,7 +1189,7 @@ function doAvatar(k,cell){const s=activeSeat(G);ui={mode:null};
 let TUT=null;
 const isTut=gid=>String(gid||'').startsWith('tut');
 const TSTEPS=[
- {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,4,7,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
+ {k:'info',t:'ยินดีต้อนรับสู่หิมพานต์',hl:[1,4,8,0],b:`คุณคือ <b>พระอินทร์</b> (เมืองของคุณอยู่บนสุด) คู่ฝึกคือบอท <b>พระพิรุณ</b> เป้าหมายคือมี <b>8 คะแนน</b> ตอนจบรอบกลางคืน แล้วรักษาไว้ได้อีก 1 วัน<br>• ยึด <b>วัด</b> ได้ 1 คะแนน (เสียวัดก็เสียคะแนน)<br>• ยึด <b>เขาพระสุเมรุ</b> ตรงกลางได้ 2 คะแนน<br>• <b>บุกชนะ</b> ได้ 1 คะแนนถาวร ไม่มีวันหาย<br>• <b>ครองแดน</b>: จบรอบกลางคืนตอนยึดวัด 2 แห่งขึ้นไป หรือยึดเขาพระสุเมรุ ได้ 1 คะแนนถาวร<br>วงประสีทองบนแผนที่คือจุดที่บทเรียนกำลังพูดถึง`},
  {k:'info',t:'หนึ่งรอบมี 3 แอคชัน',b:`ผู้เล่นผลัดกันทำคนละ 1 แอคชัน จนทุกคนทำครบ 3 แอคชันแล้วรอบจึงจบ แอคชันมี 4 อย่าง ใช้ได้อย่างละครั้งต่อรอบ จึงต้องเลือก 3 จาก 4<br>• <b>เกณฑ์ทัพ</b>: จ่ายบุญตัวละ 1 เพิ่มทหารในเมือง 2 ตัว<br>• <b>เดินทัพ</b>: ย้ายทหาร 1 ช่อง เข้าช่องศัตรู = รบ<br>• <b>ทำบุญ</b>: ได้บุญ (เงินในเกม) หรือลบบาป<br>• <b>ขอพร</b>: ใช้บุญซื้อการ์ดพลังหรือพาหนะ`},
  {k:'do',t:'ลองเกณฑ์ทัพ',hl:[1],allow:['recruit'],b:`กดปุ่ม <b>เกณฑ์ทัพ</b> เพื่อเพิ่มทหาร 2 ตัวในเมืองของคุณ (จ่ายบุญตัวละ 1 บุญ) ทหารมีทั้งหมด 10 ตัว ตัวที่ยังไม่ลงสนามอยู่ใน "คลัง"`,done:S=>S.P[0].used.includes('recruit')},
  {k:'do',t:'ยึดวัดแรก',hl:[4],allow:['move'],b:`วัดอยู่ห่างเมือง 2 ก้าว คุณมีกองหน้า 2 ตัวรออยู่แล้วในป่าที่ติดกับวัด กด <b>เดินทัพ</b> → กดป่าที่มีกองของคุณ → กดวัดที่มีวงประ แล้วกด <b>เดิน</b> ทหารเดินได้ทีละ 1 ช่อง เส้นทางไปเขาพระสุเมรุต้องผ่านป่าลึกวงใน<br><span class="muted">ถ้ามีปุ่ม "ใช้วชิราวุธ" ขึ้นมา กด <b>จบตา</b> ไปก่อน เดี๋ยวสอนทีหลัง</span>`,done:S=>S.B[4].o===0&&S.B[4].t>0&&!S.follow},
