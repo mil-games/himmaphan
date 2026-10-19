@@ -12,7 +12,7 @@ const GODS=[
  {k:'chan',name:'พระจันทร์',mount:'durong',ab:'จันทรคติ',txt:'กลางคืน ตั้งรับ +1 และกองที่ไม่ได้ขยับทั้งรอบ ตั้งรับ +1',weak:'กลางวันเหลือแค่โบนัสกองที่ไม่ได้ขยับ'},
  {k:'jupiter',name:'พระพฤหัสบดี',mount:'kwang',ab:'ครูเทวดา',txt:'ตอนยึดวัดหรือเขาพระสุเมรุอยู่ การ์ดพลังเลเวล 2–3 ถูกลง 1 บุญ',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'ganga',name:'พระแม่คงคา',mount:'makara',ab:'สายน้ำศักดิ์สิทธิ์',txt:'รบในช่องริมน้ำ +1 ทั้งบุกและรับ และเดินจากริมน้ำไปริมน้ำไหนก็ได้',weak:'รบนอกริมน้ำไม่มีโบนัส'},
- {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'เดินทัพได้ 2 ช่อง ทั้งกลางวันและกลางคืน (ก้าวที่ 2 บุกไม่ได้ และเข้าวัดหรือเขาไม่ได้)',weak:'กองนอกเมืองมีได้แค่ 4 ตัว'},
+ {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'เดินทัพได้ 2 ช่อง ทั้งกลางวันและกลางคืน ก้าวที่ 2 บุกได้ (แต่เข้าวัดหรือเขาไม่ได้)',weak:'กองนอกเมืองมีได้แค่ 4 ตัว'},
  {k:'thorani',name:'พระแม่ธรณี',mount:'hera',ab:'แผ่นดินค้ำจุน',txt:'ตั้งรับ +1 และ +1 ต่อกองของคุณที่อยู่ติดช่องนั้น (รวมสูงสุด +3)',weak:'บุกไม่มีโบนัส'},
  {k:'vessuwan',name:'ท้าวเวสสุวรรณ',mount:'asura',ab:'จอมอสูร',txt:'บุกชนะ ขโมยบุญฝ่ายแพ้ 1 และคนอื่นไม่เห็นการ์ดรบในมือคุณ',weak:'บาปเต็มเสียทหาร 3 ตัว (ปกติ 2)'},
  {k:'rahu',name:'พระราหู',mount:'kaisornnaka',ab:'อุปราคา',txt:'กลางคืน บุก +1 เพิ่ม (รวม +2) และคนอื่นไม่เห็นจำนวนทหารในกองนอกเมืองของคุณ',weak:'กลางวันไม่มีโบนัส'},
@@ -28,17 +28,17 @@ const GOD_ARCH={"war": ["indra", "shiva", "agni", "skanda", "yama"], "bun": ["br
 GODS.forEach(g=>{for(const a in GOD_ARCH)if(GOD_ARCH[a].includes(g.k))g.arch=a});
 const GOD=Object.fromEntries(GODS.map(g=>[g.k,g]));
 const MOUNTS={
- erawan:{name:'ช้างเอราวัณ',ic:'🐘',cost:4,home:'forest',txt:'ตั้งรับ +2',bonus:'พระอินทร์: ถ้าเอราวัณเดินมากับกองนั้น วชิราวุธถึงกองที่ห่าง 2 ช่อง'},
+ erawan:{name:'ช้างเอราวัณ',ic:'🐘',cost:4,home:'forest',txt:'ตั้งรับ +1 และกองที่มีเอราวัณจุทหารได้เพิ่ม 1 ตัว',bonus:'พระอินทร์: ถ้าเอราวัณเดินมากับกองนั้น วชิราวุธถึงกองที่ห่าง 2 ช่อง'},
  garuda:{name:'ครุฑ',ic:'🦅',cost:4,home:'sumeru',txt:'บุก +1 และเดินได้ 2 ช่อง',bonus:'พระนารายณ์: บินข้ามช่องศัตรูได้'},
  hong:{name:'หงส์',ic:'🦢',cost:3,home:'temple',txt:'จบรอบในวัดหรือเขาพระสุเมรุ ได้บุญ +1',bonus:'พระพรหม: เกณฑ์ทัพลงกองที่มีหงส์ได้'},
  nonthi:{name:'โคนนทิ',ic:'🐂',cost:3,home:'royal',txt:'พลังรบ +1 ทั้งบุกและรับ',bonus:'พระอิศวร: บุกชนะได้บาปแค่ +1'},
  buffalo:{name:'กระบือ',ic:'🐃',cost:2,home:'plain',txt:'บุกชนะแล้วไม่ได้บาป',bonus:'พระยม: ยมโลก +2 ต่อตัวในศึกของกองนี้'},
  rhino:{name:'แรด',ic:'🦏',cost:3,home:'deep',txt:'บุก +2',bonus:'พระเพลิง: กองนี้ไม่โดนตั้งรับ −1'},
- naga:{name:'นาค',ic:'🐍',cost:4,home:'water',txt:'รับความเสียหาย −1 (ครุฑลบล้าง)',bonus:'พระพิรุณ: +1 เมื่ออยู่ในวัด'},
- rajasi:{name:'ราชสีห์',ic:'🦁',cost:4,home:'plain',txt:'บุกชนะ แต้มฆ่า +1',bonus:'พระอาทิตย์: บุก +1 เพิ่ม'},
+ naga:{name:'นาค',ic:'🐍',cost:4,home:'water',txt:'รับความเสียหาย −1 (ครุฑลบล้าง) · บุกออกจากริมน้ำหรือบุกเข้าริมน้ำ +2',bonus:'พระพิรุณ: +1 เมื่ออยู่ในวัด'},
+ rajasi:{name:'ราชสีห์',ic:'🦁',cost:4,home:'plain',txt:'เดินได้ 2 ช่อง · บุกชนะ แต้มฆ่า +1',bonus:'พระอาทิตย์: บุก +1 เพิ่ม'},
  khotchasi:{name:'คชสีห์',ic:'🐯',cost:4,home:'forest',txt:'ตั้งรับ +1 และตอนตั้งรับรับความเสียหาย −1',bonus:'พระแม่อุมา: บุกก็ +1 ด้วย'},
  kilen:{name:'กิเลน',ic:'🦄',cost:3,home:'temple',txt:'จบรอบ บาป −1',bonus:'พระฤๅษี: จบรอบได้บุญ +1 ด้วย'},
- durong:{name:'ดุรงค์ปักษิน (ม้าปีก)',ic:'🐎',cost:4,home:'sumeru',txt:'เดินได้ 2 ช่อง (ก้าวที่ 2 บุกไม่ได้)',bonus:'พระจันทร์: ตั้งรับ +1'},
+ durong:{name:'ดุรงค์ปักษิน (ม้าปีก)',ic:'🐎',cost:4,home:'sumeru',txt:'เดินได้ 2 ช่อง',bonus:'พระจันทร์: ตั้งรับ +1'},
  kinnaree:{name:'กินรี',ic:'🧚',cost:2,home:'water',txt:'ทำบุญได้บุญ +1 เพิ่ม',bonus:'พระสุรัสวดี: ทำบุญ +2 แทน +1'},
  makara:{name:'มกร',ic:'🐊',cost:3,home:'water',txt:'ตอนบุก รับความเสียหาย −1',bonus:'พระแม่คงคา: ตอนตั้งรับก็รับความเสียหาย −1'},
  hera:{name:'เหรา',ic:'🦎',cost:2,home:'deep',txt:'ตั้งรับ +1',bonus:'พระแม่ธรณี: ตั้งรับ +2 แทน +1'},
@@ -69,16 +69,16 @@ const cardCount=(lines,useL3)=>POWERS.filter(p=>!p.todo&&(useL3||p.lv<3)&&lines.
 const P=(id,line,lv,name,txt,todo)=>({id,line,lv,name,txt,todo:!!todo});
 const POWERS=[
  P('weapon','rit',1,'ศาสตราวุธ','บุก +1'),P('swift','rit',1,'ม้าเร็ว','เดินทัพได้ 2 ช่อง'),P('banner','rit',1,'ธงรบ','กลางคืน บุก +1 เพิ่ม'),P('rally','rit',1,'ปลุกใจ','ตอนบุก รับความเสียหาย −1'),
- P('raid','rit',2,'จู่โจม','บุกชนะ ศัตรูเสียเพิ่ม 1'),P('vanguard','rit',2,'ทัพหน้า','บุกด้วยทหารมากกว่า ศัตรูเสีย 1 ก่อนรบ'),P('secret','rit',2,'ทางลับ','วัดและริมน้ำ เดินเข้าออกเขาพระสุเมรุได้ตรงๆ'),P('chain','rit',2,'ชัยต่อเนื่อง','บุกชนะ เดินต่อได้อีก 1 ช่อง'),
+ P('raid','rit',2,'จู่โจม','บุกชนะ ศัตรูเสียเพิ่ม 1'),P('vanguard','rit',2,'ทัพหน้า','บุกด้วยทหารน้อยกว่า แต้มฆ่า +1'),P('secret','rit',2,'ทางลับ','วัดและริมน้ำ เดินเข้าออกเขาพระสุเมรุได้ตรงๆ'),P('chain','rit',2,'ชัยต่อเนื่อง','บุกชนะ เดินต่อได้อีก 1 ช่อง'),
  P('manual','rit',3,'ตำราพิชัยสงคราม','ได้การ์ดรบเลข 4'),P('divine','rit',3,'อาวุธเทวะ','บุก +2'),P('sky','rit',3,'กองทัพฟ้า','เดินทัพได้ 2 ครั้งต่อรอบ (แอคชันที่ 4)'),P('vpR','rit',3,'ชัยชนะอมตะ','ได้ 1 คะแนนถาวรทันที'),
  P('plunder','rit',1,'ปล้นสะดม','บุกชนะ ได้บุญ +2'),P('ambush','rit',1,'ซุ่มโจมตี','บุกออกจากวัดหรือเขาพระสุเมรุ +1'),P('horn','rit',1,'แตรศึก','บุกตอนกลางวัน +1'),P('disarm','rit',1,'ริบอาวุธ','บุกชนะ ฝ่ายรับต้องทิ้งการ์ดรบ 1 ใบ'),
- P('blitz','rit',2,'สายฟ้าแลบ','บุกด้วยทหารไม่เกิน 2 ตัว +2'),P('pursuit','rit',2,'ไล่ล่า','บุกชนะ ฝ่ายแพ้ที่ถอยเสียเพิ่ม 1'),P('fury','rit',2,'เดือดดาล','บุกกองที่ทหารมากกว่าคุณ +1'),
+ P('blitz','rit',2,'สายฟ้าแลบ','บุกด้วยทหารไม่เกิน 2 ตัว +2'),P('pursuit','rit',2,'ไล่ล่า','บุกชนะ ฝ่ายแพ้ต้องถอย 2 ช่อง'),P('fury','rit',2,'เดือดดาล','บุกกองที่ทหารมากกว่าคุณ +1'),
  P('storm','rit',3,'พายุศึก','อีกฝ่ายทหารมากกว่า +2 (บุกและรับ)'),P('warlord','rit',3,'จอมทัพ','กองหนึ่งพาพาหนะได้ 2 ตัว (กองนั้นทหารสูงสุด 4)'),P('siege','rit',2,'ปิดล้อม','บุกวัดหรือเขาพระสุเมรุ +1'),P('conquest','rit',3,'ผู้พิชิต','บุกชนะครั้งแรกของรอบ +1 ถาวรเพิ่ม'),
  P('armor','kum',1,'เกราะเพชร','ตั้งรับ +1'),P('levy','kum',1,'ไพร่พล','เกณฑ์ทัพ +1 ตัว'),P('wall','kum',1,'กำแพงวัด','ตั้งรับในวัด +1'),P('ward','kum',1,'มนต์คุ้มกาย','ตอนตั้งรับ รับความเสียหาย −1'),
- P('reserve','kum',2,'กองหนุน','เกณฑ์ทัพลงช่องติดเมืองได้'),P('unity','kum',2,'สามัคคี','กอง 5 ตัวขึ้นไป ตั้งรับ +1'),P('counter','kum',2,'โต้กลับ','ตั้งรับชนะ ฝ่ายบุกเสียเพิ่ม 1'),P('fort','kum',2,'ป้อมค่าย','กองนอกเมืองจุทหารได้เพิ่ม 1 ตัว'),
+ P('reserve','kum',2,'กองหนุน','เกณฑ์ทัพลงช่องที่ติดกองของคุณได้ (ไม่ใช่วัดหรือเขา)'),P('unity','kum',2,'สามัคคี','กอง 5 ตัวขึ้นไป ตั้งรับ +1'),P('counter','kum',2,'โต้กลับ','ตั้งรับชนะ ฝ่ายบุกเสียเพิ่ม 1'),P('fort','kum',2,'ป้อมค่าย','กองนอกเมืองจุทหารได้เพิ่ม 1 ตัว'),
  P('guardian','kum',3,'ทวารบาล','ตั้งรับ +2'),P('dominion','kum',3,'ครองแผ่นดิน','ยึดวัดแห่งเดียวก็ได้ครองแดน'),P('reinforce','kum',3,'กำลังเสริม','จบรอบได้ทหาร 2 ตัวลงเมือง'),P('vpK','kum',3,'ผู้พิทักษ์อมตะ','ได้ 1 คะแนนถาวรทันที'),
- P('drill','kum',1,'ค่ายฝึก','เกณฑ์ทัพจ่ายแค่ 1 บุญ ไม่ว่ากี่ตัว'),P('moat','kum',1,'คูเมือง','ตั้งรับด้วยทหารน้อยกว่า ฝ่ายบุก −1'),P('watch','kum',1,'หอยาม','ตั้งรับตอนกลางคืน +1'),P('militia','kum',1,'กองอาสา','ตั้งรับด้วยทหารไม่เกิน 2 ตัว +2'),
- P('trap','kum',2,'กับดัก','ศัตรูบุกวัดของคุณ −1'),P('fallback','kum',2,'ถอยทัพ','ตั้งรับแพ้ คุณเลือกช่องถอยเอง'),P('garrison','kum',2,'ทหารประจำวัด','จบรอบ กองในวัด/เขาที่มีไม่ถึง 3 ได้ +1 ตัว'),
+ P('drill','kum',1,'ค่ายฝึก','เกณฑ์ทัพจ่ายบุญน้อยลง 1'),P('moat','kum',1,'คูเมือง','ตั้งรับด้วยทหารน้อยกว่า ฝ่ายบุก −1'),P('watch','kum',1,'หอยาม','ตั้งรับตอนกลางคืน +1'),P('militia','kum',1,'กองอาสา','ตั้งรับด้วยทหารไม่เกิน 2 ตัว +2'),
+ P('trap','kum',2,'กับดัก','ศัตรูบุกวัดของคุณ −1'),P('fallback','kum',2,'ถอยทัพ','แพ้ศึก คุณเลือกช่องถอยเอง'),P('garrison','kum',2,'ทหารประจำวัด','จบรอบ กองในวัด/เขาที่มีไม่ถึง 3 ได้ +1 ตัว'),
  P('aegis','kum',3,'เกราะเทวะ','ตั้งรับ +1 และรับความเสียหาย −1'),P('citadel','kum',3,'ป้อมเขาพระสุเมรุ','ตั้งรับที่เขาพระสุเมรุหรือวัดหลวง +2'),P('eye','kum',2,'ตาทิพย์','ตั้งรับ เห็นการ์ดฝ่ายบุกก่อนเลือก'),P('stand','kum',3,'ผู้ยืนหยัด','ตั้งรับชนะ +1 ถาวร (รอบละครั้ง)'),
  P('holy','bun',1,'น้ำมนต์','ทำบุญได้ +3'),P('alms','bun',1,'ทานบารมี','ซื้อของถูกลง 1 บุญ'),P('chant','bun',1,'สวดมนต์','จบรอบได้บุญ +1'),P('pray','bun',1,'อธิษฐาน','จบรอบได้การ์ดรบที่ใช้แล้วคืน 1 ใบ'),
  P('angel','bun',2,'เทวดารักษา','จบรอบลบบาป 1'),P('offer','bun',2,'ถวายวัด','จบรอบได้บุญ +1 ต่อวัด'),P('atone','bun',2,'ไถ่บาป','ทำบุญได้ทั้งบุญและลบบาป'),P('foresight','bun',2,'ญาณหยั่งรู้','เปลี่ยนการ์ดหลังเปิด (ยังไม่เปิดในเวอร์ชันออนไลน์)',1),
@@ -91,7 +91,7 @@ const POWERS=[
  P('merchant','maya',3,'พ่อค้ามายา','ทุกอย่างในร้านถูกลง 1 บุญ'),P('swap','maya',3,'สลับตำแหน่ง','รอบละครั้ง สลับตำแหน่งกอง 2 กองของคุณ (ฟรี)'),P('vpM','maya',3,'ตราประทับมายา','ได้ 1 คะแนนถาวรทันที'),
  P('monk','bun',1,'ธุดงค์','ทำบุญแล้วได้ทหาร 1 ตัวลงเมือง'),P('novice','bun',1,'สามเณร','มีทหารทั้งหมด 11 ตัว'),P('bowl','bun',1,'บิณฑบาต','เกณฑ์ทัพลงวัดที่ยึดอยู่ได้ (ไม่รวมวัดหลวง)'),P('lamp','bun',1,'โคมประทีป','ตั้งรับในวัด ฝ่ายบุกไม่ได้โบนัสกลางคืน'),
  P('bless','bun',2,'อำนวยพร','การ์ดรบเหลือ 1 ใบ ได้คืนทั้งชุด'),P('beast','bun',2,'บารมีสัตว์','พาหนะรบในถิ่น +2 (ปกติ +1)'),P('haven','bun',2,'เขตอภัยทาน','ศัตรูบุกวัดของคุณแล้วแพ้ ต้องถอย 2 ช่อง'),
- P('dharma','bun',3,'กองทัพศรัทธา','ทหารทั้งหมด 12 ตัว แต่กองนอกเมืองจุได้ลดลง 1'),P('deva','bun',3,'เทวดาคุ้มครอง','กองโดนฆ่าหมด ได้ทหารคืนลงเมืองเท่าที่ตาย สูงสุด 3 (รอบละครั้ง)'),P('karma','bun',2,'กรรมตามสนอง','ใครบุกชนะคุณ ได้บาปเพิ่ม 1'),P('rebirth','bun',3,'คืนชีพ','เสียทหารในศึก ได้คืน 1 ตัวลงเมือง')
+ P('dharma','bun',3,'กองทัพศรัทธา','ทหารทั้งหมด 12 ตัว แต่กองนอกเมืองจุได้ลดลง 1'),P('deva','bun',3,'เทวดาคุ้มครอง','กองโดนฆ่าหมด ได้ทหารคืนลงเมืองเท่าที่ตาย สูงสุด 3 (รอบละครั้ง)'),P('karma','bun',2,'กรรมตามสนอง','ใครบุกชนะคุณ ได้บาปเพิ่ม 1'),P('rebirth','bun',3,'คืนชีพ','แพ้ศึกจนทหารตายหมด เหลือรอด 1 ตัวเสมอ')
 ];
 /* เรียงตามสายแล้วตามเลเวล ให้ร้านค้าแสดงเลเวลต่อกัน */
 POWERS.sort((a,b)=>LINE_ORDER.indexOf(a.line)-LINE_ORDER.indexOf(b.line)||a.lv-b.lv);
@@ -103,26 +103,26 @@ const ACT={recruit:'เกณฑ์ทัพ',move:'เดินทัพ',merit
 const SEATC=i=>`var(--s${i})`;
 
 /* ===================== RULES ===================== */
-/* แผนที่รุ่น 4: ผู้เล่นละ 6 ช่อง เรียงเป็นบล็อก */
-const SECT=6;
+/* แผนที่รุ่น 5: ผู้เล่นละ 7 ช่อง เรียงเป็นบล็อก */
+const SECT=7;
 const L=S=>SECT*S.n;
 const TNAME={city:'เมือง',forest:'ป่า',temple:'วัด',plain:'ทุ่ง',water:'ริมน้ำ',deep:'ป่าลึก',sumeru:'เขาพระสุเมรุ',royal:'วัดหลวง'};
 const kOf=i=>(i-1)%SECT;
 /* แผนที่ 7 แบบ ทุกแบบสมมาตรต่อผู้เล่น จึงแฟร์ทุกที่นั่ง
-   ช่องในบล็อก k: 0 เมือง · 1 ป่า · 2 ทุ่ง · 3 วัด · 4 ริมน้ำ · 5 ป่าลึก
-   ระยะจากเมือง: วัดของตัวเอง 2 ก้าว · วัดเพื่อนบ้าน 3 ก้าวขึ้นไป · เขาพระสุเมรุและวัดหลวง 4 ก้าว
+   ช่องในบล็อก k: 0 เมือง · 1 ป่า · 2 ทุ่ง · 3 วัด · 4 ริมน้ำ · 5 ป่าลึก · 6 ทุ่งหน้าเขา
+   ระยะจากเมือง: วัดของตัวเอง 2 ก้าว · วัดเพื่อนบ้าน 3 ก้าวขึ้นไป · เขาพระสุเมรุและวัดหลวง 5 ก้าว
    edges: [k1, dt, k2] = ช่อง k1 ของผู้เล่น t ติดกับช่อง k2 ของผู้เล่น t+dt
    sumK: ช่องที่ติดเขาพระสุเมรุ · royK: ช่องที่ติดวัดหลวง */
-const T6=['city','forest','plain','temple','water','deep'];
-const BASE_EDGES=[[0,0,1],[0,0,2],[1,0,3],[2,0,3],[1,0,4],[3,0,5],[4,0,5],[2,1,1],[5,1,4]];
+const T6=['city','forest','plain','temple','water','deep','plain'];
+const BASE_EDGES=[[0,0,1],[0,0,2],[1,0,3],[2,0,3],[1,0,4],[3,0,5],[4,0,5],[2,1,1],[5,1,4],[5,0,6]];
 const MAPS=[
- {id:'classic',name:'วงแหวนหิมพานต์',desc:'แผนที่มาตรฐาน วัดอยู่ห่างเมือง 2 ก้าว ทางไปเขาพระสุเมรุต้องผ่านป่าลึก',types:T6,edges:BASE_EDGES,sumK:[5],royK:[5]},
- {id:'sea',name:'ทะเลสีทันดร',desc:'ริมน้ำทุกช่องต่อกันเป็นวง เดินอ้อมไปตีเพื่อนบ้านทางน้ำได้',types:T6,edges:[...BASE_EDGES,[4,1,4]],sumK:[5],royK:[5]},
- {id:'border',name:'ชายแดนเปิด',desc:'ทุ่งของเพื่อนบ้านติดกันด้วย ชายแดนกว้าง บุกกันดุ',types:T6,edges:[...BASE_EDGES,[2,1,2]],sumK:[5],royK:[5]},
- {id:'rivertemple',name:'วัดริมฝั่ง',desc:'วัดย้ายไปอยู่ริมน้ำ ติดป่าลึกของเพื่อนบ้าน วัดถูกแย่งง่ายขึ้น',types:['city','forest','plain','water','temple','deep'],edges:BASE_EDGES,sumK:[5],royK:[5]},
- {id:'lonely',name:'เขาโดดเดี่ยว',desc:'เขาพระสุเมรุติดกับวัดหลวงเท่านั้น ต้องยึดวัดหลวงก่อนถึงจะขึ้นเขาได้',types:T6,edges:BASE_EDGES,sumK:[],royK:[5]},
- {id:'divide',name:'แม่น้ำแบ่งแดน',desc:'วงนอกไม่ติดกับเพื่อนบ้านเลย ต้องเดินเข้าวงในแล้วข้ามทางน้ำไปหากัน ช่วงแรกสงบ',types:T6,edges:[...BASE_EDGES.filter(e=>!(e[0]===2&&e[1]===1&&e[2]===1)),[4,1,4]],sumK:[5],royK:[5]},
- {id:'dense',name:'ป่ารก',desc:'ทางในบ้านตัดกันไปมา เดินอ้อมหลบศึกได้หลายทาง',types:T6,edges:[...BASE_EDGES,[2,0,4],[1,0,2]],sumK:[5],royK:[5]}
+ {id:'classic',name:'วงแหวนหิมพานต์',desc:'แผนที่มาตรฐาน วัดอยู่ห่างเมือง 2 ก้าว ทางไปเขาพระสุเมรุต้องผ่านป่าลึกและทุ่งหน้าเขา',types:T6,edges:BASE_EDGES,sumK:[6],royK:[6]},
+ {id:'sea',name:'ทะเลสีทันดร',desc:'ริมน้ำทุกช่องต่อกันเป็นวง เดินอ้อมไปตีเพื่อนบ้านทางน้ำได้',types:T6,edges:[...BASE_EDGES,[4,1,4]],sumK:[6],royK:[6]},
+ {id:'border',name:'ชายแดนเปิด',desc:'ทุ่งของเพื่อนบ้านติดกันด้วย ชายแดนกว้าง บุกกันดุ',types:T6,edges:[...BASE_EDGES,[2,1,2]],sumK:[6],royK:[6]},
+ {id:'rivertemple',name:'วัดริมฝั่ง',desc:'วัดย้ายไปอยู่ริมน้ำ ติดป่าลึกของเพื่อนบ้าน วัดถูกแย่งง่ายขึ้น',types:['city','forest','plain','water','temple','deep','plain'],edges:BASE_EDGES,sumK:[6],royK:[6]},
+ {id:'lonely',name:'เขาโดดเดี่ยว',desc:'เขาพระสุเมรุติดกับวัดหลวงเท่านั้น ต้องยึดวัดหลวงก่อนถึงจะขึ้นเขาได้',types:T6,edges:BASE_EDGES,sumK:[],royK:[6]},
+ {id:'divide',name:'แม่น้ำแบ่งแดน',desc:'วงนอกไม่ติดกับเพื่อนบ้านเลย ต้องเดินเข้าวงในแล้วข้ามทางน้ำไปหากัน ช่วงแรกสงบ',types:T6,edges:[...BASE_EDGES.filter(e=>!(e[0]===2&&e[1]===1&&e[2]===1)),[4,1,4]],sumK:[6],royK:[6]},
+ {id:'dense',name:'ป่ารก',desc:'ทางในบ้านตัดกันไปมา เดินอ้อมหลบศึกได้หลายทาง',types:T6,edges:[...BASE_EDGES,[2,0,4],[1,0,2]],sumK:[6],royK:[6]}
 ];
 const MAPBY=Object.fromEntries(MAPS.map(m=>[m.id,m]));
 const mapOf=S=>MAPBY[S.map]||MAPS[0];
@@ -168,7 +168,9 @@ const meritAmt=(S,s)=>(has(S,s,'holy')?3:2)+(isGod(S,s,'ganesha')&&holyGround(S,
 function mountsOf(S,s){return MK.filter(k=>S.M[k]&&S.M[k].o===s)}
 function onBoard(S,s){let t=0;for(const c of S.B)if(c.o===s)t+=c.t;if(S.battle&&S.battle.a===s)t+=S.battle.n;if(S.retreat&&S.retreat.loser===s)t+=S.retreat.n;return t}
 const reserve=(S,s)=>(isGod(S,s,'reusi')?9:10)+(has(S,s,'novice')?1:0)+(has(S,s,'dharma')?2:0)-onBoard(S,s);
-const cap=(S,s,i)=>i===cityOf(s)?99:mountsAt(S,i,s).length>=2?4:(has(S,s,'fort')?6:5)-(isGod(S,s,'vayu')?1:0)-(has(S,s,'dharma')?1:0);
+/* carry = พาหนะที่เดินมากับกอง · เอราวัณในกอง จุเพิ่ม 1 */
+const cap=(S,s,i,carry)=>{if(i===cityOf(s))return 99;const ms=[...new Set([...mountsAt(S,i,s),...mList(carry)])];
+  return (ms.length>=2?4:(has(S,s,'fort')?6:5)-(isGod(S,s,'vayu')?1:0)-(has(S,s,'dharma')?1:0))+(ms.includes('erawan')?1:0)};
 function templesHeld(S,s){let n=0;for(let i=1;i<S.B.length;i++)if(ctype(S,i)==='temple'&&S.B[i].o===s&&S.B[i].t>0)n++;return n}
 function tempVP(S,s){return templesHeld(S,s)+(S.B[0].o===s&&S.B[0].t>0?2:0)}
 const total=(S,s)=>S.P[s].vp+tempVP(S,s);
@@ -220,7 +222,8 @@ function mountState(S,s,k){
 
 function recruitTargets(S,s){
   const out=[cityOf(s)];
-  if(has(S,s,'reserve')){for(const j of adj(S,cityOf(s))){const c=S.B[j];if(c.t===0||c.o===s)out.push(j)}}
+  if(has(S,s,'reserve')){const src=[cityOf(s)];for(let j=1;j<S.B.length;j++)if(S.B[j].o===s&&S.B[j].t>0&&!src.includes(j))src.push(j);
+    for(const i of src)for(const j of adj(S,i)){const c=S.B[j],t=ctype(S,j);if(j===0||t==='temple'||t==='city')continue;if((c.t===0||c.o===s)&&!out.includes(j))out.push(j)}}
   if(isGod(S,s,'brahma')&&S.M.hong&&S.M.hong.o===s&&!out.includes(S.M.hong.c))out.push(S.M.hong.c);
   if(ownsM(S,s,'thakthor')&&S.M.thakthor.c>=0&&!out.includes(S.M.thakthor.c))out.push(S.M.thakthor.c);
   if(has(S,s,'bowl')||isGod(S,s,'brahma'))for(let j=1;j<S.B.length;j++)if(terr(S,j)==='temple'&&S.B[j].o===s&&S.B[j].t>0&&!out.includes(j))out.push(j);
@@ -228,11 +231,11 @@ function recruitTargets(S,s){
 }
 const recruitAmt=(S,s,cell)=>(isGod(S,s,'brahma')?3:2)+(has(S,s,'levy')?1:0)+(has(S,s,'merc')?1:0)+(cell!=null&&isGod(S,s,'ganesha')&&ownsM(S,s,'thakthor')&&S.M.thakthor.c===cell&&cell!==cityOf(s)?1:0);
 
-/* เกณฑ์ทัพต้องจ่ายบุญ ตัวละ 1 บุญ (ค่ายฝึก: จ่าย 1 บุญต่อครั้ง ไม่ว่ากี่ตัว) บุญไม่พอได้ทหารเท่าที่จ่ายไหว */
-const recruitPrice=(S,s,n)=>n<=0?0:has(S,s,'drill')?1:Math.max(1,n-(isGod(S,s,'brahma')?1:0)-(has(S,s,'merc')?1:0));
+/* เกณฑ์ทัพต้องจ่ายบุญ ตัวละ 1 บุญ (ค่ายฝึก/พรหม/ทหารรับจ้าง: ลดราคาลง จ่ายอย่างน้อย 1) บุญไม่พอได้ทหารเท่าที่จ่ายไหว */
+const recruitPrice=(S,s,n)=>n<=0?0:Math.max(1,n-(isGod(S,s,'brahma')?1:0)-(has(S,s,'merc')?1:0)-(has(S,s,'drill')?1:0));
 function recruitN(S,s,cell){if(cell==null)cell=cityOf(s);const room=cell===cityOf(s)?99:cap(S,s,cell)-(S.B[cell].o===s?S.B[cell].t:0);
   const base=Math.max(0,Math.min(recruitAmt(S,s,cell),reserve(S,s),room));const m=S.P[s].merit;
-  return has(S,s,'drill')?(m>=1?base:0):Math.min(base,m)}
+  let k=base;while(k>0&&recruitPrice(S,s,k)>m)k--;return k}
 const canRecruitAny=(S,s)=>reserve(S,s)>0&&recruitTargets(S,s).some(t=>recruitN(S,s,t)>0);
 function doRecruitRule(S,s,cell){const n=recruitN(S,s,cell);if(n<=0)return 0;const c=recruitPrice(S,s,n);
   S.P[s].merit-=c;placeTroops(S,s,cell,n);trail(S,{k:'rec',s,t:cell,n});markAction(S,s,'recruit');
@@ -242,7 +245,7 @@ function monkBonus(S,s){if(has(S,s,'monk')&&reserve(S,s)>0){placeTroops(S,s,city
 function reachable(S,s,src,carry,maxRange){
   const res=reachCore(S,s,src,carry,maxRange);
   if(maxRange)return res;
-  const free=j=>{const c=S.B[j];if(ctype(S,j)==='city'&&citySeat(j)!==s)return false;return c.t===0||(c.o===s&&c.t<cap(S,s,j))};
+  const free=j=>{const c=S.B[j];if(ctype(S,j)==='city'&&citySeat(j)!==s)return false;return c.t===0||(c.o===s&&c.t<cap(S,s,j,carry))};
   /* ป่าลึก: ทางลับในป่า เดินจากป่าลึกไปป่าลึกช่องไหนก็ได้ (ห้ามบุก) */
   if(terr(S,src)==='deep')for(let j=1;j<S.B.length;j++)if(j!==src&&terr(S,j)==='deep'&&free(j)&&!res[j])res[j]='move';
   /* ประตูเงา: ข้ามหัวกองศัตรู 1 ช่อง */
@@ -253,7 +256,7 @@ function reachable(S,s,src,carry,maxRange){
   return res;
 }
 function reachCore(S,s,src,carry,maxRange){
-  const fast=has(S,s,'swift')||has(S,s,'forestway')||hm(carry,'garuda')||hm(carry,'durong');let range=fast||isGod(S,s,'vayu')?2:1;const vayuOnly=(!fast&&range===2)||(hm(carry,'durong')&&!hm(carry,'garuda')&&!has(S,s,'swift'));if(maxRange)range=Math.min(range,maxRange);
+  const fast=has(S,s,'swift')||has(S,s,'forestway')||hm(carry,'garuda')||hm(carry,'durong')||hm(carry,'rajasi');let range=fast||isGod(S,s,'vayu')?2:1;if(maxRange)range=Math.min(range,maxRange);
   const fly=hm(carry,'garuda')&&isGod(S,s,'narai');const vayuRule=isGod(S,s,'vayu')&&!fast;
   const res={};const seen=new Set([src]);let front=[src];
   for(let d=0;d<range;d++){const nx=[];
@@ -262,7 +265,7 @@ function reachCore(S,s,src,carry,maxRange){
       if(ctype(S,nb)==='city'&&citySeat(nb)!==s)continue;
       if(vayuRule&&d>=1&&(ctype(S,nb)==='temple'||nb===0))continue;
       const o=S.B[nb];const enemy=o.t>0&&o.o!==s;
-      if(enemy){if(vayuOnly&&d>=1)continue;if(!res[nb])res[nb]='battle';if(fly){seen.add(nb);nx.push(nb)}continue}
+      if(enemy){if(!res[nb])res[nb]='battle';if(fly){seen.add(nb);nx.push(nb)}continue}
       res[nb]='move';seen.add(nb);nx.push(nb);
     }
     front=nx;
@@ -273,8 +276,8 @@ function reachCore(S,s,src,carry,maxRange){
 function reachAny(S,s,src,maxRange){const out={};for(const m of [null,...mountsAt(S,src,s)])Object.assign(out,reachable(S,s,src,m,maxRange));return out}
 /* เส้นทางที่เดินจริง (ช่องที่ผ่าน) ใช้วาดลูกศรตามทาง ตรรกะเดียวกับ reachable */
 function movePath(S,s,src,dst,carry,maxRange){
-  const fast=has(S,s,'swift')||has(S,s,'forestway')||hm(carry,'garuda')||hm(carry,'durong');let range=fast||isGod(S,s,'vayu')?2:1;if(maxRange)range=Math.min(range,maxRange);const vayuRule=isGod(S,s,'vayu')&&!fast;
-  const vayuOnly=(!fast&&range===2)||(hm(carry,'durong')&&!hm(carry,'garuda')&&!has(S,s,'swift'));
+  const fast=has(S,s,'swift')||has(S,s,'forestway')||hm(carry,'garuda')||hm(carry,'durong')||hm(carry,'rajasi');let range=fast||isGod(S,s,'vayu')?2:1;if(maxRange)range=Math.min(range,maxRange);const vayuRule=isGod(S,s,'vayu')&&!fast;
+  
   const fly=hm(carry,'garuda')&&isGod(S,s,'narai');
   const par={[src]:-1};let front=[src];
   for(let d=0;d<range;d++){const nx=[];
@@ -283,7 +286,7 @@ function movePath(S,s,src,dst,carry,maxRange){
       if(ctype(S,nb)==='city'&&citySeat(nb)!==s)continue;
       if(vayuRule&&d>=1&&(ctype(S,nb)==='temple'||nb===0))continue;
       const o=S.B[nb];const enemy=o.t>0&&o.o!==s;
-      if(enemy){if(vayuOnly&&d>=1)continue;par[nb]=c;if(nb===dst)break;if(fly)nx.push(nb);continue}
+      if(enemy){par[nb]=c;if(nb===dst)break;if(fly)nx.push(nb);continue}
       par[nb]=c;nx.push(nb);
     }
     if(par[dst]!==undefined)break;front=nx;
@@ -330,7 +333,6 @@ function resolveBattle(S,defCard){
   const notes=[];
   let nA=b.n,nD=S.B[cell].t;const mA=mList([b.mount,b.mount2]),mD=mountsAt(S,cell,D);
   let deaths=0;
-  if(has(S,A,'vanguard')&&nA>nD&&nD>0){nD--;deaths++;notes.push('ทัพหน้า')}
   const cA=CARD[b.ac],cD=CARD[defCard];
   const pA=[['ทหาร',nA],['การ์ด',cA.s]],pD=[['ทหาร',nD],['การ์ด',cD.s]];
   const bm=battleMods(S,A,D,nA,nD,mA,mD,cell,b.from);pA.push(...bm.a);pD.push(...bm.d);if(bm.note)notes.push(...bm.note);
@@ -344,12 +346,14 @@ function resolveBattle(S,defCard){
   const kA=[['การ์ด',cA.k],...km.a,...(aWin?km.aWin:[])],kD=[['การ์ด',cD.k],...km.d,...(aWin?[]:km.dWin)];
   if(!aWin&&has(S,A,'poison'))kA.push(['ยาพิษ',1]);if(aWin&&has(S,D,'poison'))kD.push(['ยาพิษ',1]);
   const dmgA=Math.max(0,kA.reduce((t,x)=>t+x[1],0)),dmgD=Math.max(0,kD.reduce((t,x)=>t+x[1],0));
-  const lossD=Math.min(nD,dmgA),lossA=Math.min(nA,dmgD);
+  let lossD=Math.min(nD,dmgA),lossA=Math.min(nA,dmgD);
   let survA=nA-lossA,survD=nD-lossD;deaths+=lossA+lossD;
   useCard(S,A,b.ac);useCard(S,D,defCard);
   const W=aWin?A:D,Lz=aWin?D:A;
-  /* ไล่ล่า: ฝ่ายรับแพ้แล้วต้องถอย เสียเพิ่ม 1 */
-  if(aWin&&survA>0&&survD>0&&has(S,A,'pursuit')){survD--;deaths++;notes.push('ไล่ล่า ฝ่ายรับเสียเพิ่ม 1')}
+  /* คืนชีพ: ฝ่ายแพ้ที่ทหารตายหมด เหลือรอด 1 ตัวแล้วต้องถอย */
+  let reborn=false;
+  if(has(S,Lz,'rebirth')){if(aWin&&nD>0&&survD===0){survD=1;reborn=true}else if(!aWin&&nA>0&&survA===0){survA=1;reborn=true}
+    if(reborn){deaths--;if(aWin)lossD--;else lossA--;notes.push(`คืนชีพ ${gname(S,Lz)} เหลือรอด 1`)}}
   /* พิษร้าย: ฝ่ายที่ชนะคนถือการ์ดนี้ เสียเพิ่ม 1 */
   if(aWin&&survA>0&&has(S,D,'venom')){survA--;deaths++;notes.push('พิษร้าย ฝ่ายบุกเสียเพิ่ม 1')}
   if(!aWin&&survD>0&&has(S,A,'venom')){survD--;deaths++;notes.push('พิษร้าย ฝ่ายรับเสียเพิ่ม 1')}
@@ -369,6 +373,7 @@ function resolveBattle(S,defCard){
       if(survA>0)retreat={s:A,n:survA,m:mA,origin:b.from};else home(mA,A)}
   }
   else if(survW>0){holder=W;holdN=survW;holdM=mW;if(survL>0)retreat={s:Lz,n:survL,m:mL};else home(mL,Lz)}
+  else if(survL>0&&reborn){retreat={s:Lz,n:survL,m:mL};home(mW,W)}
   else if(survL>0){holder=Lz;holdN=survL;holdM=mL;home(mW,W)}
   else if(!b.raid){home(mA,A);home(mD,D)}
   if(holder>=0){S.B[cell].o=holder;S.B[cell].t=holdN;for(const k of mList(holdM))S.M[k].c=cell}
@@ -389,7 +394,6 @@ function resolveBattle(S,defCard){
   if(aWin&&has(S,A,'plunder')){S.P[A].merit+=2;notes.push('ปล้นสะดม +2 บุญ')}
   if(!aWin&&survD>0&&has(S,D,'stand')&&!S.P[D].f.stand){S.P[D].vp+=1;S.P[D].f.stand=true;notes.push('ผู้ยืนหยัด +1 ถาวร')}
   const pend=s=>retreat&&retreat.s===s?retreat.n:0;
-  for(const [s,l] of [[A,lossA],[D,lossD]]){if(l>0&&has(S,s,'rebirth')&&reserve(S,s)-pend(s)>0){placeTroops(S,s,cityOf(s),1);notes.push(`คืนชีพ ${gname(S,s)} +1 ทหาร`)}}
   /* เทวดาคุ้มครอง: กองโดนฆ่าหมดทั้งกอง ได้ทหารคืนลงเมือง สูงสุด 3 รอบละครั้ง */
   for(const [s,n0,sv] of [[A,nA,survA],[D,nD,survD]]){if(n0>0&&sv===0&&has(S,s,'deva')&&!S.P[s].f.deva){const k=Math.min(3,n0,reserve(S,s)-pend(s));if(k>0){placeTroops(S,s,cityOf(s),k);S.P[s].f.deva=true;notes.push(`เทวดาคุ้มครอง ${gname(S,s)} +${k} ทหาร`)}}}
   for(const s of [A,D]){if(isGod(S,s,'yama')&&deaths>0){const grpM=s===A?mA:mD;const g=deaths*(hm(grpM,'buffalo')?2:1);S.P[s].merit+=g;notes.push(`ยมโลก +${g} บุญ`)}}
@@ -407,10 +411,13 @@ function resolveBattle(S,defCard){
   const post={A,chain:held&&has(S,A,'chain')&&!b.bonusUsed?cell:null,vp:!!b.vajraPending&&!b.raid,vfrom:held?cell:null,dq};
   if(retreat){
     const rfrom=retreat.origin!=null?retreat.origin:cell;
-    const two=!aWin&&!b.raid&&ctype(S,cell)==='temple'&&has(S,D,'haven');
+    const haven=!aWin&&!b.raid&&ctype(S,cell)==='temple'&&has(S,D,'haven');
+    const chase=aWin&&retreat.s===D&&has(S,A,'pursuit');
+    const two=haven||chase;
     const opts=two?retreatOpts2(S,retreat.s,rfrom,retreat.n):retreatOpts(S,retreat.s,rfrom,retreat.n);
-    if(two)log(S,`เขตอภัยทาน: ${gname(S,retreat.s)} ต้องถอย 2 ช่อง`);
-    const chooser=(Lz===D&&has(S,D,'fallback'))?D:W;
+    if(haven)log(S,`เขตอภัยทาน: ${gname(S,retreat.s)} ต้องถอย 2 ช่อง`);
+    if(chase)log(S,`ไล่ล่า: ${gname(S,retreat.s)} ต้องถอย 2 ช่อง`);
+    const chooser=has(S,retreat.s,'fallback')?retreat.s:(retreat.s===A?D:A);
     if(opts.length<=1){const j=opts.length?opts[0]:cityOf(retreat.s);doRetreatApply(S,retreat.s,j,retreat.n,retreat.m,rfrom)}
     else{S.retreat={loser:retreat.s,chooser,n:retreat.n,m:mList(retreat.m),from:rfrom,opts,post};return}
   }
@@ -440,13 +447,14 @@ function battleMods(S,A,D,nA,nD,mA,mD,cell,from){
   if(isGod(S,A,'agni'))A_('เผาผลาญ',1);
   if(hm(mA,'garuda'))A_('ครุฑ',1);if(hm(mA,'nonthi'))A_('โคนนทิ',1);if(hm(mA,'rhino'))A_('แรด',2);
   if(hm(mA,'naga')&&temple&&isGod(S,A,'varuna'))A_('นาคในวัด',1);
+  if(hm(mA,'naga')&&(t==='water'||(from!=null&&terr(S,from)==='water')))A_('นาคริมน้ำ',2);
   if(hm(mA,'asura'))A_('อสุรปักษา',isGod(S,A,'vessuwan')?2:1);
   if(hm(mA,'hatsadee')){if(night)A_('หัสดีลิงค์ยามค่ำ',2);else if(isGod(S,A,'skanda'))A_('หัสดีลิงค์',1)}
   if(hm(mA,'rajasi')&&isGod(S,A,'surya'))A_('ราชสีห์ของพระอาทิตย์',1);
   if(hm(mA,'khotchasi')&&isGod(S,A,'uma'))A_('คชสีห์ของพระแม่อุมา',1);
   if(has(S,D,'armor'))D_('เกราะเพชร',1);if(temple&&has(S,D,'wall'))D_('กำแพงวัด',1);if(nD>=5&&has(S,D,'unity'))D_('สามัคคี',1);if(has(S,D,'guardian'))D_('ทวารบาล',2);
   if(isGod(S,D,'agni')&&!hm(mD,'rhino'))D_('เผาผลาญ (รับ)',-1);
-  if(hm(mD,'erawan'))D_('เอราวัณ',2);if(hm(mD,'nonthi'))D_('โคนนทิ',1);
+  if(hm(mD,'erawan'))D_('เอราวัณ',1);if(hm(mD,'nonthi'))D_('โคนนทิ',1);
   if(hm(mD,'naga')&&temple&&isGod(S,D,'varuna'))D_('นาคในวัด',1);
   if(hm(mD,'hera'))D_('เหรา',isGod(S,D,'thorani')?2:1);if(hm(mD,'khotchasi'))D_('คชสีห์',1);
   if(hm(mD,'kraisorn')){if(day)D_('ไกรสรปักษา',2);else if(isGod(S,D,'vayu'))D_('ไกรสรปักษา',1)}
@@ -474,6 +482,7 @@ function trail(S,o){S.trail=S.trail||[];S.seq=(S.seq||0)+1;S.trail.unshift(Objec
 function killMods(S,A,D,mA,mD,nA,nD){
   const a=[],d=[],aWin=[],dWin=[];if(has(S,D,'smoke'))mA=[];
   if(isGod(S,A,'skanda')&&nA>nD)a.push(['ขุนพลเทวดา',1]);
+  if(has(S,A,'vanguard')&&nA<nD)a.push(['ทัพหน้า',1]);
   if(has(S,A,'raid'))aWin.push(['จู่โจม',1]);if(hm(mA,'rajasi'))aWin.push(['ราชสีห์',1]);
   if(has(S,D,'counter'))dWin.push(['โต้กลับ',1]);
   if(hm(mD,'naga')&&!hm(mA,'garuda'))a.push(['นาคกันไว้',-1]);
@@ -488,7 +497,7 @@ function killMods(S,A,D,mA,mD,nA,nD){
 /* พรีวิวศึกที่รออยู่: พลังรบและแต้มฆ่า "ไม่รวมการ์ด" ให้ทุกคนเห็น */
 function battlePreview(S){
   const b=S.battle;if(!b)return null;const A=b.a,D=b.d,cell=b.to;const mA=mList([b.mount,b.mount2]),mD=mountsAt(S,cell,D);
-  let nD=S.B[cell].t;const pre=[];if(has(S,A,'vanguard')&&b.n>nD&&nD>0){nD--;pre.push('ทัพหน้า: ฝ่ายรับเสีย 1 ตัวก่อนรบ')}
+  let nD=S.B[cell].t;const pre=[];
   const bm=battleMods(S,A,D,b.n,nD,mA,mD,cell,b.from);
   const pA=[['ทหาร',b.n],...bm.a],pD=[['ทหาร',nD],...bm.d];
   const sum=x=>x.reduce((t,y)=>t+y[1],0);
@@ -534,7 +543,7 @@ function warpTargets(S,s,src){const n=S.B[src].t,ms=mountsAt(S,src,s).length,arm
   for(let j=1;j<S.B.length;j++){if(j===src)continue;const t=ctype(S,j),c=S.B[j];if(t==='city')continue;
     if(t==='temple'&&!(army&&c.t===0))continue;
     if(c.t===0){if(ms>=2&&n>4)continue;out.push(j)}
-    else if(c.o===s&&mountsAt(S,j,s).length+ms<=mLimit(S,s)&&c.t+n<=(mountsAt(S,j,s).length+ms>=2?4:cap(S,s,j)))out.push(j)}
+    else if(c.o===s&&mountsAt(S,j,s).length+ms<=mLimit(S,s)&&c.t+n<=cap(S,s,j,mountsAt(S,src,s)))out.push(j)}
   return out}
 function doWarpRule(S,s,src,dst){if(!warpLeft(S,s)||!warpSrcs(S,s).includes(src)||!warpTargets(S,s,src).includes(dst))return false;
   const n=S.B[src].t,ms=mountsAt(S,src,s);for(const k of ms)S.M[k].c=-1;removeTroops(S,src,n);placeTroops(S,s,dst,n);for(const k of ms)S.M[k].c=dst;
@@ -642,7 +651,7 @@ function pickMap(S){return (S.mapPick&&MAPBY[S.mapPick])?S.mapPick:MAPS[Math.flo
 function previewState(S){return {n:S.n,map:S.map,seed:S.seed,seats:S.seats,B:Array.from({length:SECT*S.n+2},(_,i)=>({o:i>0&&i<=SECT*S.n&&kOf(i)===0?citySeat(i):-1,t:0})),M:{}}}
 function terrCount(S){const c={};for(let i=0;i<S.B.length;i++){const t=terr(S,i);c[t]=(c[t]||0)+1}return c}
 function setupGame(S){
-  S.mapV=4;S.seed=S.seed||Math.floor(Math.random()*1e9);const cells=SECT*S.n+2;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
+  S.mapV=5;S.seed=S.seed||Math.floor(Math.random()*1e9);const cells=SECT*S.n+2;S.B=Array.from({length:cells},()=>({o:-1,t:0}));
   for(let s=0;s<S.n;s++){S.B[cityOf(s)]={o:s,t:4}}
   S.map=MAPBY[S.map]?S.map:pickMap(S);
   S.P=[...Array(S.n)].map((_,s)=>({merit:S.seats&&S.seats[s]&&S.seats[s].god==='ganesha'?5:3,sin:0,vp:0,pw:[],uc:[],used:[],f:{}}));
@@ -684,7 +693,7 @@ const PW_DETAIL={
  horn:'บุกตอนกลางวัน พลังรบ +1 (คู่กับธงรบที่ได้ตอนกลางคืน)',
  disarm:'บุกชนะ ฝ่ายรับต้องเลือกทิ้งการ์ดรบที่ยังเหลือในมือ 1 ใบ (ถ้าเหลือใบเดียว ทิ้งให้อัตโนมัติ)',
  blitz:'บุกด้วยทหาร 1–2 ตัว พลังรบ +2',
- pursuit:'บุกชนะแล้วฝ่ายรับต้องถอย ทหารที่ถอยเสียเพิ่ม 1 ตัว',
+ pursuit:'บุกชนะแล้วฝ่ายรับที่เหลือรอดต้องถอยไป 2 ช่อง (ไกลจากช่องเดิม)',
  fury:'บุกกองที่มีทหารมากกว่ากองของคุณ พลังรบ +1',
  storm:'ทุกศึกที่อีกฝ่ายมีทหารมากกว่าคุณ ทั้งตอนบุกและตอนตั้งรับ พลังรบ +2',
  warlord:'กองนอกเมืองพาพาหนะได้ 2 ตัว ได้โบนัสทั้งสองตัว แต่กองที่มีพาหนะ 2 ตัวมีทหารได้สูงสุด 4 ตัวเสมอ (ป้อมค่ายก็ไม่เพิ่ม)',
@@ -692,7 +701,7 @@ const PW_DETAIL={
  watch:'ตั้งรับตอนกลางคืน พลังรบ +1',
  militia:'ตั้งรับด้วยทหาร 1–2 ตัว พลังรบ +2',
  trap:'ศัตรูบุกวัดหรือวัดหลวงที่คุณยึดอยู่ ฝ่ายบุกพลังรบ −1',
- fallback:'ตั้งรับแพ้แล้วต้องถอย คุณเป็นคนเลือกช่องถอยเอง (ปกติฝ่ายชนะเลือก)',
+ fallback:'แพ้ศึกแล้วต้องถอย (ทั้งตอนบุกและตั้งรับ) คุณเป็นคนเลือกช่องถอยเอง (ปกติฝ่ายชนะเลือก)',
  garrison:'ทุกจบรอบ กองของคุณในวัด วัดหลวง หรือเขาพระสุเมรุที่มีทหารไม่ถึง 3 ตัว ได้ทหารจากคลัง +1 ตัว',
  aegis:'ตอนตั้งรับ พลังรบ +1 และความเสียหายที่ได้รับ −1',
  citadel:'ตั้งรับที่เขาพระสุเมรุหรือวัดหลวง พลังรบ +2',
@@ -707,19 +716,19 @@ const PW_DETAIL={
  plunder:'บุกแล้วชนะ ได้บุญ +2 ทันที (ไม่ต้องเหลือทหารก็ได้)',
  siege:'ตอนบุกวัด วัดหลวง หรือเขาพระสุเมรุ พลังรบ +1',
  conquest:'บุกชนะและยังเหลือทหาร ครั้งแรกของแต่ละรอบ ได้ +1 คะแนนถาวรเพิ่ม (รวมเป็น +2)',
- drill:'ปกติเกณฑ์ทัพต้องจ่ายบุญตัวละ 1 การ์ดนี้ทำให้จ่ายแค่ 1 บุญต่อครั้ง ไม่ว่าจะได้กี่ตัว',
+ drill:'เกณฑ์ทัพจ่ายบุญน้อยลง 1 บุญ (จ่ายอย่างน้อย 1 บุญเสมอ) ใช้ร่วมกับการ์ดลดราคาอื่นได้',
  eye:'ตอนคุณเป็นฝ่ายรับ เห็นการ์ดที่ฝ่ายบุกคว่ำไว้ก่อนเลือกการ์ดตั้งรับ',
  stand:'ตั้งรับชนะและยังมีทหารเหลือในช่องนั้น ได้ +1 คะแนนถาวร ได้รอบละครั้ง',
  monk:'ทุกครั้งที่ทำแอคชันทำบุญ ได้ทหาร 1 ตัวจากคลังลงเมืองด้วย',
  karma:'ใครบุกชนะคุณแล้วยึดช่องได้ คนนั้นได้บาปเพิ่มอีก 1',
- rebirth:'ทุกศึกที่คุณเสียทหาร ได้ทหาร 1 ตัวจากคลังลงเมืองทันที',
+ rebirth:'ทุกศึกที่คุณแพ้ ถ้าทหารในกองตายหมด จะเหลือรอด 1 ตัวเสมอแล้วต้องถอย ฝ่ายชนะเลือกช่องถอย (ถ้ามีถอยทัพ คุณเลือกเอง)',
  weapon:'ทุกครั้งที่คุณเป็นฝ่ายบุก พลังรบ +1',
  swift:'เดินทัพได้ไกลสุด 2 ช่องต่อครั้ง ช่องที่ผ่านต้องว่างหรือเป็นกองของคุณ ถ้าเจอศัตรูระหว่างทางจะหยุดรบที่ช่องนั้น',
  banner:'รอบกลางคืนฝ่ายบุกได้ +1 อยู่แล้ว การ์ดนี้เพิ่มให้อีก +1 รวมเป็น +2',
  rally:'ตอนคุณเป็นฝ่ายบุก ความเสียหายที่ได้รับลดลง 1 (เสียทหารน้อยลง 1 ตัว)',
  raid:'บุกแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายรับเสียทหารเพิ่ม',
- vanguard:'ตอนบุก ถ้าทหารของคุณมากกว่าฝ่ายรับ ฝ่ายรับเสียทหาร 1 ตัวทันทีก่อนเปิดการ์ด',
- secret:'วัดทุกแห่งและช่องริมน้ำทุกช่อง เดินเข้าเขาพระสุเมรุได้ตรงๆ และออกจากเขากลับไปช่องเหล่านี้ได้ ไม่ต้องผ่านป่าลึก (ประหยัดได้ 1 ก้าว)',
+ vanguard:'ตอนบุก ถ้าทหารของคุณน้อยกว่าฝ่ายรับ แต้มฆ่า +1',
+ secret:'วัดทุกแห่งและช่องริมน้ำทุกช่อง เดินเข้าเขาพระสุเมรุได้ตรงๆ และออกจากเขากลับไปช่องเหล่านี้ได้ ไม่ต้องผ่านป่าลึกและทุ่งหน้าเขา',
  chain:'บุกชนะและยังเหลือทหาร เดินต่อจากช่องนั้นได้อีก 1 ช่องในตาเดียวกัน ถ้าเจอศัตรูก็รบต่อได้ (ไม่นับเป็นแอคชัน)',
  manual:'ได้การ์ดรบ "พิชัยยุทธ" (พลัง 4 ฆ่า 2) เพิ่มในมือ เป็นการ์ดรบที่แรงที่สุด',
  divine:'ทุกครั้งที่คุณเป็นฝ่ายบุก พลังรบ +2',
@@ -729,7 +738,7 @@ const PW_DETAIL={
  levy:'แอคชันเกณฑ์ทัพได้ทหารเพิ่ม 1 ตัว (จ่ายบุญเพิ่มตามจำนวนตัว ปกติ 2 ตัว 2 บุญ มีการ์ดนี้ 3 ตัว 3 บุญ)',
  wall:'ตั้งรับในวัด พลังรบ +1',
  ward:'ตอนคุณเป็นฝ่ายตั้งรับ ความเสียหายที่ได้รับลดลง 1',
- reserve:'เกณฑ์ทัพลงช่องที่ติดกับเมืองของคุณได้ ถ้าช่องนั้นว่างหรือมีกองของคุณอยู่',
+ reserve:'เกณฑ์ทัพลงช่องที่ติดกับกองใดก็ได้ของคุณ (รวมเมือง) ถ้าช่องนั้นว่างหรือมีกองของคุณ ห้ามลงวัด วัดหลวง หรือเขาพระสุเมรุ',
  unity:'ตั้งรับด้วยทหาร 5 ตัวขึ้นไป พลังรบ +1',
  counter:'ตั้งรับแล้วชนะ แต้มฆ่าของคุณ +1 ฝ่ายบุกเสียทหารเพิ่ม',
  fort:'กองนอกเมืองจุทหารได้เพิ่มจากเดิม 1 ตัว (ปกติ 5 → 6 · ถ้ามีกองทัพศรัทธา 4 → 5 · พระพาย 4 → 5) ใช้ทั้งตอนเดินและตอนบุก',
