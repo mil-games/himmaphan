@@ -500,3 +500,10 @@ span.lchip{cursor:default}
 .volrow input{width:100%;accent-color:var(--gold);padding:0;border:0;background:none}
 .volrow b{font-size:.8rem;text-align:right;font-variant-numeric:tabular-nums}
 #volpanel p{margin:0}
+/* ===== แผนที่แบบภาพ ===== */
+.mapbox svg.tiled{border-radius:10px;overflow:hidden}
+svg.tiled .cell.click .ring{stroke:#FFE08A;stroke-width:5;stroke-dasharray:8 5;animation:hexpulse 1.4s ease-in-out infinite}
+svg.tiled .cell.sel .ring{stroke:#FFD34D;stroke-width:6;stroke-dasharray:none}
+svg.tiled .cell.click:hover image{filter:brightness(1.12)}
+@keyframes hexpulse{50%{stroke-opacity:.45}}
+@media (prefers-reduced-motion:reduce){svg.tiled .cell.click .ring{animation:none}}
