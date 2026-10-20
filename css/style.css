@@ -507,3 +507,11 @@ svg.tiled .cell.sel .ring{stroke:#FFD34D;stroke-width:6;stroke-dasharray:none}
 svg.tiled .cell.click:hover image{filter:brightness(1.12)}
 @keyframes hexpulse{50%{stroke-opacity:.45}}
 @media (prefers-reduced-motion:reduce){svg.tiled .cell.click .ring{animation:none}}
+
+/* แผนที่กลางคืน: ภาพช่องมืดลง หิ่งห้อยลอยไปมา */
+svg.tiled.night .cell>image{filter:brightness(.6) saturate(.75)}
+svg.tiled.night .cell.click>image,svg.tiled.night .cell.sel>image{filter:brightness(.85) saturate(.9)}
+svg.tiled .fflies{pointer-events:none}
+svg.tiled .ffly{transform-box:fill-box;transform-origin:center;animation:ffly 8s ease-in-out infinite;opacity:0;mix-blend-mode:screen}
+@keyframes ffly{0%{transform:translate(0,0) scale(.6);opacity:0}15%{opacity:.95}35%{opacity:.35}50%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:1}70%{opacity:.4}85%{opacity:.9}100%{transform:translate(0,0) scale(.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){svg.tiled .ffly{animation:none;opacity:.6}}
