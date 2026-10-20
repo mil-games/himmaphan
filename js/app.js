@@ -387,8 +387,9 @@ function tileCell(S,i,p,rr,t,tt,c,oc,lab,fs,hid){
   const lt=lab+(i===0?' · 2 คะแนน':'');const lw=lt.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g,'').length*fs*0.56;
   const bw=own||cityC?5:2.5;const sc=own?SEATC(c.o):cityC?SEATC(citySeat(i)):'#F3E3BE';
   return `<clipPath id="${id}"><polygon points="${hp}"/></clipPath>
-    <polygon points="${hexPts(p.x,p.y+3,R0)}" fill="#000" opacity=".35"/>
+    <polygon points="${hexPts(p.x+2,p.y+6,R0+2)}" fill="#120804" opacity=".5"/><polygon points="${hexPts(p.x,p.y,R0+3.5)}" fill="#2A170C"/>
     <image href="img/tiles/${img}.webp" x="${p.x-R0}" y="${p.y-R0}" width="${R0*2}" height="${R0*2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>
+    <polygon points="${hexPts(p.x,p.y,R0-3)}" fill="none" stroke="#FFF6DA" stroke-opacity=".28" stroke-width="2"/>
     <polygon class="ring" points="${hp}" fill="${own?SEATC(c.o):'none'}" fill-opacity="${own?.12:0}" stroke="${sc}" stroke-width="${bw}" stroke-linejoin="round"/>
     <g class="tlab"><rect x="${p.x-lw/2-8}" y="${p.y-R0-2}" width="${lw+16}" height="${fs+8}" rx="${(fs+8)/2}" fill="#1E0F0C" fill-opacity=".82" stroke="${cityC?sc:'#C9A04A'}" stroke-width="1.2"/>
     <text x="${p.x}" y="${p.y-R0+fs+0.5}" text-anchor="middle" font-size="${fs}" fill="#F7EBCF" font-family="Anuphan,sans-serif">${esc(lab)}${i===0?' · 2 คะแนน':''}</text></g>
@@ -409,12 +410,64 @@ function riverSVG(S,M,pts){const rnd=mrng(((S.seed||1)*7919)^0x51ed27);const n=p
   const ribbon=extra=>{const L=[],Rr=[];for(let i=0;i<K;i++){const a=smp[(i-1+K)%K],b=smp[(i+1)%K];let tx=b.x-a.x,ty=b.y-a.y;const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;const w=wAt(i)+extra;
       L.push([smp[i].x-ty*w,smp[i].y+tx*w]);Rr.push([smp[i].x+ty*w,smp[i].y-tx*w])}
     let d='';const f=q=>q[0].toFixed(1)+' '+q[1].toFixed(1);for(let i=0;i<K;i++){const j=(i+1)%K;d+=`M${f(L[i])}L${f(L[j])}L${f(Rr[j])}L${f(Rr[i])}Z`}return d};
-  const cl=smp.map(q=>q.x.toFixed(1)+' '+q.y.toFixed(1));
+  M.riv=smp;M.rivW=base*1.6+M.r*0.32;const cl=smp.map(q=>q.x.toFixed(1)+' '+q.y.toFixed(1));
   const flow=reduceMotion()?'':`<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="180 180" dur="40s" repeatCount="indefinite"/>`;
   return `<defs><pattern id="triv" patternUnits="userSpaceOnUse" width="180" height="180"><image href="img/tiles/river.webp" width="180" height="180"/>${flow}</pattern></defs>
     <path d="${ribbon(M.r*0.32)}" fill="#4E6B2A" stroke="#4E6B2A" stroke-width="1" opacity=".5"/>
     <path d="${ribbon(M.r*0.17)}" fill="#D8C08A" stroke="#D8C08A" stroke-width="1"/>
     <path d="${ribbon(0)}" fill="url(#triv)" stroke="url(#triv)" stroke-width="1.5"/>`}
+/* ของประดับพื้นหลัง: ต้นไม้ พุ่มไม้ ก้อนหิน บ้านพัง เจดีย์ร้าง รอยไหม้จากสงคราม วางสุ่มคงที่ตามห้อง ไม่ทับช่อง ทาง และแม่น้ำ */
+const DECOR_CACHE={};
+function decorSVG(S,M){
+  const key=(S.seed||1)+':'+S.n+':'+(S.map||'')+':'+S.B.length;if(DECOR_CACHE[key])return DECOR_CACHE[key];
+  const rnd=mrng(((S.seed||1)*31337)^0x2545F491),W=M.W,H=M.H;
+  /* จุดที่ห้ามวาง: ช่อง เส้นทาง แม่น้ำ */
+  const block=[];for(let i=0;i<M.pos.length;i++)block.push([M.pos[i].x,M.pos[i].y,(i===0?M.r*1.7:M.r)*1.12+6]);
+  for(let i=0;i<S.B.length;i++)for(const j of adj(S,i)){if(j<i)continue;const a=M.pos[i],b=M.pos[j],bd=M.bend[i+'-'+j]||0;
+    const qx=(a.x+b.x)/2-(b.y-a.y)*bd,qy=(a.y+b.y)/2+(b.x-a.x)*bd;
+    for(let k=1;k<16;k++){const t=k/16,u=1-t;block.push([u*u*a.x+2*u*t*qx+t*t*b.x,u*u*a.y+2*u*t*qy+t*t*b.y,6])}}
+  for(const q of (M.riv||[]))block.push([q.x,q.y,M.rivW||M.r]);
+  const free=(x,y,r)=>x>r&&x<W-r&&y>r&&y<H-r&&block.every(([bx,by,br])=>Math.hypot(x-bx,y-by)>br+r);
+  const placed=[];const put=(x,y,r)=>{placed.push([x,y,r]);block.push([x,y,r*0.7])};
+  const out=[];const f=v=>v.toFixed(1);
+  const shadow=(x,y,rx)=>`<ellipse cx="${f(x+rx*0.25)}" cy="${f(y+rx*0.35)}" rx="${f(rx)}" ry="${f(rx*0.42)}" fill="#1B1405" opacity=".35"/>`;
+  const G=['#2F5A1E','#3B6B24','#4C7D2B','#5E8F33'];
+  const tree=(x,y,s)=>{const c=G[Math.floor(rnd()*3)];return shadow(x,y+s*0.5,s*0.9)+`<rect x="${f(x-s*0.09)}" y="${f(y)}" width="${f(s*0.18)}" height="${f(s*0.55)}" fill="#5A3A1E"/>`
+    +`<circle cx="${f(x-s*0.32)}" cy="${f(y-s*0.05)}" r="${f(s*0.42)}" fill="${c}"/><circle cx="${f(x+s*0.3)}" cy="${f(y-s*0.02)}" r="${f(s*0.4)}" fill="${c}"/><circle cx="${f(x)}" cy="${f(y-s*0.35)}" r="${f(s*0.5)}" fill="${c}"/>`
+    +`<circle cx="${f(x-s*0.12)}" cy="${f(y-s*0.5)}" r="${f(s*0.22)}" fill="#8DB24A" opacity=".55"/>`};
+  const pine=(x,y,s)=>shadow(x,y+s*0.45,s*0.7)+`<rect x="${f(x-s*0.07)}" y="${f(y+s*0.15)}" width="${f(s*0.14)}" height="${f(s*0.35)}" fill="#4A2E17"/><path d="M${f(x)} ${f(y-s*0.95)}L${f(x+s*0.45)} ${f(y+s*0.2)}L${f(x-s*0.45)} ${f(y+s*0.2)}Z" fill="#244A1A"/><path d="M${f(x)} ${f(y-s*0.95)}L${f(x+s*0.12)} ${f(y-s*0.3)}L${f(x-s*0.22)} ${f(y+s*0.1)}L${f(x-s*0.45)} ${f(y+s*0.2)}Z" fill="#3F7028" opacity=".8"/>`;
+  const bush=(x,y,s)=>shadow(x,y+s*0.2,s*0.6)+`<circle cx="${f(x-s*0.25)}" cy="${f(y)}" r="${f(s*0.3)}" fill="#3E6A22"/><circle cx="${f(x+s*0.22)}" cy="${f(y+s*0.02)}" r="${f(s*0.28)}" fill="#4A7A28"/><circle cx="${f(x)}" cy="${f(y-s*0.15)}" r="${f(s*0.32)}" fill="#55892E"/>${rnd()<.4?`<circle cx="${f(x+s*0.1)}" cy="${f(y-s*0.2)}" r="${f(s*0.07)}" fill="#E8C34A"/><circle cx="${f(x-s*0.2)}" cy="${f(y-s*0.05)}" r="${f(s*0.06)}" fill="#E07A5F"/>`:''}`;
+  const rock=(x,y,s)=>shadow(x,y+s*0.15,s*0.6)+`<path d="M${f(x-s*0.55)} ${f(y+s*0.2)}L${f(x-s*0.35)} ${f(y-s*0.25)}L${f(x+s*0.05)} ${f(y-s*0.4)}L${f(x+s*0.5)} ${f(y-s*0.1)}L${f(x+s*0.55)} ${f(y+s*0.2)}Z" fill="#8A8170"/><path d="M${f(x-s*0.35)} ${f(y-s*0.25)}L${f(x+s*0.05)} ${f(y-s*0.4)}L${f(x+s*0.1)} ${f(y+s*0.2)}L${f(x-s*0.55)} ${f(y+s*0.2)}Z" fill="#A9A08C"/>`
+    +(rnd()<.6?`<path d="M${f(x+s*0.4)} ${f(y+s*0.22)}L${f(x+s*0.55)} ${f(y-s*0.02)}L${f(x+s*0.85)} ${f(y+s*0.22)}Z" fill="#7A7262"/>`:'');
+  /* บ้านไม้ทรงไทยหลังคาพัง */
+  const hut=(x,y,s)=>{const burnt=rnd()<.5;return shadow(x,y+s*0.35,s*0.95)
+    +`<rect x="${f(x-s*0.5)}" y="${f(y-s*0.1)}" width="${f(s)}" height="${f(s*0.45)}" fill="${burnt?'#4A3324':'#8B5E34'}"/><rect x="${f(x-s*0.1)}" y="${f(y+s*0.08)}" width="${f(s*0.2)}" height="${f(s*0.27)}" fill="#2A1A10"/>`
+    +`<path d="M${f(x-s*0.65)} ${f(y-s*0.08)}L${f(x-s*0.05)} ${f(y-s*0.7)}L${f(x+s*0.2)} ${f(y-s*0.42)}L${f(x+s*0.05)} ${f(y-s*0.3)}L${f(x+s*0.35)} ${f(y-s*0.2)}L${f(x+s*0.65)} ${f(y-s*0.08)}Z" fill="${burnt?'#3A2A1E':'#6B4423'}"/>`
+    +`<path d="M${f(x+s*0.2)} ${f(y-s*0.42)}L${f(x+s*0.45)} ${f(y-s*0.15)}" stroke="#2A1A10" stroke-width="${f(s*0.06)}"/>`
+    +`<path d="M${f(x+s*0.35)} ${f(y+s*0.35)}l${f(s*0.25)} ${f(-s*0.05)}l${f(s*0.12)} ${f(s*0.04)}" stroke="#5A3A1E" stroke-width="${f(s*0.07)}" fill="none"/>`
+    +(burnt?`<circle cx="${f(x+s*0.1)}" cy="${f(y-s*0.85)}" r="${f(s*0.18)}" fill="#6E6A62" opacity=".35"/><circle cx="${f(x+s*0.22)}" cy="${f(y-s*1.15)}" r="${f(s*0.24)}" fill="#6E6A62" opacity=".22"/>`:'')};
+  /* เจดีย์ร้างยอดหัก */
+  const stupa=(x,y,s)=>shadow(x,y+s*0.3,s*0.8)+`<rect x="${f(x-s*0.55)}" y="${f(y+s*0.1)}" width="${f(s*1.1)}" height="${f(s*0.22)}" fill="#9C8F78"/><path d="M${f(x-s*0.4)} ${f(y+s*0.1)}Q${f(x-s*0.42)} ${f(y-s*0.45)} ${f(x)} ${f(y-s*0.5)}Q${f(x+s*0.42)} ${f(y-s*0.45)} ${f(x+s*0.4)} ${f(y+s*0.1)}Z" fill="#B8AA8E"/>`
+    +`<path d="M${f(x-s*0.12)} ${f(y-s*0.5)}L${f(x-s*0.06)} ${f(y-s*0.95)}L${f(x+s*0.04)} ${f(y-s*0.8)}L${f(x+s*0.12)} ${f(y-s*0.5)}Z" fill="#A89A80"/><path d="M${f(x+s*0.05)} ${f(y-s*0.5)}Q${f(x+s*0.38)} ${f(y-s*0.42)} ${f(x+s*0.4)} ${f(y+s*0.1)}L${f(x+s*0.16)} ${f(y+s*0.1)}Q${f(x+s*0.2)} ${f(y-s*0.3)} ${f(x+s*0.05)} ${f(y-s*0.5)}Z" fill="#8E826B" opacity=".55"/>`
+    +`<rect x="${f(x+s*0.5)}" y="${f(y+s*0.18)}" width="${f(s*0.22)}" height="${f(s*0.14)}" fill="#8D8068" transform="rotate(18 ${f(x+s*0.6)} ${f(y+s*0.25)})"/><path d="M${f(x-s*0.5)} ${f(y+s*0.1)}q${f(s*0.1)} ${f(-s*0.2)} ${f(s*0.25)} ${f(-s*0.1)}" stroke="#4E7A2A" stroke-width="${f(s*0.06)}" fill="none"/>`;
+  /* รอยไหม้และหญ้าแห้งจากสงคราม */
+  const scorch=(x,y,s)=>`<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(s)}" ry="${f(s*0.55)}" fill="#2A1A0E" opacity=".38"/><ellipse cx="${f(x+s*0.2)}" cy="${f(y-s*0.05)}" rx="${f(s*0.5)}" ry="${f(s*0.28)}" fill="#1A0F08" opacity=".35"/>`
+    +`<path d="M${f(x-s*0.3)} ${f(y)}l${f(s*0.05)} ${f(-s*0.4)}M${f(x+s*0.1)} ${f(y+s*0.05)}l${f(-s*0.03)} ${f(-s*0.45)}" stroke="#2A1A0E" stroke-width="2.2" stroke-linecap="round"/>`;
+  /* ธงรบที่ปักทิ้งไว้ */
+  const flag=(x,y,s)=>`<path d="M${f(x)} ${f(y+s*0.3)}L${f(x+s*0.05)} ${f(y-s*0.8)}" stroke="#4A2E17" stroke-width="${f(s*0.07)}"/><path d="M${f(x+s*0.05)} ${f(y-s*0.8)}L${f(x+s*0.55)} ${f(y-s*0.62)}L${f(x+s*0.3)} ${f(y-s*0.55)}L${f(x+s*0.5)} ${f(y-s*0.38)}L${f(x+s*0.04)} ${f(y-s*0.45)}Z" fill="#9E2A22"/>`;
+  const grass=(x,y,s)=>`<path d="M${f(x-s*0.3)} ${f(y)}q${f(s*0.05)} ${f(-s*0.4)} ${f(-s*0.15)} ${f(-s*0.6)}M${f(x)} ${f(y)}q0 ${f(-s*0.5)} ${f(s*0.1)} ${f(-s*0.75)}M${f(x+s*0.3)} ${f(y)}q${f(-s*0.05)} ${f(-s*0.35)} ${f(s*0.2)} ${f(-s*0.55)}" stroke="#6F8F2E" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  const sz=M.r;
+  /* แต่ละชนิด: [ฟังก์ชัน, จำนวนครั้งที่ลอง, ขนาด, รัศมีกันทับ, จับกลุ่ม] */
+  const kinds=[[hut,40,sz*0.85,sz*0.6,1],[stupa,24,sz*0.95,sz*0.6,0],[scorch,30,sz*0.9,sz*0.55,0],[flag,14,sz*0.7,sz*0.3,0],[tree,160,sz*0.78,sz*0.45,3],[pine,90,sz*0.75,sz*0.35,2],[bush,140,sz*0.52,sz*0.3,1],[rock,70,sz*0.5,sz*0.3,1],[grass,220,sz*0.42,sz*0.14,0]];
+  const lay=[[],[],[]];/* 0 พื้น · 1 ของบนพื้น */
+  for(const [fn,tries,s0,rad,clus] of kinds){for(let k=0;k<tries;k++){const x=rnd()*W,y=rnd()*H,s=s0*(0.8+rnd()*0.45);
+      if(!free(x,y,rad))continue;
+      const one=(xx,yy,ss)=>{put(xx,yy,rad);(fn===scorch||fn===grass?lay[0]:lay[1]).push([yy,fn(xx,yy,ss)])};one(x,y,s);
+      for(let c=0;c<clus;c++){const a=rnd()*6.28,d=rad*(1.4+rnd()*0.8),xx=x+Math.cos(a)*d,yy=y+Math.sin(a)*d*0.7;if(free(xx,yy,rad))one(xx,yy,s*(0.75+rnd()*0.3))}}}
+  /* วาดจากบนลงล่าง ของที่อยู่ล่างกว่าจะทับของที่อยู่ข้างหลัง */
+  const svg=`<g class="decor" aria-hidden="true">${lay[0].map(x=>x[1]).join('')}${lay[1].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('')}</g>`;
+  return DECOR_CACHE[key]=svg;
+}
 function mapSVG(S,clickable,selected,hl){hl=hl||[];
   const M=mapLayout(S),n=L(S);
   let lines='';
@@ -448,12 +501,12 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
       ${c.t>0||tt==='city'?'':glyph(tt,p.x,p.y,rr)}
       <text x="${p.x}" y="${p.y-rr*0.3}" text-anchor="middle" font-size="${fs}" fill="var(--muted)" font-family="Anuphan,sans-serif">${esc(lab)}</text>
       ${c.t>0?`<text x="${p.x}" y="${p.y+rr*0.4}" text-anchor="middle" font-size="${Math.max(17,rr*0.66)}" font-weight="700" fill="${SEATC(c.o)}" font-family="Anuphan,sans-serif">${hid?'?':c.t}</text>`:''}`}
-      ${ms.map((k,j)=>{const mx=p.x+rr*0.8-j*22,my=p.y-rr*0.82;return `<g class="mtok"><circle cx="${mx}" cy="${my}" r="14" fill="var(--surface)" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/>${MOUNT_ART.has(k)?(()=>{const [fx,fy]=MOUNT_FOCUS[k]||[.5,.3];const R2=12.5,W=R2*2*2.1,H=W*IMG_R;return `<clipPath id="mc-${k}"><circle cx="${mx}" cy="${my}" r="${R2}"/></clipPath><image href="img/mounts/${k}.webp" x="${(mx-fx*W).toFixed(1)}" y="${(my-fy*H).toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" clip-path="url(#mc-${k})" preserveAspectRatio="none"/><circle cx="${mx}" cy="${my}" r="14" fill="none" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/>`})():`<text x="${mx}" y="${my+6}" text-anchor="middle" font-size="16">${MOUNTS[k].ic}</text>`}<title>${MOUNTS[k].name} ของ${GOD[godOf(S,S.M[k].o)].name}</title></g>`}).join('')}
+      ${ms.map((k,j)=>{const mx=TILES?p.x+rr*0.84-j*24:p.x+rr*0.8-j*22,my=TILES?p.y+rr*0.7+j*9:p.y-rr*0.82;return `<g class="mtok"><circle cx="${mx}" cy="${my}" r="14" fill="var(--surface)" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/>${MOUNT_ART.has(k)?(()=>{const [fx,fy]=MOUNT_FOCUS[k]||[.5,.3];const R2=12.5,W=R2*2*2.1,H=W*IMG_R;return `<clipPath id="mc-${k}"><circle cx="${mx}" cy="${my}" r="${R2}"/></clipPath><image href="img/mounts/${k}.webp" x="${(mx-fx*W).toFixed(1)}" y="${(my-fy*H).toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" clip-path="url(#mc-${k})" preserveAspectRatio="none"/><circle cx="${mx}" cy="${my}" r="14" fill="none" stroke="${SEATC(S.M[k].o)}" stroke-width="3"/>`})():`<text x="${mx}" y="${my+6}" text-anchor="middle" font-size="16">${MOUNTS[k].ic}</text>`}<title>${MOUNTS[k].name} ของ${GOD[godOf(S,S.M[k].o)].name}</title></g>`}).join('')}
       ${i===0&&!TILES?`<text x="${p.x}" y="${p.y+rr*0.55}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Anuphan,sans-serif">2 คะแนน</text>`:''}
     </g>`;
   }
-  const defs=TILES?`<defs><pattern id="tgr" patternUnits="userSpaceOnUse" width="260" height="260"><image href="img/tiles/ground.webp" width="260" height="260"/></pattern><radialGradient id="tvig" cx="50%" cy="50%" r="65%"><stop offset="70%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#1A0D08" stop-opacity=".55"/></radialGradient></defs><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tgr)"/><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tvig)"/>`:'';
-  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่" class="${TILES?'tiled':''}">${defs}${lines}${cells}${showArrows()?arrowsSVG(S,M):''}</svg>`;
+  const defs=TILES?`<defs><pattern id="tgr" patternUnits="userSpaceOnUse" width="260" height="260"><image href="img/tiles/ground.webp" width="260" height="260"/></pattern><radialGradient id="tvig" cx="50%" cy="50%" r="65%"><stop offset="70%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#1A0D08" stop-opacity=".55"/></radialGradient></defs><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tgr)"/><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="#2B2410" opacity=".34"/><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tvig)"/>`:'';
+  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่" class="${TILES?'tiled':''}">${defs}${TILES?decorSVG(S,M):''}${lines}${cells}${showArrows()?arrowsSVG(S,M):''}</svg>`;
 }
 
 const mapInfoAttr=S=>`data-info="map:${esc(mapOf(S).id)}" data-tip="${esc(mapOf(S).desc)}" aria-haspopup="dialog"`;
