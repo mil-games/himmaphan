@@ -430,44 +430,39 @@ function decorSVG(S,M){
   const free=(x,y,r)=>x>r&&x<W-r&&y>r&&y<H-r&&block.every(([bx,by,br])=>Math.hypot(x-bx,y-by)>br+r);
   const placed=[];const put=(x,y,r)=>{placed.push([x,y,r]);block.push([x,y,r*0.7])};
   const out=[];const f=v=>v.toFixed(1);
-  const shadow=(x,y,rx)=>`<ellipse cx="${f(x+rx*0.25)}" cy="${f(y+rx*0.35)}" rx="${f(rx)}" ry="${f(rx*0.42)}" fill="#1B1405" opacity=".35"/>`;
-  const G=['#2F5A1E','#3B6B24','#4C7D2B','#5E8F33'];
-  const tree=(x,y,s)=>{const c=G[Math.floor(rnd()*3)];return shadow(x,y+s*0.5,s*0.9)+`<rect x="${f(x-s*0.09)}" y="${f(y)}" width="${f(s*0.18)}" height="${f(s*0.55)}" fill="#5A3A1E"/>`
-    +`<circle cx="${f(x-s*0.32)}" cy="${f(y-s*0.05)}" r="${f(s*0.42)}" fill="${c}"/><circle cx="${f(x+s*0.3)}" cy="${f(y-s*0.02)}" r="${f(s*0.4)}" fill="${c}"/><circle cx="${f(x)}" cy="${f(y-s*0.35)}" r="${f(s*0.5)}" fill="${c}"/>`
-    +`<circle cx="${f(x-s*0.12)}" cy="${f(y-s*0.5)}" r="${f(s*0.22)}" fill="#8DB24A" opacity=".55"/>`};
-  const pine=(x,y,s)=>shadow(x,y+s*0.45,s*0.7)+`<rect x="${f(x-s*0.07)}" y="${f(y+s*0.15)}" width="${f(s*0.14)}" height="${f(s*0.35)}" fill="#4A2E17"/><path d="M${f(x)} ${f(y-s*0.95)}L${f(x+s*0.45)} ${f(y+s*0.2)}L${f(x-s*0.45)} ${f(y+s*0.2)}Z" fill="#244A1A"/><path d="M${f(x)} ${f(y-s*0.95)}L${f(x+s*0.12)} ${f(y-s*0.3)}L${f(x-s*0.22)} ${f(y+s*0.1)}L${f(x-s*0.45)} ${f(y+s*0.2)}Z" fill="#3F7028" opacity=".8"/>`;
-  const bush=(x,y,s)=>shadow(x,y+s*0.2,s*0.6)+`<circle cx="${f(x-s*0.25)}" cy="${f(y)}" r="${f(s*0.3)}" fill="#3E6A22"/><circle cx="${f(x+s*0.22)}" cy="${f(y+s*0.02)}" r="${f(s*0.28)}" fill="#4A7A28"/><circle cx="${f(x)}" cy="${f(y-s*0.15)}" r="${f(s*0.32)}" fill="#55892E"/>${rnd()<.4?`<circle cx="${f(x+s*0.1)}" cy="${f(y-s*0.2)}" r="${f(s*0.07)}" fill="#E8C34A"/><circle cx="${f(x-s*0.2)}" cy="${f(y-s*0.05)}" r="${f(s*0.06)}" fill="#E07A5F"/>`:''}`;
-  const rock=(x,y,s)=>shadow(x,y+s*0.15,s*0.6)+`<path d="M${f(x-s*0.55)} ${f(y+s*0.2)}L${f(x-s*0.35)} ${f(y-s*0.25)}L${f(x+s*0.05)} ${f(y-s*0.4)}L${f(x+s*0.5)} ${f(y-s*0.1)}L${f(x+s*0.55)} ${f(y+s*0.2)}Z" fill="#8A8170"/><path d="M${f(x-s*0.35)} ${f(y-s*0.25)}L${f(x+s*0.05)} ${f(y-s*0.4)}L${f(x+s*0.1)} ${f(y+s*0.2)}L${f(x-s*0.55)} ${f(y+s*0.2)}Z" fill="#A9A08C"/>`
-    +(rnd()<.6?`<path d="M${f(x+s*0.4)} ${f(y+s*0.22)}L${f(x+s*0.55)} ${f(y-s*0.02)}L${f(x+s*0.85)} ${f(y+s*0.22)}Z" fill="#7A7262"/>`:'');
-  /* บ้านไม้ทรงไทยหลังคาพัง */
-  const hut=(x,y,s)=>{const burnt=rnd()<.5;return shadow(x,y+s*0.35,s*0.95)
-    +`<rect x="${f(x-s*0.5)}" y="${f(y-s*0.1)}" width="${f(s)}" height="${f(s*0.45)}" fill="${burnt?'#4A3324':'#8B5E34'}"/><rect x="${f(x-s*0.1)}" y="${f(y+s*0.08)}" width="${f(s*0.2)}" height="${f(s*0.27)}" fill="#2A1A10"/>`
-    +`<path d="M${f(x-s*0.65)} ${f(y-s*0.08)}L${f(x-s*0.05)} ${f(y-s*0.7)}L${f(x+s*0.2)} ${f(y-s*0.42)}L${f(x+s*0.05)} ${f(y-s*0.3)}L${f(x+s*0.35)} ${f(y-s*0.2)}L${f(x+s*0.65)} ${f(y-s*0.08)}Z" fill="${burnt?'#3A2A1E':'#6B4423'}"/>`
-    +`<path d="M${f(x+s*0.2)} ${f(y-s*0.42)}L${f(x+s*0.45)} ${f(y-s*0.15)}" stroke="#2A1A10" stroke-width="${f(s*0.06)}"/>`
-    +`<path d="M${f(x+s*0.35)} ${f(y+s*0.35)}l${f(s*0.25)} ${f(-s*0.05)}l${f(s*0.12)} ${f(s*0.04)}" stroke="#5A3A1E" stroke-width="${f(s*0.07)}" fill="none"/>`
-    +(burnt?`<circle cx="${f(x+s*0.1)}" cy="${f(y-s*0.85)}" r="${f(s*0.18)}" fill="#6E6A62" opacity=".35"/><circle cx="${f(x+s*0.22)}" cy="${f(y-s*1.15)}" r="${f(s*0.24)}" fill="#6E6A62" opacity=".22"/>`:'')};
-  /* เจดีย์ร้างยอดหัก */
-  const stupa=(x,y,s)=>shadow(x,y+s*0.3,s*0.8)+`<rect x="${f(x-s*0.55)}" y="${f(y+s*0.1)}" width="${f(s*1.1)}" height="${f(s*0.22)}" fill="#9C8F78"/><path d="M${f(x-s*0.4)} ${f(y+s*0.1)}Q${f(x-s*0.42)} ${f(y-s*0.45)} ${f(x)} ${f(y-s*0.5)}Q${f(x+s*0.42)} ${f(y-s*0.45)} ${f(x+s*0.4)} ${f(y+s*0.1)}Z" fill="#B8AA8E"/>`
-    +`<path d="M${f(x-s*0.12)} ${f(y-s*0.5)}L${f(x-s*0.06)} ${f(y-s*0.95)}L${f(x+s*0.04)} ${f(y-s*0.8)}L${f(x+s*0.12)} ${f(y-s*0.5)}Z" fill="#A89A80"/><path d="M${f(x+s*0.05)} ${f(y-s*0.5)}Q${f(x+s*0.38)} ${f(y-s*0.42)} ${f(x+s*0.4)} ${f(y+s*0.1)}L${f(x+s*0.16)} ${f(y+s*0.1)}Q${f(x+s*0.2)} ${f(y-s*0.3)} ${f(x+s*0.05)} ${f(y-s*0.5)}Z" fill="#8E826B" opacity=".55"/>`
-    +`<rect x="${f(x+s*0.5)}" y="${f(y+s*0.18)}" width="${f(s*0.22)}" height="${f(s*0.14)}" fill="#8D8068" transform="rotate(18 ${f(x+s*0.6)} ${f(y+s*0.25)})"/><path d="M${f(x-s*0.5)} ${f(y+s*0.1)}q${f(s*0.1)} ${f(-s*0.2)} ${f(s*0.25)} ${f(-s*0.1)}" stroke="#4E7A2A" stroke-width="${f(s*0.06)}" fill="none"/>`;
-  /* รอยไหม้และหญ้าแห้งจากสงคราม */
-  const scorch=(x,y,s)=>`<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(s)}" ry="${f(s*0.55)}" fill="#2A1A0E" opacity=".38"/><ellipse cx="${f(x+s*0.2)}" cy="${f(y-s*0.05)}" rx="${f(s*0.5)}" ry="${f(s*0.28)}" fill="#1A0F08" opacity=".35"/>`
-    +`<path d="M${f(x-s*0.3)} ${f(y)}l${f(s*0.05)} ${f(-s*0.4)}M${f(x+s*0.1)} ${f(y+s*0.05)}l${f(-s*0.03)} ${f(-s*0.45)}" stroke="#2A1A0E" stroke-width="2.2" stroke-linecap="round"/>`;
-  /* ธงรบที่ปักทิ้งไว้ */
-  const flag=(x,y,s)=>`<path d="M${f(x)} ${f(y+s*0.3)}L${f(x+s*0.05)} ${f(y-s*0.8)}" stroke="#4A2E17" stroke-width="${f(s*0.07)}"/><path d="M${f(x+s*0.05)} ${f(y-s*0.8)}L${f(x+s*0.55)} ${f(y-s*0.62)}L${f(x+s*0.3)} ${f(y-s*0.55)}L${f(x+s*0.5)} ${f(y-s*0.38)}L${f(x+s*0.04)} ${f(y-s*0.45)}Z" fill="#9E2A22"/>`;
-  const grass=(x,y,s)=>`<path d="M${f(x-s*0.3)} ${f(y)}q${f(s*0.05)} ${f(-s*0.4)} ${f(-s*0.15)} ${f(-s*0.6)}M${f(x)} ${f(y)}q0 ${f(-s*0.5)} ${f(s*0.1)} ${f(-s*0.75)}M${f(x+s*0.3)} ${f(y)}q${f(-s*0.05)} ${f(-s*0.35)} ${f(s*0.2)} ${f(-s*0.55)}" stroke="#6F8F2E" stroke-width="2" fill="none" stroke-linecap="round"/>`;
   const sz=M.r;
-  /* แต่ละชนิด: [ฟังก์ชัน, จำนวนครั้งที่ลอง, ขนาด, รัศมีกันทับ, จับกลุ่ม] */
-  const kinds=[[hut,40,sz*0.85,sz*0.6,1],[stupa,24,sz*0.95,sz*0.6,0],[scorch,30,sz*0.9,sz*0.55,0],[flag,14,sz*0.7,sz*0.3,0],[tree,160,sz*0.78,sz*0.45,3],[pine,90,sz*0.75,sz*0.35,2],[bush,140,sz*0.52,sz*0.3,1],[rock,70,sz*0.5,sz*0.3,1],[grass,220,sz*0.42,sz*0.14,0]];
-  const lay=[[],[],[]];/* 0 พื้น · 1 ของบนพื้น */
-  for(const [fn,tries,s0,rad,clus] of kinds){for(let k=0;k<tries;k++){const x=rnd()*W,y=rnd()*H,s=s0*(0.8+rnd()*0.45);
-      if(!free(x,y,rad))continue;
-      const one=(xx,yy,ss)=>{put(xx,yy,rad);(fn===scorch||fn===grass?lay[0]:lay[1]).push([yy,fn(xx,yy,ss)])};one(x,y,s);
-      for(let c=0;c<clus;c++){const a=rnd()*6.28,d=rad*(1.4+rnd()*0.8),xx=x+Math.cos(a)*d,yy=y+Math.sin(a)*d*0.7;if(free(xx,yy,rad))one(xx,yy,s*(0.75+rnd()*0.3))}}}
+  /* ภาพของประดับ (img/decor) วางให้ฐานภาพอยู่ที่จุด x,y · [ชื่อ, กว้าง/สูง, สูง(เท่าของรัศมีช่อง), ครั้งที่ลอง, รัศมีกันทับ, จับกลุ่ม, พื้น] */
+  const pic=(n,ar,hh,flip)=>(x,y,s)=>{const h=s,w=h*ar;const fl=flip&&rnd()<.5;
+    return `<ellipse cx="${f(x)}" cy="${f(y-h*0.02)}" rx="${f(w*0.42)}" ry="${f(w*0.13)}" fill="#120C04" opacity=".38"/><image href="img/decor/${n}.webp" x="${f(fl?-x-w/2:x-w/2)}" y="${f(y-h*0.96)}" width="${f(w)}" height="${f(h)}"${fl?' transform="scale(-1,1)"':''}/>`};
+  const flat=(n,ar)=>(x,y,s)=>{const w=s,h=w/ar;return `<image href="img/decor/${n}.webp" x="${f(x-w/2)}" y="${f(y-h/2)}" width="${f(w)}" height="${f(h)}" opacity=".9"/>`};
+  const kinds=[
+    [pic('hut',.927,1,1),14,sz*1.35,sz*0.62,0],[pic('stupa',.737,1,1),9,sz*1.55,sz*0.55,0],[pic('cart',1.071,1,1),8,sz*0.9,sz*0.5,0],[pic('flag',.55,1,1),8,sz*1.1,sz*0.32,0],
+    [flat('scorch',1.107),16,sz*1.5,sz*0.6,0,1],
+    [pic('tree',.973,1,1),110,sz*1.55,sz*0.55,2],[pic('trees',.973,1,1),70,sz*1.7,sz*0.62,1],[pic('cypress',.27,1,0),90,sz*1.45,sz*0.24,2],
+    [pic('bush',1.038,1,1),120,sz*0.7,sz*0.32,1],[pic('rocks',1.045,1,1),40,sz*0.72,sz*0.34,0]];
+  const lay=[[],[]];
+  for(const [fn,tries,s0,rad,clus,ground] of kinds){for(let k=0;k<tries;k++){const x=rnd()*W,y=rnd()*H,sc=s0*(0.82+rnd()*0.36);
+      /* ของสูงต้องเช็คส่วนบนด้วย ไม่ให้ยอดไม้ไปทับทางหรือช่อง */
+      const ok=(xx,yy,ss)=>free(xx,yy,rad)&&(ground||(free(xx,yy-ss*0.45,rad*0.9)&&free(xx,yy-ss*0.8,rad*0.7)));
+      if(!ok(x,y,sc))continue;
+      const one=(xx,yy,ss)=>{put(xx,yy,rad);if(!ground){put(xx,yy-ss*0.45,rad*0.9);put(xx,yy-ss*0.8,rad*0.7)}(ground?lay[0]:lay[1]).push([yy,fn(xx,yy,ss)])};one(x,y,sc);
+      for(let c=0;c<clus;c++){const a=rnd()*6.28,d=rad*(1.5+rnd()*0.8),xx=x+Math.cos(a)*d,yy=y+Math.sin(a)*d*0.7,s2=sc*(0.75+rnd()*0.3);if(ok(xx,yy,s2))one(xx,yy,s2)}}}
   /* วาดจากบนลงล่าง ของที่อยู่ล่างกว่าจะทับของที่อยู่ข้างหลัง */
   const svg=`<g class="decor" aria-hidden="true">${lay[0].map(x=>x[1]).join('')}${lay[1].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('')}</g>`;
   return DECOR_CACHE[key]=svg;
 }
+/* กลางคืน: พื้นมืดลง ช่องที่มีคนอยู่ (เมือง วัด เขา) มีแสงตะเกียงอุ่นๆ รอบช่อง */
+function nightUnder(S,M){
+  let g=`<defs><radialGradient id="nglow"><stop offset="0%" stop-color="#FFC765" stop-opacity=".55"/><stop offset="55%" stop-color="#FF9A3C" stop-opacity=".18"/><stop offset="100%" stop-color="#FF9A3C" stop-opacity="0"/></radialGradient></defs>
+    <rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="#081030" opacity=".58"/>`;
+  for(let i=0;i<S.B.length;i++){const t=ctype(S,i);if(!(t==='city'||t==='temple'||i===0))continue;const p=M.pos[i],r=(i===0?M.r*1.7:M.r)*2.1;
+    g+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}" fill="url(#nglow)"/>`}
+  return `<g aria-hidden="true">${g}</g>`}
+/* หิ่งห้อย: จุดแสงลอยไปมาและกะพริบ ตำแหน่งสุ่มคงที่ตามห้อง */
+function fireflies(S,M){const rnd=mrng(((S.seed||1)*977)^0x6A09E667);const n=Math.round(M.W*M.H/16000);let g='';
+  for(let k=0;k<n;k++){const x=rnd()*M.W,y=rnd()*M.H,r=3+rnd()*3.5,dx=(rnd()-.5)*70,dy=(rnd()-.5)*50,dur=5+rnd()*7,del=-rnd()*dur;
+    g+=`<circle class="ffly" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*2.6).toFixed(1)}" fill="url(#ffg)" style="--dx:${dx.toFixed(0)}px;--dy:${dy.toFixed(0)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${del.toFixed(1)}s"/>`}
+  return `<defs><radialGradient id="ffg"><stop offset="0%" stop-color="#FFFDE0"/><stop offset="22%" stop-color="#F2FF7A" stop-opacity=".95"/><stop offset="50%" stop-color="#C8F25A" stop-opacity=".3"/><stop offset="100%" stop-color="#C8F25A" stop-opacity="0"/></radialGradient></defs><g class="fflies" aria-hidden="true">${g}</g>`}
 function mapSVG(S,clickable,selected,hl){hl=hl||[];
   const M=mapLayout(S),n=L(S);
   let lines='';
@@ -506,7 +501,8 @@ function mapSVG(S,clickable,selected,hl){hl=hl||[];
     </g>`;
   }
   const defs=TILES?`<defs><pattern id="tgr" patternUnits="userSpaceOnUse" width="260" height="260"><image href="img/tiles/ground.webp" width="260" height="260"/></pattern><radialGradient id="tvig" cx="50%" cy="50%" r="65%"><stop offset="70%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#1A0D08" stop-opacity=".55"/></radialGradient></defs><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tgr)"/><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="#2B2410" opacity=".34"/><rect x="-40" y="-40" width="${M.W+80}" height="${M.H+80}" fill="url(#tvig)"/>`:'';
-  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่" class="${TILES?'tiled':''}">${defs}${TILES?decorSVG(S,M):''}${lines}${cells}${showArrows()?arrowsSVG(S,M):''}</svg>`;
+  const night=TILES&&S.moon==='wane';
+  return `<svg viewBox="0 0 ${M.W} ${M.H}" aria-label="แผนที่" class="${TILES?'tiled':''}${night?' night':''}">${defs}${TILES?decorSVG(S,M):''}${lines}${night?nightUnder(S,M):''}${cells}${night?fireflies(S,M):''}${showArrows()?arrowsSVG(S,M):''}</svg>`;
 }
 
 const mapInfoAttr=S=>`data-info="map:${esc(mapOf(S).id)}" data-tip="${esc(mapOf(S).desc)}" aria-haspopup="dialog"`;
