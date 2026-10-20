@@ -1081,7 +1081,7 @@ function playersBox(S,act){
      ${S.status==='play'?`<p class="small" style="margin:10px 0 0"><b>รอบหน้า</b> (ถ้าคะแนนเป็นแบบตอนนี้): ${nxt.map((s,i)=>`<span class="nxt"><span class="ordno sm" style="background:${SEATC(s)}">${i+1}</span>${esc(gname(S,s))}</span>`).join(' ')}</p>`:''}
      ${act>=0&&GOD[godOf(S,act)]?`<p class="small muted" style="margin-top:6px">${esc(GOD[godOf(S,act)].ab)}: ${esc(GOD[godOf(S,act)].txt)}</p>`:''}</div>`;
 }
-const SHOP={open:false,tab:'pw'};
+const SHOP={open:false,tab:'pw',modal:false};
 function shopBox(S,s,live){
   const canBuy=live&&!S.follow&&!S.battle&&!S.retreat&&!S.disarm&&actionOK(S,s,'buy');
   const lab={ok:'',mine:'ของคุณ',taken:'มีเจ้าของ',locked:'ต้องมีเลเวลก่อนหน้า',poor:'บุญไม่พอ',off:'ปิดในห้องนี้',todo:'ยังไม่เปิด'};
@@ -1090,20 +1090,26 @@ function shopBox(S,s,live){
   const freeM=MK.filter(k=>!S.M[k]).length;const freeP=POWERS.filter(p=>!p.todo&&powerState(S,s,p.id)!=='off'&&!S.P.some(q=>q.pw.includes(p.id))).length;
   const note=!live?`<p class="small muted">ยังไม่ใช่ตาคุณ เปิดดูวางแผนได้ ราคาและสถานะคิดจาก${esc(gname(S,s))}</p>`:canBuy?'':`<p class="small muted">${S.battle||S.follow||S.retreat||S.disarm?'ซื้อได้หลังศึกนี้จบ':'รอบนี้ใช้แอคชันขอพรไปแล้ว'}</p>`;
   const tab=(id,label)=>`<button class="shoptab ${SHOP.tab===id?'on':''}" data-shoptab="${id}" role="tab" aria-selected="${SHOP.tab===id}">${label}</button>`;
-  return `<details class="panel shopwrap" ${SHOP.open?'open':''} id="shopd"><summary>ขอพร (บุญ${live?'คุณ':'ของ'+esc(gname(S,s))} ${S.P[s].merit})</summary>
-   <div class="stack" style="margin-top:10px">
+  const inner=`<div class="stack" style="margin-top:10px">
    <div class="shoptabs" role="tablist">${tab('pw',`${ico('tab-cards','tabic')} การ์ดพลัง <span class="muted">(เหลือ ${freeP})</span>`)}${tab('mount',`${ico('tab-mounts','tabic')} สัตว์พาหนะ <span class="muted">(ว่าง ${freeM})</span>`)}</div>
    ${note}
    ${SHOP.tab==='pw'?`<div class="shop pwshop c${activeLines(S).length}">${activeLines(S).map(col).join('')}</div>`
      :`<div class="shop mshop">${MK.map(k=>{const st=mountState(S,s,k);const m=MOUNTS[k];const own=OWNER_GOD[k]===godOf(S,s);
      return `<button class="pw mnt ${st==='ok'&&canBuy?'can':''} ${st==='mine'||st==='taken'?'owned':''}" data-mount="${k}" ${st==='ok'&&canBuy?'':'disabled'}><span class="nm"><span><span class="mic">${mPic(k)}</span>${m.name}</span><span class="cost tab"><span>${priceOf(S,s,{mount:k})} บุญ</span></span></span><span class="tx">${m.txt} · ถิ่น: ${HOME[k]} +1${own&&m.bonus?' · <b>ของคุณได้โบนัส</b>: '+m.bonus.split(': ')[1]:''}${lab[st]?'<br><i>'+(st==='taken'?'เป็นของ'+esc(gname(S,S.M[k].o)):lab[st])+'</i>':''}</span></button>`}).join('')}</div>`}
-   </div></details>`;
+   </div>`;
+  const head=`ขอพร (บุญ${live?'คุณ':'ของ'+esc(gname(S,s))} ${S.P[s].merit})`;
+  /* กดขอพรแล้ว ร้านเด้งขึ้นกลางจอ · ร้านด้านล่างยังอยู่ไว้เปิดอ่านตอนคนอื่นเล่น */
+  const modal=SHOP.modal&&canBuy?`<div class="pop shoppop" id="shoppop" role="dialog" aria-modal="true" aria-label="ขอพร"><div class="panel shopmodal"><div class="row shophead"><h3>${head}</h3><button class="ghost small" id="shopx" aria-label="ปิด">ปิด ✕</button></div>${inner}</div></div>`:'';
+  if(!(SHOP.modal&&canBuy))SHOP.modal=false;
+  return `<details class="panel shopwrap" ${SHOP.open?'open':''} id="shopd"><summary>${head}</summary>${SHOP.modal?'<p class="small muted" style="margin-top:8px">เปิดร้านอยู่กลางจอ</p>':inner}</details>${modal}`;
 }
 function wireGame(S,act){
   const $=id=>document.getElementById(id);
   const b2=$('back2');if(b2)b2.onclick=showLobby;
   const re=()=>render();
   const sd=$('shopd');if(sd)sd.ontoggle=()=>{if(SHOP.open!==sd.open)sfx('page');SHOP.open=sd.open};
+  {const sp=$('shoppop');if(sp){const close=()=>{SHOP.modal=false;sfx('page');re()};$('shopx').onclick=close;sp.onclick=e=>{if(e.target===sp)close()};
+    document.onkeydown=e=>{if(e.key==='Escape'&&SHOP.modal){document.onkeydown=null;close()}};const f=sp.querySelector('.shoptab.on')||$('shopx');try{f.focus({preventScroll:true})}catch(e){}}}
   app.querySelectorAll('[data-shoptab]').forEach(b=>b.onclick=()=>{SHOP.tab=b.dataset.shoptab;SHOP.open=true;sfx('page');re()});
   if($('cancel'))$('cancel').onclick=()=>{ui={mode:null,shop:ui.shop};re()};
   app.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
@@ -1111,7 +1117,7 @@ function wireGame(S,act){
     if(a==='move'){ui={mode:'move-src',shop:ui.shop};re()}
     else if(a==='recruit'){const t=recruitTargets(S,act).filter(j=>recruitN(S,act,j)>0);if(t.length===1)doRecruit(t[0]);else{ui={mode:'recruit',shop:ui.shop};re()}}
     else if(a==='merit'){if(has(S,act,'atone')||S.P[act].sin===0)doMerit('merit');else{ui={mode:'merit'};re()}}
-    else if(a==='buy'){SHOP.open=true;re();const d=$('shopd');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}}
+    else if(a==='buy'){SHOP.modal=true;sfx('page');re()}
   });
   app.querySelectorAll('[data-mm]').forEach(b=>b.onclick=()=>doMerit(b.dataset.mm));
   if($('pass'))$('pass').onclick=doPass;
@@ -1172,7 +1178,7 @@ function doMerit(kind){const s=activeSeat(G);ui={mode:null};
     else{p.merit+=g;log(T,`${gname(T,s)} ทำบุญ +${g}`)}
     const mb=monkBonus(T,s);if(mb)log(T,`${gname(T,s)}${mb.replace(' · ',' ')}`);
     markAction(T,s,'merit');advance(T)}).then(ok=>{if(ok)sfx('merit')})}
-function doBuy(item){const s=activeSeat(G);ui={mode:null};
+function doBuy(item){const s=activeSeat(G);ui={mode:null};SHOP.modal=false;
   mutate(GID,T=>{if(!guard(T,s)||!actionOK(T,s,'buy'))return false;const p=T.P[s];
     if(item.pw){if(powerState(T,s,item.pw)!=='ok')return false;const c=priceOf(T,s,item);p.merit-=c;p.pw.push(item.pw);
       if(['vpR','vpK','vpB','vpM'].includes(item.pw))p.vp+=1;log(T,`${gname(T,s)} ขอพรได้${PW[item.pw].name} (−${c} บุญ)`)}
@@ -1249,7 +1255,7 @@ const TSTEPS=[
  {k:'do',t:'บุก!',hl:[3],allow:['move'],b:`บอทมีทหาร 2 ตัวในทุ่งข้างเมืองคุณ ลองบุก: กด <b>เดินทัพ</b> → เมืองของคุณ → ทุ่งที่มีวงประ → ส่งทหารให้มากที่สุด แล้ว<b>เลือกการ์ดรบ</b><br><b>พลังรบ</b> = ทหาร + พลังการ์ด + โบนัส ใครสูงกว่าชนะ (เสมอฝ่ายรับชนะ)<br><b>แต้มฆ่า</b> ของการ์ดคือจำนวนทหารที่อีกฝ่ายเสีย ทั้งสองฝ่ายเสียทหารเสมอ<br>คำแนะนำ: ลองเลือก <b>ตั้งมั่น (พลัง 3)</b> เพื่อให้ชนะชัวร์`,done:S=>!!(S.last&&S.last.A===0)},
  {k:'do',t:'วชิราวุธของพระอินทร์',allow:[],b:`ดูกล่อง <b>ศึกล่าสุด</b> ว่าพลังรบมาจากไหน ฝ่ายแพ้ที่เหลือรอดต้องถอยไป 1 ช่อง โดยฝ่ายชนะเป็นคนเลือกช่อง (ถ้ามีช่องเดียวระบบถอยให้เอง)<br>หลังเดินทัพ พระอินทร์ใช้ <b>วชิราวุธ</b> ได้รอบละครั้ง ทำให้กองศัตรูที่อยู่ติดกับกองคุณเสียทหาร 1 ตัวโดยไม่ต้องรบ ลองกด <b>ใช้วชิราวุธ</b> แล้วเลือกกองศัตรู หรือกด <b>จบตา</b>`,done:S=>!S.follow&&!S.battle&&!S.retreat},
  {k:'info',t:'บาป: ราคาของสงคราม',b:`บุกชนะได้คะแนนถาวร แต่ได้ <b>บาป +1</b> ด้วย (ดูในแถบผู้เล่น) ถ้าบาปถึง <b>3</b> จะเสียทหาร 2 ตัวทันที<br>บุกบ่อยได้คะแนนเร็ว แต่ต้องหาจังหวะทำบุญลบบาป นี่คือการตัดสินใจหลักของเกม`},
- {k:'do',t:'ขอพร',allow:['buy'],b:`เปิดรายการ <b>ขอพร</b> ด้านล่าง แล้วซื้อการ์ดพลังเลเวล 1 สักใบ (การ์ดที่สีชัดไม่จางคือซื้อได้ ขอบแดง = สายฤทธิ์ น้ำเงิน = สายคุ้มกัน เหลือง = สายบุญ) การ์ดเลเวล 2 ต้องมีเลเวล 1 ในสายเดียวกันก่อน<br>หรือจะซื้อ <b>ช้างเอราวัณ</b> พาหนะประจำองค์ก็ได้ ถ้าบุญพอ`,done:S=>S.P[0].pw.length>0||mountsOf(S,0).length>0},
+ {k:'do',t:'ขอพร',allow:['buy'],b:`กดปุ่ม <b>ขอพร</b> ร้านจะเด้งขึ้นกลางจอ แล้วซื้อการ์ดพลังเลเวล 1 สักใบ (การ์ดที่สีชัดไม่จางคือซื้อได้ ขอบแดง = สายฤทธิ์ น้ำเงิน = สายคุ้มกัน เหลือง = สายบุญ) การ์ดเลเวล 2 ต้องมีเลเวล 1 ในสายเดียวกันก่อน<br>หรือจะซื้อ <b>ช้างเอราวัณ</b> พาหนะประจำองค์ก็ได้ ถ้าบุญพอ`,done:S=>S.P[0].pw.length>0||mountsOf(S,0).length>0},
  {k:'do',t:'ลบบาป',allow:['merit'],b:`แอคชันสุดท้ายของรอบนี้ กด <b>ทำบุญ</b> แล้วเลือก <b>ลบบาป 1</b> ถ้ามีบาปอยู่`,done:S=>S.round>2||(S.round===2&&S.P[0].used.includes('merit'))},
  {k:'end',t:'พร้อมรบแล้ว!',b:`คุณรู้กติกาหลักครบแล้ว ยังมีอีกหลายอย่างให้ลองเอง: เทพแต่ละองค์มีพลังไม่เหมือนกัน พาหนะของเทพเจ้าของได้โบนัสเพิ่ม และ <b>ครุฑข่มนาค</b> ได้ +2<br>จะเล่นต่อกับบอทในห้องนี้ก็ได้ หรือกลับไปเปิดห้องจริงชวนเพื่อน`}
 ];
