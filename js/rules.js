@@ -2,14 +2,14 @@
 /* ===================== DATA ===================== */
 const GODS=[
  {k:'indra',name:'พระอินทร์',mount:'erawan',ab:'วชิราวุธ',txt:'รอบละครั้ง หลังเดินทัพ ทำให้กองศัตรูที่ติดกับกองที่เพิ่งเดินเสียทหาร 1 ตัว',weak:'ไม่มีโบนัสตอนรบ'},
- {k:'narai',name:'พระนารายณ์',mount:'garuda',ab:'อวตาร',txt:'รอบละครั้ง ย้ายพาหนะไปกองไหนก็ได้ของตัวเอง หรือสลับตำแหน่งกอง 2 กองของตัวเอง (ฟรี)',weak:'ไม่มีโบนัสตอนรบ'},
+ {k:'narai',name:'พระนารายณ์',mount:'garuda',ab:'อวตาร',txt:'รอบละครั้ง ย้ายพาหนะไปกองไหนก็ได้ของตัวเอง หรือสลับตำแหน่งกอง 2 กองของตัวเอง (ฟรี) · รบกับทศกัณฐ์ +1',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'brahma',name:'พระพรหม',mount:'hong',ab:'สร้างสรรพสิ่ง',txt:'เกณฑ์ทัพได้ 3 ตัว (จ่ายบุญแค่ 2) และเกณฑ์ลงวัดที่ยึดอยู่ได้',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'shiva',name:'พระอิศวร',mount:'nonthi',ab:'ระบำทำลายล้าง',txt:'บุกชนะได้แต้มโทสะ 1 (สูงสุด 3) บุก +1 ต่อแต้ม รอบไหนไม่บุก แต้มหายหมด',weak:'บุกชนะได้บาป +2'},
  {k:'yama',name:'พระยม',mount:'buffalo',ab:'ยมโลก',txt:'ทหารตายในศึกที่คุณเกี่ยว ได้บุญ +1 ต่อตัว',weak:'ไม่มีโบนัสตอนรบ'},
- {k:'agni',name:'พระเพลิง',mount:'rhino',ab:'เผาผลาญ',txt:'บุกได้พลังรบ +1',weak:'ตั้งรับ −1'},
+ {k:'agni',name:'พระเพลิง',mount:'rhino',ab:'เผาผลาญ',txt:'บุกชนะ เลือกได้ว่าจะให้ฝ่ายรับเสียทหารเพิ่ม 1 ตัว หรือเสียบุญ 1',weak:'ไม่มีโบนัสพลังรบ'},
  {k:'varuna',name:'พระพิรุณ',mount:'naga',ab:'หลั่งฝน',txt:'จบรอบได้บุญ +1 ต่อวัด และตั้งรับในวัด +1',weak:'บุกไม่มีโบนัส'},
- {k:'surya',name:'พระอาทิตย์',mount:'rajasi',ab:'สุริยเดช',txt:'กลางวัน พลังรบ +1 ทั้งบุกและรับ และจบรอบกลางวัน กองในวัดที่มีไม่ถึง 3 ได้ทหาร +1',weak:'กลางคืน ตั้งรับ −1'},
- {k:'chan',name:'พระจันทร์',mount:'durong',ab:'จันทรคติ',txt:'กลางคืน ตั้งรับ +1 และกองที่ไม่ได้ขยับทั้งรอบ ตั้งรับ +1',weak:'กลางวันเหลือแค่โบนัสกองที่ไม่ได้ขยับ'},
+ {k:'tosakan',name:'ทศกัณฐ์',mount:'rajasi',ab:'ทศพักตร์',txt:'กองนอกเมืองจุทหารได้ 6 ตัว และบุกด้วยทหารมากกว่าฝ่ายรับ พลังรบ +1 · รบกับพระนารายณ์ +1',weak:'ไม่มีโบนัสตอนตั้งรับ'},
+ {k:'montho',name:'นางมณโฑ',mount:'durong',ab:'มนตร์มณโฑ',txt:'กลางคืน ตั้งรับ +2 · กลางวัน บุก +2',weak:'กลางคืนบุกและกลางวันตั้งรับไม่มีโบนัส'},
  {k:'jupiter',name:'พระพฤหัสบดี',mount:'kwang',ab:'ครูเทวดา',txt:'ตอนยึดวัดหรือเขาพระสุเมรุอยู่ การ์ดพลังเลเวล 2–3 ถูกลง 1 บุญ',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'ganga',name:'พระแม่คงคา',mount:'makara',ab:'สายน้ำศักดิ์สิทธิ์',txt:'รบในช่องริมน้ำ +1 ทั้งบุกและรับ และเดินจากริมน้ำไปริมน้ำไหนก็ได้',weak:'รบนอกริมน้ำไม่มีโบนัส'},
  {k:'vayu',name:'พระพาย',mount:'kraisorn',ab:'วายุ',txt:'เดินทัพได้ 2 ช่อง ทั้งกลางวันและกลางคืน ก้าวที่ 2 บุกได้ (แต่เข้าวัดหรือเขาไม่ได้)',weak:'กองนอกเมืองมีได้แค่ 4 ตัว'},
@@ -17,16 +17,18 @@ const GODS=[
  {k:'vessuwan',name:'ท้าวเวสสุวรรณ',mount:'asura',ab:'จอมอสูร',txt:'บุกชนะ ขโมยบุญฝ่ายแพ้ 1 และคนอื่นไม่เห็นการ์ดรบในมือคุณ',weak:'บาปเต็มเสียทหาร 3 ตัว (ปกติ 2)'},
  {k:'rahu',name:'พระราหู',mount:'kaisornnaka',ab:'อุปราคา',txt:'กลางคืน บุก +1 เพิ่ม (รวม +2) และคนอื่นไม่เห็นจำนวนทหารในกองนอกเมืองของคุณ',weak:'กลางวันไม่มีโบนัส'},
  {k:'uma',name:'พระแม่อุมา',mount:'khotchasi',ab:'ศักติ',txt:'กองที่มีพาหนะ พลังรบ +1 ทั้งบุกและรับ',weak:'ไม่มีพาหนะก็ไม่มีโบนัส'},
- {k:'skanda',name:'พระขันธกุมาร',mount:'hatsadee',ab:'ขุนพลเทวดา',txt:'บุกด้วยทหารมากกว่าฝ่ายรับ แต้มฆ่า +1',weak:'ไม่มีโบนัสตอนตั้งรับ'},
+ {k:'skanda',name:'พระขันธกุมาร',mount:'hatsadee',ab:'ขุนพลเทวดา',txt:'บุกด้วยทหารน้อยกว่าหรือเท่ากับฝ่ายรับ พลังรบ +2',weak:'ไม่มีโบนัสตอนตั้งรับ'},
  {k:'ganesha',name:'พระพิฆเนศ',mount:'thakthor',ab:'ขจัดอุปสรรค',txt:'เริ่มด้วยบุญ 5 และทำบุญตอนยึดวัดหรือเขาอยู่ ได้บุญ +1',weak:'ไม่มีโบนัสตอนรบ'},
- {k:'saraswati',name:'พระสุรัสวดี',mount:'kinnaree',ab:'ปัญญาญาณ',txt:'การ์ดพลังเลเวล 1 ราคา 1 บุญ',weak:'ไม่มีโบนัสตอนรบ'},
+ {k:'saraswati',name:'พระสุรัสวดี',mount:'kinnaree',ab:'ปัญญาญาณ',txt:'จบรอบ (ทั้งกลางวันและกลางคืน) ถ้าไม่ได้ครองวัดอยู่เลย ได้บุญ +2',weak:'ไม่มีโบนัสตอนรบ'},
  {k:'reusi',name:'พระฤๅษี',mount:'kilen',ab:'ตบะ',txt:'บุกชนะครั้งแรกของแต่ละรอบไม่ได้บาป และตั้งรับเห็นการ์ดฝ่ายบุกก่อนเลือก',weak:'มีทหารทั้งหมด 9 ตัว (ปกติ 10)'}
 ];
 /* แนวทางเล่นของเทพ 4 สาย */
 const ARCH={war:{n:'สายสงคราม',ic:'⚔',d:'ยิ่งรบต่อเนื่องยิ่งเก่ง แต่เปลืองทหาร'},bun:{n:'สายบุญบารมี',ic:'🙏',d:'ยึดวัดและเขาแล้วได้ทรัพยากร'},maya:{n:'สายมายา',ic:'🌀',d:'เคลื่อนที่หลอกล่อ ซ่อนข้อมูล'},guard:{n:'สายผู้พิทักษ์',ic:'🛡',d:'ยืนเฝ้านานยิ่งแข็ง กองช่วยกันเอง'}};
-const GOD_ARCH={"war": ["indra", "shiva", "agni", "skanda", "yama"], "bun": ["brahma", "varuna", "jupiter", "ganesha", "saraswati"], "maya": ["narai", "vayu", "rahu", "vessuwan", "reusi"], "guard": ["thorani", "uma", "ganga", "chan", "surya"]};
+const GOD_ARCH={"war": ["indra", "shiva", "agni", "skanda", "yama"], "bun": ["brahma", "varuna", "jupiter", "ganesha", "saraswati"], "maya": ["narai", "vayu", "rahu", "vessuwan", "reusi"], "guard": ["thorani", "uma", "ganga", "montho", "tosakan"]};
 GODS.forEach(g=>{for(const a in GOD_ARCH)if(GOD_ARCH[a].includes(g.k))g.arch=a});
 const GOD=Object.fromEntries(GODS.map(g=>[g.k,g]));
+/* ห้องเก่าที่ยังเลือกพระอาทิตย์/พระจันทร์ไว้ ใช้ทศกัณฐ์/นางมณโฑแทน */
+const GOD_ALIAS={surya:'tosakan',chan:'montho'};GOD.surya=GOD.tosakan;GOD.chan=GOD.montho;
 const MOUNTS={
  erawan:{name:'ช้างเอราวัณ',ic:'🐘',cost:4,home:'forest',txt:'ตั้งรับ +1 และกองที่มีเอราวัณจุทหารได้เพิ่ม 1 ตัว',bonus:'พระอินทร์: ถ้าเอราวัณเดินมากับกองนั้น วชิราวุธถึงกองที่ห่าง 2 ช่อง'},
  garuda:{name:'ครุฑ',ic:'🦅',cost:4,home:'sumeru',txt:'บุก +1 และเดินได้ 2 ช่อง',bonus:'พระนารายณ์: บินข้ามช่องศัตรูได้'},
@@ -35,10 +37,10 @@ const MOUNTS={
  buffalo:{name:'กระบือ',ic:'🐃',cost:2,home:'plain',txt:'บุกชนะแล้วไม่ได้บาป',bonus:'พระยม: ยมโลก +2 ต่อตัวในศึกของกองนี้'},
  rhino:{name:'แรด',ic:'🦏',cost:3,home:'deep',txt:'บุก +2',bonus:'พระเพลิง: กองนี้ไม่โดนตั้งรับ −1'},
  naga:{name:'นาค',ic:'🐍',cost:4,home:'water',txt:'รับความเสียหาย −1 (ครุฑลบล้าง) · บุกออกจากริมน้ำหรือบุกเข้าริมน้ำ +2',bonus:'พระพิรุณ: +1 เมื่ออยู่ในวัด'},
- rajasi:{name:'ราชสีห์',ic:'🦁',cost:4,home:'plain',txt:'เดินได้ 2 ช่อง · บุกชนะ แต้มฆ่า +1',bonus:'พระอาทิตย์: บุก +1 เพิ่ม'},
+ rajasi:{name:'ราชสีห์',ic:'🦁',cost:4,home:'plain',txt:'เดินได้ 2 ช่อง · บุกชนะ แต้มฆ่า +1',bonus:'ทศกัณฐ์: บุก +1 เพิ่ม'},
  khotchasi:{name:'คชสีห์',ic:'🐯',cost:4,home:'forest',txt:'ตั้งรับ +1 และตอนตั้งรับรับความเสียหาย −1',bonus:'พระแม่อุมา: บุกก็ +1 ด้วย'},
  kilen:{name:'กิเลน',ic:'🦄',cost:3,home:'temple',txt:'จบรอบ บาป −1',bonus:'พระฤๅษี: จบรอบได้บุญ +1 ด้วย'},
- durong:{name:'ดุรงค์ปักษิน (ม้าปีก)',ic:'🐎',cost:4,home:'sumeru',txt:'เดินได้ 2 ช่อง',bonus:'พระจันทร์: ตั้งรับ +1'},
+ durong:{name:'ดุรงค์ปักษิน (ม้าปีก)',ic:'🐎',cost:4,home:'sumeru',txt:'เดินได้ 2 ช่อง',bonus:'นางมณโฑ: ตั้งรับ +1'},
  kinnaree:{name:'กินรี',ic:'🧚',cost:2,home:'water',txt:'ทำบุญได้บุญ +1 เพิ่ม',bonus:'พระสุรัสวดี: ทำบุญ +2 แทน +1'},
  makara:{name:'มกร',ic:'🐊',cost:3,home:'water',txt:'ตอนบุก รับความเสียหาย −1',bonus:'พระแม่คงคา: ตอนตั้งรับก็รับความเสียหาย −1'},
  hera:{name:'เหรา',ic:'🦎',cost:2,home:'deep',txt:'ตั้งรับ +1',bonus:'พระแม่ธรณี: ตั้งรับ +2 แทน +1'},
@@ -135,7 +137,7 @@ const ctype=(S,i)=>{const t=terr(S,i);return t==='royal'?'temple':t==='deep'?'fo
 const citySeat=i=>(i-1)/SECT;
 const cityOf=s=>1+SECT*s;
 const has=(S,s,id)=>S.P[s].pw.includes(id);
-const godOf=(S,s)=>S.seats[s].god;
+const godOf=(S,s)=>{const g=S.seats[s].god;return GOD_ALIAS[g]||g};
 const isGod=(S,s,k)=>godOf(S,s)===k;
 const ADJC={};
 function adjTable(S){
@@ -170,7 +172,7 @@ function onBoard(S,s){let t=0;for(const c of S.B)if(c.o===s)t+=c.t;if(S.battle&&
 const reserve=(S,s)=>(isGod(S,s,'reusi')?9:10)+(has(S,s,'novice')?1:0)+(has(S,s,'dharma')?2:0)-onBoard(S,s);
 /* carry = พาหนะที่เดินมากับกอง · เอราวัณในกอง จุเพิ่ม 1 */
 const cap=(S,s,i,carry)=>{if(i===cityOf(s))return 99;const ms=[...new Set([...mountsAt(S,i,s),...mList(carry)])];
-  return (ms.length>=2?4:(has(S,s,'fort')?6:5)-(isGod(S,s,'vayu')?1:0)-(has(S,s,'dharma')?1:0))+(ms.includes('erawan')?1:0)};
+  return (ms.length>=2?4:(has(S,s,'fort')?6:5)+(isGod(S,s,'tosakan')?1:0)-(isGod(S,s,'vayu')?1:0)-(has(S,s,'dharma')?1:0))+(ms.includes('erawan')?1:0)};
 function templesHeld(S,s){let n=0;for(let i=1;i<S.B.length;i++)if(ctype(S,i)==='temple'&&S.B[i].o===s&&S.B[i].t>0)n++;return n}
 function tempVP(S,s){return templesHeld(S,s)+(S.B[0].o===s&&S.B[0].t>0?2:0)}
 const total=(S,s)=>S.P[s].vp+tempVP(S,s);
@@ -198,7 +200,7 @@ function markAction(S,s,a){
 function hasActions(S,s){return ['recruit','move','merit','buy'].some(a=>actionOK(S,s,a))}
 
 function priceOf(S,s,item){let base=item.mount?MOUNTS[item.mount].cost:COST[PW[item.pw].lv];
-  if(item.pw){const lv=PW[item.pw].lv;if(isGod(S,s,'jupiter')&&lv>=2&&holyGround(S,s))base-=1;if(isGod(S,s,'saraswati')&&lv===1)base=1;if(has(S,s,'haggler')&&lv>=2)base-=1}
+  if(item.pw){const lv=PW[item.pw].lv;if(isGod(S,s,'jupiter')&&lv>=2&&holyGround(S,s))base-=1;if(has(S,s,'haggler')&&lv>=2)base-=1}
   if(item.mount&&has(S,s,'blackmarket'))base-=1;
   if(has(S,s,'merchant'))base-=1;
   return Math.max(1,base-(has(S,s,'alms')?1:0))}
@@ -389,6 +391,7 @@ function resolveBattle(S,defCard){
     if(has(S,A,'conquest')&&!S.P[A].f.conquest){S.P[A].vp+=1;S.P[A].f.conquest=true;notes.push('ผู้พิชิต +1 ถาวร')}
     if(has(S,D,'karma')){S.P[A].sin+=1;notes.push('กรรมตามสนอง บาป +1')}
   }
+  if(aWin&&isGod(S,A,'agni')&&b.agni==='m'&&S.P[D].merit>0){S.P[D].merit--;notes.push('เผาผลาญ ฝ่ายรับเสียบุญ 1')}
   if(aWin&&has(S,A,'arson')&&S.P[D].merit>0){S.P[D].merit--;S.P[A].merit++;notes.push('ลอบวางเพลิง ขโมยบุญ 1')}
   if(aWin&&isGod(S,A,'shiva')){S.P[A].rage=Math.min(3,(S.P[A].rage||0)+1);notes.push(`โทสะ ${S.P[A].rage}`)}
   if(aWin&&has(S,A,'plunder')){S.P[A].merit+=2;notes.push('ปล้นสะดม +2 บุญ')}
@@ -433,7 +436,6 @@ function battleMods(S,A,D,nA,nD,mA,mD,cell,from){
   if(from!=null&&terr(S,from)==='plain')A_('ทุ่งศึก',1);
   if(terr(S,cell)==='deep'&&has(S,D,'hidden'))D_('ซ่อนกำลัง',2);
   if(isGod(S,A,'shiva')&&S.P[A].rage)A_('โทสะ',S.P[A].rage);
-  if(isGod(S,D,'chan')&&!(S.P[D].f.mv||[]).includes(cell))D_('มั่นคง (ไม่ได้ขยับ)',1);
   if(isGod(S,D,'thorani')){const nb=nbs(S,cell,D).filter(j=>S.B[j].o===D&&S.B[j].t>0).length;D_('แผ่นดินค้ำจุน',1+Math.min(2,nb))}
   if(isGod(S,D,'varuna')&&temple)D_('หลั่งฝน (วัด)',1);
   if(has(S,A,'weapon'))A_('ศาสตราวุธ',1);if(has(S,A,'siege')&&(temple||cell===0))A_('ปิดล้อม',1);if(has(S,A,'divine'))A_('อาวุธเทวะ',2);
@@ -444,23 +446,25 @@ function battleMods(S,A,D,nA,nD,mA,mD,cell,from){
   if(nD>nA&&has(S,A,'storm'))A_('พายุศึก',2);if(nA>nD&&has(S,D,'storm'))D_('พายุศึก',2);
   if(nD<nA&&has(S,D,'moat'))A_('คูเมือง',-1);if(night&&has(S,D,'watch'))D_('หอยาม',1);if(nD<=2&&has(S,D,'militia'))D_('กองอาสา',2);
   if(temple&&has(S,D,'trap'))A_('กับดัก',-1);if(has(S,D,'aegis'))D_('เกราะเทวะ',1);if((cell===0||isRoyal(S,cell))&&has(S,D,'citadel'))D_('ป้อมเขาพระสุเมรุ',2);
-  if(isGod(S,A,'agni'))A_('เผาผลาญ',1);
+  if(isGod(S,A,'tosakan')&&nA>nD)A_('ทศพักตร์',1);
+  /* คู่ปรับ: ทศกัณฐ์กับพระนารายณ์ รบกันเมื่อไหร่ ได้ +1 ทั้งคู่ */
+  if((isGod(S,A,'tosakan')&&isGod(S,D,'narai'))||(isGod(S,A,'narai')&&isGod(S,D,'tosakan'))){A_('คู่ปรับ',1);D_('คู่ปรับ',1)}
+  if(isGod(S,A,'skanda')&&nA<=nD)A_('ขุนพลเทวดา',2);
   if(hm(mA,'garuda'))A_('ครุฑ',1);if(hm(mA,'nonthi'))A_('โคนนทิ',1);if(hm(mA,'rhino'))A_('แรด',2);
   if(hm(mA,'naga')&&temple&&isGod(S,A,'varuna'))A_('นาคในวัด',1);
   if(hm(mA,'naga')&&(t==='water'||(from!=null&&terr(S,from)==='water')))A_('นาคริมน้ำ',2);
   if(hm(mA,'asura'))A_('อสุรปักษา',isGod(S,A,'vessuwan')?2:1);
   if(hm(mA,'hatsadee')){if(night)A_('หัสดีลิงค์ยามค่ำ',2);else if(isGod(S,A,'skanda'))A_('หัสดีลิงค์',1)}
-  if(hm(mA,'rajasi')&&isGod(S,A,'surya'))A_('ราชสีห์ของพระอาทิตย์',1);
+  if(hm(mA,'rajasi')&&isGod(S,A,'tosakan'))A_('ราชสีห์ของทศกัณฐ์',1);
   if(hm(mA,'khotchasi')&&isGod(S,A,'uma'))A_('คชสีห์ของพระแม่อุมา',1);
   if(has(S,D,'armor'))D_('เกราะเพชร',1);if(temple&&has(S,D,'wall'))D_('กำแพงวัด',1);if(nD>=5&&has(S,D,'unity'))D_('สามัคคี',1);if(has(S,D,'guardian'))D_('ทวารบาล',2);
-  if(isGod(S,D,'agni')&&!hm(mD,'rhino'))D_('เผาผลาญ (รับ)',-1);
   if(hm(mD,'erawan'))D_('เอราวัณ',1);if(hm(mD,'nonthi'))D_('โคนนทิ',1);
   if(hm(mD,'naga')&&temple&&isGod(S,D,'varuna'))D_('นาคในวัด',1);
   if(hm(mD,'hera'))D_('เหรา',isGod(S,D,'thorani')?2:1);if(hm(mD,'khotchasi'))D_('คชสีห์',1);
   if(hm(mD,'kraisorn')){if(day)D_('ไกรสรปักษา',2);else if(isGod(S,D,'vayu'))D_('ไกรสรปักษา',1)}
   // เทพ
-  if(isGod(S,A,'surya')&&day)A_('สุริยเดช',1);if(isGod(S,D,'surya'))D_(day?'สุริยเดช':'สุริยเดช (กลางคืน)',day?1:-1);
-  if(isGod(S,D,'chan')&&night)D_('จันทรคติ',1);if(hm(mD,'durong')&&isGod(S,D,'chan'))D_('ม้าปีกของพระจันทร์',1);
+  if(isGod(S,A,'montho')&&day)A_('มนตร์มณโฑ (กลางวัน)',2);
+  if(isGod(S,D,'montho')&&night)D_('มนตร์มณโฑ (กลางคืน)',2);if(hm(mD,'durong')&&isGod(S,D,'montho'))D_('ม้าปีกของนางมณโฑ',1);
   if(t==='water'){if(isGod(S,A,'ganga'))A_('สายน้ำศักดิ์สิทธิ์',1);if(isGod(S,D,'ganga'))D_('สายน้ำศักดิ์สิทธิ์',1)}
   if(isGod(S,A,'rahu')&&night)A_('อุปราคา',1);
   if(isGod(S,A,'uma')&&mList(mA).length)A_('ศักติ',1);if(isGod(S,D,'uma')&&mList(mD).length)D_('ศักติ',1);
@@ -481,7 +485,7 @@ function trail(S,o){S.trail=S.trail||[];S.seq=(S.seq||0)+1;S.trail.unshift(Objec
 /* แต้มฆ่าที่ไม่ได้มาจากการ์ด: a/d = ได้เสมอ (รวมการลดความเสียหาย), aWin/dWin = ได้เมื่อชนะ */
 function killMods(S,A,D,mA,mD,nA,nD){
   const a=[],d=[],aWin=[],dWin=[];if(has(S,D,'smoke'))mA=[];
-  if(isGod(S,A,'skanda')&&nA>nD)a.push(['ขุนพลเทวดา',1]);
+  if(isGod(S,A,'agni')&&!(S.battle&&S.battle.agni==='m'))aWin.push(['เผาผลาญ',1]);
   if(has(S,A,'vanguard')&&nA<nD)a.push(['ทัพหน้า',1]);
   if(has(S,A,'raid'))aWin.push(['จู่โจม',1]);if(hm(mA,'rajasi'))aWin.push(['ราชสีห์',1]);
   if(has(S,D,'counter'))dWin.push(['โต้กลับ',1]);
@@ -621,8 +625,8 @@ function endRound(S){
     const p=S.P[s];const th=templesHeld(S,s);
     /* ริมน้ำ = แม่น้ำศักดิ์สิทธิ์: มีกองอยู่ริมน้ำ ได้การ์ดรบที่ใช้แล้วคืน 1 ใบ (ใบที่แรงสุด) */
     if(p.uc.length&&S.B.some((c,j)=>c.o===s&&c.t>0&&terr(S,j)==='water')){p.uc.sort((a,b)=>CARD[b].s-CARD[a].s);p.uc.shift()}
-    /* พระอาทิตย์: จบรอบกลางวัน กองในวัดที่มีไม่ถึง 3 ได้ +1 */
-    if(isGod(S,s,'surya')&&S.moon==='wax')for(let j=1;j<S.B.length;j++){const c=S.B[j];if(c.o===s&&c.t>0&&c.t<3&&ctype(S,j)==='temple'&&reserve(S,s)>0)placeTroops(S,s,j,1)}
+    /* พระสุรัสวดี: จบรอบ ถ้าไม่ได้ครองวัดเลย ได้บุญ +2 */
+    if(isGod(S,s,'saraswati')&&!S.B.some((c,j)=>c.o===s&&c.t>0&&ctype(S,j)==='temple')){p.merit+=2;log(S,`${gname(S,s)} ปัญญาญาณ ไม่ได้ครองวัด ได้บุญ +2`)}
     /* พระอิศวร: รอบไหนไม่บุก แต้มโทสะหายหมด */
     if(isGod(S,s,'shiva')&&!p.f.atk)p.rage=0;
     if(S.moon==='wax')p.merit+=th;

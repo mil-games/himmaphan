@@ -647,9 +647,9 @@ const GOD_FLAVOR={indra:'สายฟ้าแห่งดาวดึงส์ 
   saraswati:'เสียงพิณของข้า ปลุกปัญญาให้ตื่นขึ้น',narai:'ทุกการเคลื่อนไหว อยู่ในแผนของข้าแล้ว',vayu:'ตามข้าทันไหมล่ะ?',
   rahu:'เมื่อข้ากลืนจันทร์ ความมืดจะเป็นของข้า',vessuwan:'ยักษ์ทั้งปวง จงก้มหัวต่อราชาแห่งทิศเหนือ',reusi:'ตบะที่บำเพ็ญมานับพันปี เจ้าต้านไม่ไหวหรอก',
   thorani:'ผืนดินนี้ จะไม่มีวันถูกพรากไป',uma:'อ่อนโยนต่อผู้ภักดี ไร้ปรานีต่อผู้รุกราน',ganga:'สายน้ำไหลไปที่ใด ชีวิตย่อมงอกงามที่นั่น',
-  chan:'คืนนี้ แสงจันทร์จะคุ้มครองเจ้า',surya:'ตราบที่ตะวันยังส่องแสง ข้าไม่มีวันพ่าย'};
+  montho:'คืนนี้ ข้าจะเฝ้าลงกาไว้เอง',tosakan:'สิบหน้ายี่สิบกร ใครจะต้านข้าได้'};
 /* จุดโฟกัสของภาพแต่ละองค์ (ตำแหน่งหน้า) ใช้ตอนครอปเป็นแบนเนอร์และวงกลม ปรับเมื่อได้รูปจริง */
-const GOD_FOCUS={surya:[.5,.165],chan:[.52,.24],uma:[.53,.21],thorani:[.47,.215],reusi:[.5,.165],vessuwan:[.49,.29],rahu:[.5,.27],vayu:[.40,.27],narai:[.49,.23],saraswati:[.5,.24],ganesha:[.5,.345],jupiter:[.46,.225],varuna:[.4,.19],brahma:[.49,.285],yama:[.375,.26],skanda:[.54,.25],agni:[.45,.345],shiva:[.55,.25],ganga:[.50,.20],indra:[.51,.33]}; /* [x,y] ตำแหน่งกลางหน้า เป็นสัดส่วนของภาพ (ภาพมาตรฐาน 832×1216) */
+const GOD_FOCUS={tosakan:[.5,.265],montho:[.42,.255],uma:[.53,.21],thorani:[.47,.215],reusi:[.5,.165],vessuwan:[.49,.29],rahu:[.5,.27],vayu:[.40,.27],narai:[.49,.23],saraswati:[.5,.24],ganesha:[.5,.345],jupiter:[.46,.225],varuna:[.4,.19],brahma:[.49,.285],yama:[.375,.26],skanda:[.54,.25],agni:[.45,.345],shiva:[.55,.25],ganga:[.50,.20],indra:[.51,.33]}; /* [x,y] ตำแหน่งกลางหน้า เป็นสัดส่วนของภาพ (ภาพมาตรฐาน 832×1216) */
 const IMG_R=1216/832;
 function focusStyle(k,cls){const f=GOD_FOCUS[k];if(!f||cls==='full'&&false)return '';const [fx,fy]=f;
   if(cls==='av'||cls==='chip'){const z=2.3;return `style="inset:auto;width:${z*100}%;height:auto;max-width:none;left:${(50-fx*z*100).toFixed(1)}%;top:${(50-fy*IMG_R*z*100).toFixed(1)}%"`}
@@ -941,6 +941,7 @@ function modeBox(S,act){
     return `<div class="banner stack"><div><b>${strike?'🌀 จู่โจมจากเงา บุก':battle?'บุก':'เดินไป'}${esc(cname(S,dst))}</b>${strike?' <span class="small muted">(ชนะแล้วกลับช่องเดิม แพ้แล้วถอยจากช่องเดิม)</span>':''}${battle?` · ศัตรู ${S.B[dst].t} ตัว (${esc(gname(S,S.B[dst].o))})`:''}</div>
       <div class="row">จำนวนทหาร <button id="nm" ${ui.n<=1?'disabled':''} aria-label="ลด">−</button><b class="tab">${ui.n}</b><button id="np" ${ui.n>=(lim4!=null?Math.min(nMax,lim4):nMax)?'disabled':''} aria-label="เพิ่ม">+</button><span class="small muted">สูงสุด ${lim4!=null?Math.min(nMax,lim4):nMax}</span></div>
       ${carryUI}
+      ${battle&&isGod(S,act,'agni')?`<div class="stack" style="gap:4px"><div class="small"><b>เผาผลาญ</b> ถ้าบุกชนะ จะเอาแบบไหน</div><div class="row">${[['k','ฝ่ายรับเสียทหารเพิ่ม 1'],['m','ฝ่ายรับเสียบุญ 1']].map(([v,l])=>`<label class="mopt ${(ui.agni||'k')===v?'on':''}"><input type="radio" name="agni" value="${v}" ${(ui.agni||'k')===v?'checked':''}>${l}</label>`).join('')}</div></div>`:''}
       ${battle?`<div>เลือกการ์ดรบ (ฝ่ายรับไม่เห็นจนกว่าจะเปิด)</div><div class="cards">${availCards(S,act).map(c=>cardBtn(c,'data-ac',ui.card===c)).join('')}</div>
       <div class="small muted">โบนัสบุกของคุณ: ${atkBonusText(S,act,mList([ui.carry,ui.carry2]),dst,ui.n,src)}</div>`:''}
       <div class="row"><button class="primary" id="go" ${(battle&&ui.card==null)||!co.ok.length?'disabled':''}>${battle?'บุก':'เดิน'}</button>${cancel}</div></div>`;
@@ -971,7 +972,7 @@ function carryOpts(S,s,src,dst,n,bonus){
 }
 function atkBonusText(S,s,m,cell,n,from){const D=S.B[cell].o;const mD=D>=0?mountsAt(S,cell,D):[];
   const bm=battleMods(S,s,D,n,S.B[cell].t,m,mD,cell,from);let t=fmtMods(bm.a);
-  if(has(S,s,'vanguard')&&n<S.B[cell].t)t+=' · ทัพหน้า: ฆ่า +1';if(has(S,s,'pursuit'))t+=' · ไล่ล่า: ชนะแล้วศัตรูถอย 2 ช่อง';if(isGod(S,s,'skanda')&&n>S.B[cell].t)t+=' · ขุนพลเทวดา: ฆ่า +1';
+  if(has(S,s,'vanguard')&&n<S.B[cell].t)t+=' · ทัพหน้า: ฆ่า +1';if(has(S,s,'pursuit'))t+=' · ไล่ล่า: ชนะแล้วศัตรูถอย 2 ช่อง';if(isGod(S,s,'agni'))t+=(ui.agni==='m'?' · เผาผลาญ: ชนะแล้วฝ่ายรับเสียบุญ 1':' · เผาผลาญ: ชนะแล้วฆ่า +1');
   if(hm(m,'rajasi'))t+=' · ราชสีห์: ชนะแล้วฆ่า +1';if(hm(m,'makara'))t+=' · มกร: รับความเสียหาย −1';return t}
 const SUN=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="10" fill="var(--gold)"/>${[0,45,90,135,180,225,270,315].map(d=>`<line x1="24" y1="5" x2="24" y2="11" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" transform="rotate(${d} 24 24)"/>`).join('')}</svg>`;
 const MOON=`<svg class="phicon" viewBox="0 0 48 48" aria-hidden="true"><path d="M30 7a17 17 0 1 0 11 29A14 14 0 0 1 30 7z" fill="var(--nightline)"/><circle cx="12" cy="12" r="1.6" fill="var(--nightline)"/><circle cx="40" cy="18" r="1.2" fill="var(--nightline)"/><circle cx="36" cy="42" r="1.4" fill="var(--nightline)"/></svg>`;
@@ -1123,6 +1124,7 @@ function wireGame(S,act){
   if($('np'))$('np').onclick=()=>{ui.n++;re()};
   app.querySelectorAll('input[name=carry]').forEach(r=>r.onchange=()=>{ui.carry=r.value;re()});
   app.querySelectorAll('input[name=carry2]').forEach(r=>r.onchange=()=>{ui.carry2=r.value;re()});
+  app.querySelectorAll('input[name=agni]').forEach(r=>r.onchange=()=>{ui.agni=r.value;re()});
   app.querySelectorAll('[data-xc]').forEach(b=>b.onclick=()=>{const c=+b.dataset.xc;mutate(GID,T=>{if(!T.disarm||!iControl(T,disarmBy(T.disarm)))return false;if(!doDisarm(T,c))return false})});
   if($('go'))$('go').onclick=e=>{e.currentTarget.disabled=true;doMove()};
   if($('avatar'))$('avatar').onclick=()=>{ui={mode:'avatar-pick'};re()};
@@ -1178,7 +1180,7 @@ function doBuy(item){const s=activeSeat(G);ui={mode:null};
       T.M[item.mount]={o:s,c:cityOf(s)};log(T,`${gname(T,s)} ได้${MOUNTS[item.mount].name}มาเป็นพาหนะ (−${c} บุญ)`)}
     markAction(T,s,'buy');advance(T)}).then(ok=>{if(ok)sfx('coin')})}
 function doMove(){
-  const s=activeSeat(G);const {src,dst,n,card,bonus}=ui;const carry=ui.carry;const carry2=ui.carry2||null;
+  const s=activeSeat(G);const {src,dst,n,card,bonus}=ui;const agni=ui.agni==='m'?'m':'k';const carry=ui.carry;const carry2=ui.carry2||null;
   if(src==null||dst==null||ui.mode!=='move-cfg'){ui={mode:null};render();return}
   ui={mode:null};
   const fail=m=>{window.__why=m;toast('เดินไม่ได้: '+m);return false};
@@ -1201,7 +1203,7 @@ function doMove(){
       if(n>cap(T,s,dst,TK))return fail('กองที่บุกมีทหารเกินที่กองนอกเมืองจุได้');
       const path=movePath(T,s,src,dst,TK,bonus?1:0);
       removeTroops(T,src,n);for(const k of TK)T.M[k].c=-1;
-      T.battle={a:s,d:T.B[dst].o,to:dst,from:src,path:kind==='strike'?[src,dst]:path,raid:kind==='strike',n,mount:takeM,mount2:take2,ac:card,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
+      T.battle={a:s,d:T.B[dst].o,to:dst,from:src,path:kind==='strike'?[src,dst]:path,raid:kind==='strike',n,mount:takeM,mount2:take2,ac:card,agni,bonusUsed:!!bonus,vajraPending:bonus?wasVajra:true};
       trail(T,{k:'atk',s,f:src,t:dst,n,m:takeM||null,p:kind==='strike'?[src,dst]:path});markMv(T,s,dst);
       log(T,`${gname(T,s)} ${kind==='strike'?'จู่โจมจากเงา':'ยกทัพ'} ${n} ตัวบุก${cname(T,dst)} ของ${gname(T,T.B[dst].o)}`);
       if(!c.t)sendMountsHome(T,src,s);
