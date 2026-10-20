@@ -433,8 +433,8 @@ function decorSVG(S,M){
   const sz=M.r;
   /* ภาพของประดับ (img/decor) วางให้ฐานภาพอยู่ที่จุด x,y · [ชื่อ, กว้าง/สูง, สูง(เท่าของรัศมีช่อง), ครั้งที่ลอง, รัศมีกันทับ, จับกลุ่ม, พื้น] */
   const pic=(n,ar,hh,flip)=>(x,y,s)=>{const h=s,w=h*ar;const fl=flip&&rnd()<.5;
-    return `<ellipse cx="${f(x)}" cy="${f(y-h*0.02)}" rx="${f(w*0.42)}" ry="${f(w*0.13)}" fill="#120C04" opacity=".38"/><image href="img/decor/${n}.webp" x="${f(fl?-x-w/2:x-w/2)}" y="${f(y-h*0.96)}" width="${f(w)}" height="${f(h)}"${fl?' transform="scale(-1,1)"':''}/>`};
-  const flat=(n,ar)=>(x,y,s)=>{const w=s,h=w/ar;return `<image href="img/decor/${n}.webp" x="${f(x-w/2)}" y="${f(y-h/2)}" width="${f(w)}" height="${f(h)}" opacity=".9"/>`};
+    return `<ellipse cx="${f(x)}" cy="${f(y-h*0.02)}" rx="${f(w*0.42)}" ry="${f(w*0.13)}" fill="#120C04" opacity=".38"/><image href="img/${n}.webp" x="${f(fl?-x-w/2:x-w/2)}" y="${f(y-h*0.96)}" width="${f(w)}" height="${f(h)}"${fl?' transform="scale(-1,1)"':''}/>`};
+  const flat=(n,ar)=>(x,y,s)=>{const w=s,h=w/ar;return `<image href="img/${n}.webp" x="${f(x-w/2)}" y="${f(y-h/2)}" width="${f(w)}" height="${f(h)}" opacity=".9"/>`};
   const kinds=[
     [pic('hut',.927,1,1),14,sz*1.35,sz*0.62,0],[pic('stupa',.737,1,1),9,sz*1.55,sz*0.55,0],[pic('cart',1.071,1,1),8,sz*0.9,sz*0.5,0],[pic('flag',.55,1,1),8,sz*1.1,sz*0.32,0],
     [flat('scorch',1.107),16,sz*1.5,sz*0.6,0,1],
